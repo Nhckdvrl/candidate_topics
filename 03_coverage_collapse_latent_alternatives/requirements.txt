@@ -1,0 +1,10 @@
+torch>=2.2
+transformers>=4.45
+datasets>=2.21
+accelerate>=0.30
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.5
+matplotlib>=3.9
+pyarrow>=17.0
+pytest>=8.0
