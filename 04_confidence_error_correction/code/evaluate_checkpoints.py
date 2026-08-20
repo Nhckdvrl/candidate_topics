@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate base + every correction-cycle checkpoint on matched items."""
+"""Evaluate base + every correction-cycle checkpoint on matched G-1v2 items."""
 from __future__ import annotations
 
 import argparse
@@ -57,7 +57,7 @@ def main() -> None:
     ap.add_argument("--pairs", required=True)
     ap.add_argument("--split", choices=["discovery", "confirmation"], required=True)
     ap.add_argument("--output", required=True)
-    ap.add_argument("--batch-size", type=int, default=16)
+    ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--seed", type=int, default=None)
     args = ap.parse_args()
@@ -80,16 +80,18 @@ def main() -> None:
 
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
-            torch_dtype=torch.bfloat16 if device.type == "cuda" else torch.float32,
+            dtype=torch.bfloat16 if device.type == "cuda" else torch.float32,
             trust_remote_code=True,
         ).to(device).eval()
 
+        # G0 must use exactly the same primary semantic measurement as G-1v2.
         scored = score_items(
             model,
             tokenizer,
             items,
             batch_size=args.batch_size,
             template="primary",
+            permutation_scheme="cyclic",
             device=device,
         )
         for r in scored:
@@ -114,6 +116,7 @@ def main() -> None:
                     "top1_correct": int(r["top1_correct"]),
                     "correct_rank": int(r["target_rank"]),
                     "answer_entropy": float(r["answer_entropy"]),
+                    "position_susceptibility_js": float(r["position_susceptibility_js"]),
                 }
             )
         del model
@@ -128,7 +131,7 @@ def main() -> None:
             f"max_abs_diff={np.max(baseline_diffs):.6g}"
         )
         if np.max(baseline_diffs) > 1e-4:
-            print("WARNING: cycle-0 scorer does not exactly reproduce frozen G-1 base scores")
+            print("WARNING: cycle-0 scorer does not exactly reproduce frozen G-1v2 base scores")
 
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, "w", encoding="utf-8") as f:
