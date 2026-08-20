@@ -1,174 +1,294 @@
-# Behavior Stabilization vs. Representation Stabilization
+# 01 — Behavior Stabilization vs. Representation Stabilization
 
 ## Status
 
-Candidate topic. **High priority for Training Dynamics**, but only worth continuing if a cheap pilot shows a clear temporal decoupling between output behavior and internal representations.
+**Candidate topic — audited G0 implementation ready.**
+
+The broad question, “do representations keep changing after behavior stabilizes?”, is too close to existing Pythia training-dynamics work such as PolyPythias and concept-evolution studies. The version worth testing is narrower:
+
+> **After global output-distribution movement reaches a low late-training regime, does feature-level representational learning continue in a way that cannot be explained by trivial residual-coordinate drift?**
+
+The purpose of the current code is not to prove a paper claim. It is to kill or keep this topic quickly.
 
 ---
 
 ## 1. Background
 
-A recent Training Dynamics line suggests that different notions of "model change" can evolve on very different time scales.
+### Seed 1 — output-distribution stabilization
 
-### Seed paper 1: output-space stabilization
+**Establishing a Scale for KL Divergence in Language Models Across Various Settings** (Findings ACL 2026) studies Pythia checkpoints in a geometry built from sequence log-likelihoods. It shows that movement in output-distribution space becomes much smaller during training even while parameters continue to move.
 
-**Establishing a Scale for KL Divergence in Language Models Across Various Settings** (Findings ACL 2026) studies language-model training trajectories in output-distribution space. On Pythia checkpoints, the paper finds that model behavior measured through likelihood/KL geometry stabilizes relatively early, even though the model's weights continue to move substantially.
+Paper: <https://aclanthology.org/2026.findings-acl.1163/>
 
-The key established phenomenon is therefore:
+The key measurement is a local KL proxy derived from a double-centered checkpoint × text log-likelihood matrix:
 
-> **behavior can become nearly stable before parameter training has stopped.**
+```text
+2 KL(p_i, p_j) ≈ ||q_i - q_j||² / N
+```
 
-Paper: https://aclanthology.org/2026.findings-acl.1163/
+The relevant comparison is between checkpoints separated by a **fixed training horizon**. Varying the checkpoint gap would confound movement rate with elapsed training.
 
-### Seed paper 2: representation dynamics
+### Seed 2 — representation / feature dynamics
 
-**Evolution of Concepts in Language Model Pre-Training** (ICLR 2026) and **Crosscoding Through Time** (ACL 2026) show that internal features can be tracked across training checkpoints. Features can emerge, persist, change, or disappear over pretraining, and some of these feature changes are behaviorally or causally relevant.
+**Evolution of Concepts in Language Model Pre-Training** and **Crosscoding Through Time** show that representations and sparse features can emerge, persist, consolidate, or disappear across pretraining checkpoints.
 
-- Evolution of Concepts: https://proceedings.iclr.cc/paper_files/paper/2026/hash/45673dbf3f331fbd911b0689872de396-Abstract-Conference.html
-- Crosscoding Through Time: https://github.com/bayazitdeniz/crosscoding-through-time
+- Evolution of Concepts: <https://proceedings.iclr.cc/paper_files/paper/2026/hash/45673dbf3f331fbd911b0689872de396-Abstract-Conference.html>
+- Crosscoding Through Time: <https://github.com/bayazitdeniz/crosscoding-through-time>
 
-These two lines leave a very natural missing comparison:
+Crosscoding Through Time explicitly works with checkpoint pairs/triplets and a fixed residual-stream hook, then uses sparse crosscoders and RelIE-style attribution to study feature life cycles.
 
-> **When the model's output behavior has already stabilized, have its internal representations stabilized as well?**
+### Important nearby work / novelty constraint
 
-The topic is not simply "study representation dynamics". That has already been done. The one-step question is to compare the **time of behavioral stabilization** with the **time of representational stabilization** within the same training trajectory.
+**PolyPythias** already studies Pythia training phases, linguistic representations, and representational shifts across many pretraining runs. Therefore a paper cannot stop at “CKA changes later than benchmark performance” or “hidden states keep moving.”
+
+The interesting gap is instead:
+
+> **Can global function-space convergence hide continued interpretable feature learning?**
+
+If G0 only finds generic activation drift, the topic is not strong enough.
 
 ---
 
-## 2. What we want to study
+## 2. What we want to know
 
 Let
 
-- `t_behavior` = the point at which successive checkpoints become nearly indistinguishable in output-distribution space;
-- `t_repr` = the point at which internal representations/features stop changing substantially.
+- `D_behavior(t, Δ)` measure local output-distribution movement;
+- `D_repr(t, Δ)` measure movement of matched residual representations;
+- `Δ = 1,000 training steps` for every pair.
 
-The central question is:
+We test whether the **relative decay** of the two quantities differs:
 
-> **How are `t_behavior` and `t_repr` related?**
+```text
+behavior movement falls strongly
+while
+meaningful representation movement remains elevated
+```
 
-Possible regimes include:
+The strongest eventual story would be:
 
-1. `t_behavior << t_repr`: behavior becomes stable while the inside of the model keeps reorganizing;
-2. `t_repr << t_behavior`: the representation basis stabilizes first, while later training mainly changes readout/calibration;
-3. `t_behavior ≈ t_repr`: internal and external convergence are synchronized;
-4. there is no single global order, but different layers/features stabilize at systematically different times.
+```text
+global behavioral convergence
+        ↓
+hides continued sparse-feature emergence / reorganization
+        ↓
+those late features encode local or task-relevant functional changes
+```
 
-The most interesting result would be a period of **behaviorally silent representational reorganization**: output behavior changes very little, yet internal features continue to emerge, disappear, or change their organization.
-
----
-
-## 3. Exact measurements
-
-### 3.1 Behavioral change
-
-Follow the KL-trajectory setup from the seed paper.
-
-For successive checkpoints `t` and `t + Δ`, evaluate a fixed set of held-out texts and estimate:
-
-`D_behavior(t) = KL(p_t || p_{t+Δ})`
-
-The pilot only needs a stable relative trajectory; the goal is to locate the late-training regime where output-distribution movement has become very small.
-
-### 3.2 Representation change: cheap pilot
-
-Before training crosscoders or SAEs, use a cheap geometry-level screen.
-
-For the same fixed texts and token positions, collect hidden states from a few layers and compute representation similarity between adjacent checkpoints, e.g. linear CKA:
-
-`D_repr^l(t) = 1 - CKA(H_t^l, H_{t+Δ}^l)`
-
-Suggested layers for the pilot:
-
-- 25% depth
-- 50% depth
-- 75% depth
-- final layer
-
-CKA is only a screening tool. If a clean decoupling appears, the full study should move to feature-level measurements.
-
-### 3.3 Representation change: full-paper measurement
-
-Use cross-checkpoint crosscoders / sparse features to track:
-
-- feature emergence;
-- feature disappearance;
-- feature persistence;
-- feature reassignment/change;
-- optionally, causally relevant feature turnover using RelIE-style measurements.
-
-The important quantity is not generic parameter drift, but **meaningful feature turnover after behavioral stabilization**.
+That final feature-level step is not part of G0. G0 only decides whether it is worth paying for crosscoder experiments.
 
 ---
 
-## 4. Minimal validation experiment
+## 3. Audited validation design
 
-### Model
+The validation is deliberately split into two gates.
 
-Start with **Pythia-410M**.
+### G0-A — reproduce the behavioral premise first
 
-Pythia is ideal because it provides dense public pretraining checkpoints and is already used by the seed literature.
+Do **not** inspect representation results until this passes.
 
-### Checkpoints
+Model:
 
-A first sparse trajectory is enough:
+```text
+EleutherAI/pythia-410m
+```
 
-`1k, 2k, 4k, 8k, 16k, 32k, 48k, 64k, 80k, 96k, 112k, 128k, 143k`
+Fixed-horizon pairs:
 
-### Data
+```text
+2k   → 3k
+5k   → 6k
+10k  → 11k
+20k  → 21k
+50k  → 51k
+100k → 101k
+142k → 143k
+```
 
-Use a fixed set of **1,000 held-out Pile texts**.
+Every pair has:
 
-For each checkpoint:
+```text
+Δ = 1,000 steps
+```
 
-1. compute sequence log-likelihoods for all 1,000 texts;
-2. save hidden states at four selected layers;
-3. sample a fixed set of token positions, e.g. 16 positions per text;
-4. compute adjacent-checkpoint KL movement;
-5. compute adjacent-checkpoint CKA movement.
+This avoids the previous invalid comparison where checkpoint intervals grew from 1k to 16k.
 
-### Pilot outputs
+Data:
 
-The pilot should produce only three essential plots:
+- 1,000 fixed UTF-8 byte chunks;
+- approximately 1,024 bytes per chunk;
+- generated once from `NeelNanda/pile-10k` using reservoir sampling;
+- the exact corpus is hashed and reused by every checkpoint;
+- no silent tokenizer truncation is allowed.
 
-1. **Behavioral movement vs training step**
-   - `D_behavior(t)`
-2. **Representation movement vs training step**
-   - `D_repr^l(t)` for several layers
-3. **Behavioral movement vs representational movement**
-   - each training interval as one point
+Behavior metrics:
 
-Do not hand-pick a stabilization step in advance. If the curves support it, estimate `t_behavior` and `t_repr` using a change-point or piecewise-regression analysis.
+1. raw local KL proxy in bits/byte;
+2. robust KL sensitivity check:
+   - lower 2% log-likelihood clipping per checkpoint;
+   - remove the top 3% examples by maximum pairwise LL-change score;
+3. 95% cluster bootstrap CIs over examples.
+
+G0-A passes only when:
+
+- the fixed-horizon KL trajectory clearly enters a lower late-training regime;
+- raw and robust curves tell the same qualitative story;
+- the result is not driven by a handful of pathological text chunks.
+
+If this premise does not reproduce, stop and debug the behavior measurement. Do not interpret representations.
+
+### G0-B — cheap representation screen
+
+Only after G0-A passes.
+
+To keep the screen fast, the default uses one explicit residual-stream location:
+
+```text
+middle GPT-NeoX block, resid_pre
+```
+
+This matches the type of hook used by Crosscoding Through Time more closely than relying on an ambiguous `hidden_states[k]` tuple.
+
+For each text we sample four deterministic interior token positions and compare matched states across the same fixed-1k checkpoint pairs.
+
+We report three complementary metrics:
+
+1. **matched cosine drift**
+   - sensitive to direct movement of the same state in the same lineage;
+2. **pooled-standardized drift**
+   - dimensionless matched displacement after pairwise feature standardization;
+3. **projected linear CKA**
+   - a rotation/scale-tolerant geometry control.
+
+CKA is **not** a falsifier by itself. A representation can rotate while preserving CKA, and sparse features can change even when global second-order geometry remains similar.
+
+Bootstrap:
+
+- cosine / standardized drift: 500 cluster bootstraps by text;
+- CKA: a small bootstrap after fixed random projection to 128 dimensions, because CKA is only a control in G0.
 
 ---
 
-## 5. Decision rule
+## 4. Why these measurements are deliberately redundant
 
-### Continue
+A useful result must survive multiple explanations.
 
-Continue only if at least one of the following appears clearly and reproducibly:
+### Case A — only direct drift stays high, CKA ≈ 1
 
-- behavior enters a stable regime while representation drift remains substantial;
-- representation stabilizes much earlier than behavior;
-- different layers show a strong and systematic stabilization order.
+Likely interpretation:
 
-If this happens, move from CKA to crosscoder/feature-level analysis and replicate across model scales and seeds.
+```text
+coordinate / basis / scale drift
+```
 
-### Stop
+This is weak and does **not** justify a paper.
 
-Stop if:
+### Case B — behavior stabilizes and matched + standardized drift remain high
 
-- behavioral and representational movement simply decay together with no interesting separation;
-- the apparent gap is tiny, unstable across text samples, or highly sensitive to the similarity metric;
-- only parameter-space drift remains while feature-level representations are already stable.
+Potentially interesting. Continue to G1, especially if the effect is reproducible under corpus resampling and additional layers.
 
-Do **not** turn a weak CKA difference into a paper claim.
+### Case C — all representation metrics decay with behavior
+
+Broad topic is likely dead. Given PolyPythias and existing representation-dynamics work, do not force a weak separation into a claim.
+
+### Case D — systematic layer ordering appears
+
+Potentially interesting, but only after replicating the middle-layer signal and then expanding to a small layer sweep.
 
 ---
 
-## 6. Why this topic may matter
+## 5. G1 only if G0 survives
 
-If model behavior stops changing much earlier than its internal representations, then late pretraining is doing something that ordinary benchmark/output evaluation cannot see. The scientific question becomes:
+Do **not** train a large crosscoder grid immediately.
 
-> **What does a language model keep learning after its behavior appears to have stabilized?**
+Pick only three snapshots around the transition found by G0, for example:
 
-That would connect output-space training dynamics with interpretable feature dynamics without inventing a new benchmark or a new training algorithm.
+```text
+before behavioral stabilization
+near stabilization
+late stable regime
+```
+
+Then reuse the Crosscoding Through Time machinery to ask whether sparse features still:
+
+- emerge;
+- disappear;
+- persist;
+- change causal relevance.
+
+The real paper-level claim requires feature-level evidence. Geometry-level movement is only a screening signal.
+
+The topic becomes genuinely strong only if we can show something like:
+
+> global sequence-distribution movement is already small, but interpretable late features still reorganize and encode local functional changes that the global KL summary hides.
+
+---
+
+## 6. Quick start
+
+```bash
+cd 01_behavior_vs_representation_stabilization
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Engineering smoke test
+
+```bash
+NUM_EXAMPLES=100 BATCH_SIZE=16 GATE=behavior ./run_pilot.sh
+```
+
+### G0-A — behavior premise
+
+```bash
+NUM_EXAMPLES=1000 BATCH_SIZE=16 GATE=behavior ./run_pilot.sh
+```
+
+Inspect:
+
+```text
+artifacts/analysis/behavior_metrics.csv
+artifacts/analysis/behavior_outliers.csv
+artifacts/analysis/behavior_constant_horizon.png
+artifacts/analysis/behavior_summary.json
+```
+
+### G0-B — representation screen
+
+Only after G0-A is convincing:
+
+```bash
+NUM_EXAMPLES=1000 BATCH_SIZE=16 POSITIONS_PER_TEXT=4 GATE=representation ./run_pilot.sh
+```
+
+Inspect:
+
+```text
+artifacts/analysis/representation_metrics.csv
+artifacts/analysis/representation_constant_horizon.png
+artifacts/analysis/behavior_vs_representation.csv
+artifacts/analysis/behavior_vs_representation.png
+artifacts/analysis/representation_summary.json
+```
+
+To run both gates in one shot after the pipeline has been smoke-tested:
+
+```bash
+GATE=all ./run_pilot.sh
+```
+
+---
+
+## 7. Decision rule
+
+| Result | Decision |
+| --- | --- |
+| Fixed-horizon KL premise does not reproduce | stop; implementation / corpus issue |
+| KL stabilizes; all representation measures stabilize similarly | stop topic |
+| KL stabilizes; only raw/direct activation movement remains | weak; likely coordinate drift; stop unless stronger evidence appears |
+| KL stabilizes; matched + standardized geometry movement remains systematically elevated | continue to G1 |
+| G1 also finds late sparse-feature turnover | topic is alive |
+| Late features have local/task-functional effects despite low global KL | strong paper direction |
+
+The repository intentionally contains no hard-coded “significance = continue” threshold. With 1,000 examples, tiny effects can be statistically significant. We care about **effect-size separation, robustness, and interpretability**, not p-value hunting.
