@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Sharded vLLM generation for checkpoint sampling or re-entry requests.
+
+The script is intentionally single-model / single-process. Scale out by running
+one process per GPU with different `--shard-index`; this is robust on clusters
+with slow inter-node links because shards never communicate.
+"""
+from __future__ import annotations
+
+import argparse
+
+from common import read_jsonl, write_jsonl, stable_hash_int
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", required=True)
+    ap.add_argument("--input", required=True)
+    ap.add_argument("--output", required=True)
+    ap.add_argument("--n", type=int, default=8)
+    ap.add_argument("--temperature", type=float, default=0.6)
+    ap.add_argument("--top-p", type=float, default=0.95)
+    ap.add_argument("--max-tokens", type=int, default=8192)
+    ap.add_argument("--tensor-parallel-size", type=int, default=1)
+    ap.add_argument("--gpu-memory-utilization", type=float, default=0.90)
+    ap.add_argument("--shard-index", type=int, default=0)
+    ap.add_argument("--num-shards", type=int, default=1)
+    ap.add_argument("--seed", type=int, default=12345)
+    args = ap.parse_args()
+
+    from vllm import LLM, SamplingParams
+
+    rows = read_jsonl(args.input)
+    rows = [
+        r for r in rows
+        if stable_hash_int(str(r.get("request_id", r.get("problem_id")))) % args.num_shards
+        == args.shard_index
+    ]
+    if not rows:
+        write_jsonl(args.output, [])
+        print("empty shard")
+        return
+
+    llm = LLM(
+        model=args.model,
+        tensor_parallel_size=args.tensor_parallel_size,
+        trust_remote_code=True,
+        gpu_memory_utilization=args.gpu_memory_utilization,
+        dtype="bfloat16",
+    )
+    tok = llm.get_tokenizer()
+    prompts = []
+    for r in rows:
+        user_text = str(r["prompt"])
+        messages = [{"role": "user", "content": user_text}]
+        base = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        assistant_prefix = str(r.get("assistant_prefix", ""))
+        prompts.append(base + assistant_prefix)
+
+    params = SamplingParams(
+        n=args.n,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        max_tokens=args.max_tokens,
+        seed=args.seed,
+    )
+    outputs = llm.generate(prompts, params)
+
+    out = []
+    for row, result in zip(rows, outputs):
+        for j, cand in enumerate(result.outputs):
+            out.append(
+                {
+                    **row,
+                    "sample_index": j,
+                    "generated_continuation": cand.text,
+                    "response": str(row.get("assistant_prefix", "")) + cand.text,
+                    "finish_reason": cand.finish_reason,
+                    "model": args.model,
+                    "sampling": {
+                        "temperature": args.temperature,
+                        "top_p": args.top_p,
+                        "max_tokens": args.max_tokens,
+                        "seed": args.seed,
+                    },
+                }
+            )
+    write_jsonl(args.output, out)
+    print(f"requests={len(rows)} completions={len(out)} shard={args.shard_index}/{args.num_shards}")
+
+
+if __name__ == "__main__":
+    main()
