@@ -1,108 +1,390 @@
 # Validation contract — Topic 05
 
-## Primary scientific question
+This file is the **locked scientific contract for fast topic validation**. The aim is not to save GPU-hours; the aim is to make the first experiment maximally decisive while preventing post-hoc rescue.
 
-Does robust temporal forgetting primarily reflect loss of **self-access to a previously successful reasoning route**, or deeper loss of the route itself?
+## 0. Scientific question
 
-The first experiment is behavioral and likelihood-based. No hidden-state probe is part of G0.
+> When a reasoning model reliably solved a problem earlier in training but reliably fails it later, is the former route still accessible/compatible and merely no longer self-selected, or has that route/competence substantially eroded?
 
-## G-1: robust state construction
+Primary evidence is behavioral + likelihood based. **No hidden-state probe is part of G-1/G0.**
 
-Input: one JSON object per sampled completion with `problem_id`, `checkpoint`, `checkpoint_order`, `prompt`, `response`, `correct`, `gold_answer`.
+---
 
-Frozen thresholds with >=8 samples/checkpoint:
+# G-1 — Does robust temporal forgetting survive repeated sampling?
+
+## Dataset / lineage
+
+Primary:
 
 ```text
-robust_correct >= 0.75
-robust_wrong   <= 0.125
+model lineage  UWNSL Qwen2.5-7B DeepScaleR GRPO
+checkpoints    step_32,64,96,128,160,192,224,256
+dataset        HuggingFaceH4/MATH-500 (500 problems)
+samples        16 / problem / checkpoint
+temperature    0.6
+top_p          0.95
+max tokens     8192 initially; rerun truncation-heavy cases at 16000
 ```
+
+The seed paper publicly releases these checkpoints and uses temperature 0.6 / top-p 0.95 in its sampling pipeline.
+
+## Answer scoring
+
+Primary scorer must be aligned with the seed stack:
+
+1. official `Temperal_sampling/prime_math.compute_score` rule/sympy scorer;
+2. for rule-negative cases with an extractable candidate, Qwen2.5-32B-Instruct fallback (`--method hybrid`).
+
+Before freezing F/N/S, manually audit a stratified random sample of at least:
+
+```text
+25 rule-positive
+25 judge-rescued
+25 final-negative
+```
+
+If disagreement > 5%, fix the scorer and rescore **all** checkpoints before classification.
+
+## Integrity checks
+
+Primary classification requires:
+
+- all 8 expected checkpoint orders present for a problem;
+- `>=16` scored samples at every checkpoint;
+- exact same problem IDs / gold answers across checkpoints;
+- no truncated generation rate large enough to differ systematically by checkpoint.
+
+Do not label missing checkpoints as `never_correct`.
+
+## Frozen states
+
+At checkpoint t:
+
+```text
+C robust-correct  pass_rate >= 0.75
+W robust-wrong    pass_rate <= 0.125
+U uncertain       otherwise
+```
+
+Wilson 95% intervals are reported only as diagnostics. Do not change group membership to whichever CI definition looks better.
 
 Groups:
 
-- **F forgotten**: final <= .125; at least one earlier checkpoint >= .75; select the latest qualifying old checkpoint.
-- **N never-correct**: every checkpoint <= .125.
-- **S stable-correct**: final >= .75 and at least one earlier checkpoint >= .75.
-
-### G-1 pass condition
-
-For MATH-500: `F>=50`, `N>=50`, `S>=50`.
-
-The F threshold is the key feasibility gate. If F<50, do not loosen thresholds after seeing results merely to manufacture support. Either expand to OlympiadBench under the same thresholds or stop.
-
-## G0-A: re-entry
-
-For each F item, use the latest robust-correct checkpoint and freeze one deterministic old correct trace before interventions. A reasonable primary rule is shortest valid correct trace.
-
-For N, obtain an externally correct trace from a fixed teacher or verified solution source.
-
-Primary prefix fractions: `0.00, 0.10, 0.25, 0.50`.
-
-Reject prefixes containing boxed final answer, explicit final-answer phrase with normalized gold answer, or >60% of the full trace.
-
-### Conditions
+### F — robust forgotten
 
 ```text
-F_oldself   forgotten + its own old correct prefix
-F_other     forgotten + another verified correct prefix
-F_wrong     forgotten + final model's own wrong prefix
-N_correct   never-correct + verified correct prefix
-S_oldself   stable-correct + its own old prefix
+final = W
+at least one earlier checkpoint = C
+old checkpoint = latest earlier C
 ```
 
-`F_other` must be matched in reasoning-step count and approximate token count.
+### N — never-correct
 
-### Sampling
+```text
+all 8 checkpoints = W
+```
 
-Primary: final checkpoint only, 8 rollouts/problem/condition/prefix level, temperature 0.6, top_p 0.95.
+### S — stable-correct
 
-Also run deterministic decoding as a robustness check, but do not select whichever looks better as primary.
+```text
+final = C
+at least one earlier checkpoint = C
+```
 
-### Primary estimands
+## G-1 pass condition
 
-`R_c(k) = mean correctness`.
+MATH-500 must yield at least:
 
-Route-specific contrast: `Delta_self(k) = R_F_oldself(k) - R_F_other(k)`.
+```text
+F >= 50
+N >= 50
+S >= 50
+```
 
-Retention-vs-novelty contrast: compare F old-self rescue against N correct-prefix rescue after matching difficulty/information.
+If `F < 50`:
 
-Cluster-bootstrap by problem ID.
+1. do not relax `.75/.125`;
+2. run OlympiadBench under the same definition if desired;
+3. if still sparse, primary topic is not supported strongly enough for re-entry and is stopped.
 
-## G0-B: teacher-forced old-route likelihood
+The exploratory `analyze_state_dynamics.py` may then describe what dynamics *do* dominate, but that cannot rescue this topic.
 
-For F and S, evaluate final-model mean per-token NLL on frozen old traces as a function of prefix depth. For N use matched verified correct traces.
+---
+
+# G0 setup — freeze traces and controls before final-model intervention
+
+## Old-self trace
+
+For each F/S item:
+
+1. use the **latest robust-correct checkpoint** fixed by G-1;
+2. among its correct sampled completions, choose the shortest valid nonempty correct trace deterministically;
+3. freeze it before any re-entry result exists.
+
+Why shortest? It is a simple deterministic rule and reduces the chance that success is caused merely by giving an extremely long solution.
+
+## Final-wrong trace
+
+For F:
+
+- from final checkpoint incorrect samples, choose shortest valid nonempty wrong trace deterministically.
+
+## Other-correct / never-correct solution
+
+Primary other route is the canonical MATH-500 worked `solution`:
+
+- F: `other_correct_trace`;
+- N: `verified_correct_trace`.
+
+This gives a fixed verified route that was not chosen from G0 outcomes.
+
+## F ↔ N matching
+
+One-to-one greedy match before G0 using:
+
+1. same MATH subject when available;
+2. level;
+3. prompt length proxy.
+
+Both groups already satisfy final pass rate `<= .125`.
+
+Do not rematch based on which controls give nicer rescue curves.
+
+---
+
+# G0-A — Re-entry experiment
+
+## Prefix levels
+
+The partial trace is appended directly after the **assistant generation prompt**. It is not embedded as a user-provided hint. This is essential: the experiment tests continuation from a former generation state, not ordinary instruction following.
+
+Primary fractions on **old-self reasoning-step sequence**:
+
+```text
+10%
+25%
+50%
+```
+
+`0%` baseline is emitted exactly once per problem.
+
+### Step boundaries
+
+Automatic parser uses explicit line/paragraph boundaries, then sentence-like boundaries as fallback. Before G0:
+
+- manually audit 30 F old-self traces;
+- if >10% of cut points are clearly inside malformed/math fragments, improve the deterministic splitter **before any G0 inference** and rebuild all prefixes.
+
+Do not hand-fix individual items after seeing outcomes.
+
+## Token-budget matching
+
+For each F and fraction k:
+
+1. compute tokenizer-token count of the F old-self prefix;
+2. truncate `other_correct` and `final_wrong` at the nearest complete step under approximately that budget;
+3. use the same F budget for its matched N `verified_correct` prefix.
+
+Primary tolerance:
+
+```text
+absolute token-budget ratio error <= 0.30
+```
+
+Items/conditions outside tolerance are excluded before inference and reported.
+
+## Answer leakage
+
+Automatically reject prefixes containing:
+
+- `\\boxed{...}` / `\\fbox{...}`;
+- explicit `final answer`, `answer is`, equivalent final-answer markers containing the gold answer.
+
+Do not ban every raw occurrence of the gold number: it can be a legitimate intermediate value.
+
+Before G0, manually audit at least **100 generated prefixes** across sources/fractions. If any direct answer leakage is found, fix the deterministic leak detector and rebuild every prefix.
+
+## Conditions
+
+```text
+F baseline
+F oldself
+F other_correct
+F final_wrong
+N baseline
+N verified_correct
+S baseline
+S oldself
+```
+
+Primary sampling:
+
+```text
+8 rollouts / request
+temperature 0.6
+top_p 0.95
+```
+
+Given abundant GPUs, run 16 rollouts/request as a robustness pass **after** the 8-sample primary result, without changing conditions/fractions.
+
+## Primary estimands
+
+For condition c and fraction k:
+
+\[
+R_c(k)=P(\text{correct}).
+\]
+
+### 1. Absolute rescue
+
+\[
+R_{F,oldself}(k)-R_{F,baseline}.
+\]
+
+Necessary but not sufficient.
+
+### 2. Route-specificity
+
+\[
+\Delta_{route}(k)=R_{F,oldself}(k)-R_{F,othercorrect}(k).
+\]
+
+### 3. Wrong-route control
+
+\[
+\Delta_{wrong}(k)=R_{F,oldself}(k)-R_{F,finalwrong}(k).
+\]
+
+### 4. History-specificity
+
+For frozen F/N pairs with the same prefix token budget:
+
+\[
+\Delta_{history}(k)=R_{F,oldself}(k)-R_{N,verifiedcorrect}(k).
+\]
+
+All confidence intervals cluster/bootstrap over **problem IDs**; F/N comparison clusters over matched pair ID.
+
+## Primary interpretation
+
+### Strong lost-entry pattern
+
+Prefer to see all of:
+
+1. short old-self prefix strongly rescues over baseline;
+2. old-self > wrong prefix;
+3. old-self > other-correct or at least produces an earlier/steeper rescue curve;
+4. F old-self > matched N correct-prefix rescue;
+5. G0-B old-route likelihood remains favorable.
+
+Do not require every inequality to reach a magic p-value in a 50-item pilot. Direction, effect size, bootstrap CI, and replication across fractions matter.
+
+### Broad guidability, not old-route retention
+
+```text
+oldself ≈ other_correct
+both >> baseline
+F ≈ N after matched correct prefixes
+```
+
+Conclusion: robust forgotten problems can still be guided, but there is little evidence for route-specific historical access. This is scientifically useful but weakens the original "old route" story.
+
+### Partial erosion
+
+Only 50% prefixes rescue; old-route suffix NLL is increasingly bad.
+
+### Genuine route loss pattern
+
+Even 50% non-leaking prefixes fail; old-route suffix NLL resembles N controls while S control is healthy.
+
+---
+
+# G0-B — Old-route continuation likelihood
+
+Run on F/S old-self traces and N verified-correct traces.
+
+Use the **final checkpoint** and its actual chat template. Score per-token suffix NLL after prefix fractions:
+
+```text
+0, 10%, 25%, 50%
+```
 
 Important:
 
-- per-token NLL, not total loss;
-- identical prompt/chat template;
-- exclude answer-only suffixes;
-- report the curve rather than a cherry-picked point.
+- score assistant tokens only;
+- same user prompt formatting as generation;
+- per-token NLL, never total NLL;
+- plot the full fraction curve;
+- do not select a favorable layer/probe/position (there are none in this measurement).
 
-A useful pattern is: free generation fails but old-route suffix NLL remains substantially better than N controls.
+Interpretation is comparative. Low NLL alone does not prove a human-like stored memory.
 
-## G1: relearning savings
+---
 
-Secondary triangulation, preregistered before G0 results.
+# G1 — Relearning savings (secondary)
 
-Starting from identical final checkpoints, expose separate clones/adapters to equal-size F and matched N solution sets for a very small fixed number of updates.
+Only after G0 is complete; its role is triangulation, not rescue.
 
-Measure exposures needed to recover a fixed success criterion and normalized solution NLL.
+Start from identical final checkpoints and use equal-size F/N sets:
 
-Do not use G1 to rescue a failed G0 by changing item definitions or traces.
+```text
+F: old correct solutions of robust forgotten items
+N: verified solutions of matched never-correct items
+```
 
-## Positive controls
+Match initial final-model solution NLL as closely as practical; otherwise easier N examples create a trivial bias.
 
-1. `S_oldself` should be easy to continue.
-2. Correct prefix depth should increase answer information on average; if no condition benefits at all, prefix construction is suspect.
-3. Answer checker should reproduce official checkpoint accuracies approximately.
-4. All prefix conditions must pass answer-leakage checks.
+Use LoRA first for speed, then full-parameter confirmation only if the signal is large.
 
-## Confirmation split
+Fixed exposure checkpoints, e.g.:
 
-Recommended MATH-500 split: 60% pipeline/discovery, 40% locked confirmation; then optional OlympiadBench replication.
+```text
+0,1,2,4,8 corrective exposures/item
+```
 
-Primary fractions and contrasts are already fixed; discovery is for implementation debugging, not metric shopping.
+Measure:
 
-## No-rescue rule
+- generation success;
+- verified-solution NLL;
+- exposures-to-recover criterion.
 
-After a failed locked confirmation, do not rescue the topic by trying many prefix fractions, selecting a different old checkpoint because it works better, switching to hidden probes, or reporting only easy-to-rescue problems.
+A savings effect is consistent with a residual learning trace, but it does not by itself localize the mechanism.
+
+---
+
+# Confirmation / anti-selection rules
+
+The initial MATH-500 run can be split deterministically by stable hash:
+
+```text
+60% pipeline/discovery
+40% locked confirmation
+```
+
+Discovery may fix bugs in answer checking, step splitting, or leakage detection. It may **not** be used to choose new prefix fractions or replace controls.
+
+After frozen confirmation fails, do not rescue by:
+
+- loosening robust-state thresholds;
+- selecting a different old checkpoint because it works better;
+- trying many prefix fractions and reporting the best;
+- switching to hidden-state probes;
+- selecting only easy-to-rescue F items;
+- replacing `other_correct` with a custom teacher chosen after outcomes;
+- redefining "retention" as any small hint benefit.
+
+---
+
+# Predetermined exploratory branch if the premise is wrong
+
+`analyze_state_dynamics.py` is allowed to report:
+
+- fraction of `C→W`, `W→C`, `C→W→C`, repeated flips;
+- when robust flips occur;
+- whether temporal training looks monotonic or state-volatile.
+
+Possible natural follow-up:
+
+> **Are reasoning skills learned monotonically, or do individual problems repeatedly enter and leave competence during RL?**
+
+This is **not Topic 05**. If the state-sequence audit is striking, register it separately and perform a new collision search before running targeted experiments.
