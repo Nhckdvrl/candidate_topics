@@ -99,10 +99,11 @@ def main() -> None:
 
         hook = block.register_forward_pre_hook(capture_resid_pre)
 
-    log_likelihood = np.empty(n_examples, dtype=np.float64)
     token_lengths = np.empty(n_examples, dtype=np.int32)
 
-    if args.mode == "representation":
+    if args.mode == "behavior":
+        log_likelihood = np.empty(n_examples, dtype=np.float64)
+    else:
         n_obs = n_examples * args.positions_per_text
         hidden = np.empty((n_obs, hidden_dim), dtype=np.float16)
         obs_example_id = np.empty(n_obs, dtype=np.int32)
@@ -130,17 +131,28 @@ def main() -> None:
             captured.clear()
 
             with torch.inference_mode():
-                out = model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    use_cache=False,
-                    output_hidden_states=False,
-                )
-                logits = out.logits[:, :-1].float()
-                targets = input_ids[:, 1:]
-                target_mask = attention_mask[:, 1:].bool()
-                token_logp = torch.log_softmax(logits, dim=-1).gather(-1, targets.unsqueeze(-1)).squeeze(-1)
-                seq_ll = (token_logp * target_mask).sum(dim=1)
+                if args.mode == "behavior":
+                    out = model(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        use_cache=False,
+                        output_hidden_states=False,
+                    )
+                    logits = out.logits[:, :-1].float()
+                    targets = input_ids[:, 1:]
+                    target_mask = attention_mask[:, 1:].bool()
+                    token_logp = torch.log_softmax(logits, dim=-1).gather(-1, targets.unsqueeze(-1)).squeeze(-1)
+                    seq_ll = (token_logp * target_mask).sum(dim=1)
+                else:
+                    # G0-B only needs the hooked residual stream. Calling the GPT-NeoX
+                    # backbone avoids the expensive vocabulary projection / log-softmax.
+                    model.gpt_neox(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        use_cache=False,
+                        output_hidden_states=False,
+                        return_dict=True,
+                    )
 
             if args.mode == "representation" and "resid_pre" not in captured:
                 raise RuntimeError("Residual hook did not fire")
@@ -149,9 +161,10 @@ def main() -> None:
                 ex = start + bi
                 length = int(attention_mask[bi].sum().item())
                 token_lengths[ex] = length
-                log_likelihood[ex] = float(seq_ll[bi].item())
 
-                if args.mode == "representation":
+                if args.mode == "behavior":
+                    log_likelihood[ex] = float(seq_ll[bi].item())
+                else:
                     positions = quantile_positions(length, args.positions_per_text)
                     h = captured["resid_pre"][bi]
                     for pos in positions:
@@ -160,7 +173,8 @@ def main() -> None:
                         obs_position[write_obs] = int(pos)
                         write_obs += 1
 
-            del out, logits, token_logp, seq_ll
+            if args.mode == "behavior":
+                del out, logits, token_logp, seq_ll
     finally:
         if hook is not None:
             hook.remove()
@@ -175,9 +189,10 @@ def main() -> None:
         "example_id": np.asarray(ids, dtype=np.int32),
         "byte_lengths": byte_lengths,
         "token_lengths": token_lengths,
-        "log_likelihood": log_likelihood,
     }
-    if args.mode == "representation":
+    if args.mode == "behavior":
+        payload["log_likelihood"] = log_likelihood
+    else:
         payload.update(
             hidden=hidden,
             obs_example_id=obs_example_id,
