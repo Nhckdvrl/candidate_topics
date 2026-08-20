@@ -4,6 +4,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 from graph_parser import parse_first_fork
 from prompt_utils import full_prompt
+from analyze_sampled_branches import first_branch
 
 
 def test_parse_official_style_two_chain_question():
@@ -25,3 +26,8 @@ def test_prompt_matches_official_template_shape():
     assert "\\boxed{}" in p
     assert "### Input:\nQ?" in p
     assert p.endswith("step by step:\n1.")
+
+
+def test_first_branch_parser():
+    assert first_branch("Reasoning\n1. q = p + 3 = 8.\n2. r = q + 2") == "q"
+    assert first_branch("No numbered branch here") is None

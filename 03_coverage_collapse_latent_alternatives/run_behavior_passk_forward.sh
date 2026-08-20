@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Forward-only reproduction of the reasoning_forks Graph Branching pass@k trajectory.
-# The upstream prepare_sampling_synthetic.sh also schedules reverse checkpoints; this
-# wrapper deliberately avoids requiring an unrelated reverse SFT run.
-
 UPSTREAM=${UPSTREAM:-external/reasoning_forks}
 RUN_REL=${RUN_REL:-runs/reasoning_forks_sft/qwen2.5_0.5b_sft_arithchain_2_10_forward_lr1e-5_bs32_ga1}
 BASE_REL=${BASE_REL:-inference_runs/candidate_topic_forward/qwen2.5-0.5b}
@@ -18,8 +14,6 @@ STEPS=(200 400 800 1600 3200)
 
 pushd "$UPSTREAM" >/dev/null
 mkdir -p "$BASE_REL"
-
-# Build exactly the five forward configs used by the official synthetic pass@k script.
 RUN_DIRS=()
 for STEP in "${STEPS[@]}"; do
   CKPT="$RUN_REL/checkpoint-$STEP"
@@ -40,14 +34,12 @@ YAML
   RUN_DIRS+=("$SAMPLE_DIR")
 done
 
-# Reuse the upstream prompt builder and exact Alpaca chat template.
 python src/inference/build_prompts.py \
   --dataset_name arithchain_2_10 \
   --save_dir "$BASE_REL" \
   --tokenizer_path "$RUN_REL/checkpoint-200" \
   --chat_template_path src/alpaca_template.jira
 
-# Batch the five vLLM jobs across configurable local GPU IDs (default 0,1,2,3).
 pids=()
 for i in "${!RUN_DIRS[@]}"; do
   GPU=${GPU_IDS[$((i % ${#GPU_IDS[@]}))]}
@@ -60,7 +52,6 @@ for i in "${!RUN_DIRS[@]}"; do
     --gpu_memory_utilization 0.8 \
     --n "$NUM_SAMPLES" &
   pids+=("$!")
-  # Avoid loading two models onto the same GPU at once when jobs > GPUs.
   if (( (i + 1) % ${#GPU_IDS[@]} == 0 )); then
     for pid in "${pids[@]}"; do wait "$pid"; done
     pids=()
@@ -75,3 +66,9 @@ python src/math_eval/evaluate_pass_k.py \
   --workers "$WORKERS"
 
 popd >/dev/null
+
+python src/analyze_sampled_branches.py \
+  --forks artifacts/forks.jsonl \
+  --upstream "$UPSTREAM" \
+  --base-rel "$BASE_REL" \
+  --output-dir artifacts/behavior
