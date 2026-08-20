@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Build accessibility-matched high/low wrong-commitment pairs.
+"""Build accessibility-matched high/low semantic-commitment pairs for G-1v2.
 
-All matching uses frozen base-model covariates. No post-SFT outcome can enter
-pair construction.
+G-1v2 intentionally does NOT gate items on top-wrong argmax stability.
+Argmax stability is mechanically related to the treatment: diffuse wrong
+beliefs are expected to have unstable top-1 identities. Position susceptibility
+is measured separately and audited before G0.
 """
 from __future__ import annotations
 
@@ -33,21 +35,26 @@ def quantile(xs: list[float], q: float) -> float:
     return float(np.quantile(np.asarray(xs, dtype=float), q))
 
 
-def valid_item(r: dict, require_k: int | None, min_stability: float) -> bool:
+def valid_item(r: dict, require_k: int | None) -> bool:
     if "p_correct" not in r or "wrong_concentration" not in r:
         return False
     if require_k is not None and int(r.get("choice_count", len(r["choices"]))) != require_k:
         return False
-    if float(r.get("top_wrong_stability", 0.0)) < min_stability:
-        return False
-    if int(r.get("modal_top_wrong", r["top_wrong"])) != int(r["top_wrong"]):
-        return False
     probs = [float(x) for x in r["semantic_probs"]]
+    if not all(np.isfinite(probs)):
+        return False
     answer = int(r["answer"])
     return max(range(len(probs)), key=lambda i: probs[i]) != answer
 
 
-def pair_cost(h: dict, l: dict, p_caliper: float, q_ratio: float, a_ratio: float) -> float | None:
+def pair_cost(
+    h: dict,
+    l: dict,
+    p_caliper: float,
+    q_ratio: float,
+    a_ratio: float,
+    susceptibility_caliper: float | None,
+) -> float | None:
     if h.get("category") != l.get("category"):
         return None
     dp = abs(float(h["p_correct"]) - float(l["p_correct"]))
@@ -64,8 +71,16 @@ def pair_cost(h: dict, l: dict, p_caliper: float, q_ratio: float, a_ratio: float
     if max(ha, la) / min(ha, la) > a_ratio:
         return None
 
+    ds = 0.0
+    if susceptibility_caliper is not None:
+        hs = float(h.get("position_susceptibility_js", 0.0))
+        ls = float(l.get("position_susceptibility_js", 0.0))
+        ds = abs(hs - ls)
+        if ds > susceptibility_caliper:
+            return None
+
     length_penalty = abs(math.log(hq / lq)) + 0.5 * abs(math.log(ha / la))
-    return dp / max(p_caliper, 1e-9) + 0.15 * length_penalty
+    return dp / max(p_caliper, 1e-9) + 0.15 * length_penalty + 0.25 * ds
 
 
 def optimal_match_category(
@@ -74,6 +89,7 @@ def optimal_match_category(
     p_caliper: float,
     q_ratio: float,
     a_ratio: float,
+    susceptibility_caliper: float | None,
 ) -> list[tuple[dict, dict, float]]:
     if not high or not low:
         return []
@@ -81,7 +97,9 @@ def optimal_match_category(
     cost = np.full((len(high), len(low)), BIG, dtype=float)
     for i, h in enumerate(high):
         for j, l in enumerate(low):
-            c = pair_cost(h, l, p_caliper, q_ratio, a_ratio)
+            c = pair_cost(
+                h, l, p_caliper, q_ratio, a_ratio, susceptibility_caliper
+            )
             if c is not None:
                 cost[i, j] = c
     rows, cols = linear_sum_assignment(cost)
@@ -100,7 +118,6 @@ def stratified_split(pairs: list[dict], discovery_fraction: float, seed: int) ->
     for cat_pairs in by_cat.values():
         rng.shuffle(cat_pairs)
         n_disc = int(round(len(cat_pairs) * discovery_fraction))
-        # Keep both splits non-empty when category has enough pairs.
         if len(cat_pairs) >= 2:
             n_disc = min(max(n_disc, 1), len(cat_pairs) - 1)
         for i, p in enumerate(cat_pairs):
@@ -114,17 +131,18 @@ def main() -> None:
     ap.add_argument("--eligible-output", required=True)
     ap.add_argument("--report-output", required=True)
     ap.add_argument("--require-k", type=int, default=10)
-    ap.add_argument("--min-stability", type=float, default=0.80)
     ap.add_argument("--p-caliper", type=float, default=0.02)
     ap.add_argument("--question-length-ratio", type=float, default=1.35)
     ap.add_argument("--answer-length-ratio", type=float, default=1.50)
+    ap.add_argument("--susceptibility-caliper", type=float, default=None)
     ap.add_argument("--high-quantile", type=float, default=0.70)
     ap.add_argument("--low-quantile", type=float, default=0.30)
     ap.add_argument("--discovery-fraction", type=float, default=0.70)
     ap.add_argument("--seed", type=int, default=20260821)
     args = ap.parse_args()
 
-    rows = [r for r in read_jsonl(args.input) if valid_item(r, args.require_k, args.min_stability)]
+    all_rows = read_jsonl(args.input)
+    rows = [r for r in all_rows if valid_item(r, args.require_k)]
     if not rows:
         raise SystemExit("No eligible initially-wrong items")
 
@@ -150,6 +168,7 @@ def main() -> None:
                 args.p_caliper,
                 args.question_length_ratio,
                 args.answer_length_ratio,
+                args.susceptibility_caliper,
             )
         )
 
@@ -164,6 +183,10 @@ def main() -> None:
                 "match_cost": cost,
                 "p_correct_abs_diff": abs(float(h["p_correct"]) - float(l["p_correct"])),
                 "commitment_diff": float(h["wrong_concentration"]) - float(l["wrong_concentration"]),
+                "susceptibility_abs_diff": abs(
+                    float(h.get("position_susceptibility_js", 0.0))
+                    - float(l.get("position_susceptibility_js", 0.0))
+                ),
             }
         )
     stratified_split(pairs, args.discovery_fraction, args.seed)
@@ -173,10 +196,15 @@ def main() -> None:
 
     diffs = [p["p_correct_abs_diff"] for p in pairs]
     cdiff = [p["commitment_diff"] for p in pairs]
+    sdiff = [p["susceptibility_abs_diff"] for p in pairs]
     split_counts = Counter(p["split"] for p in pairs)
     cats = Counter(p["category"] for p in pairs)
+
+    stabilities = [float(r.get("top_wrong_stability", float("nan"))) for r in rows]
+    suscept = [float(r.get("position_susceptibility_js", float("nan"))) for r in rows]
     report = {
-        "n_scored_input": len(read_jsonl(args.input)),
+        "measurement_version": "g1v2_logmean",
+        "n_scored_input": len(all_rows),
         "n_eligible_wrong": len(rows),
         "wrong_concentration_low_cut": lo_cut,
         "wrong_concentration_high_cut": hi_cut,
@@ -187,6 +215,13 @@ def main() -> None:
         "median_abs_p_correct_diff": float(np.median(diffs)) if diffs else None,
         "mean_commitment_separation": float(np.mean(cdiff)) if cdiff else None,
         "median_commitment_separation": float(np.median(cdiff)) if cdiff else None,
+        "mean_susceptibility_abs_diff": float(np.mean(sdiff)) if sdiff else None,
+        "eligible_median_top_wrong_stability_diagnostic_only": (
+            float(np.nanmedian(stabilities)) if stabilities else None
+        ),
+        "eligible_median_position_susceptibility_js": (
+            float(np.nanmedian(suscept)) if suscept else None
+        ),
         "split_counts": dict(split_counts),
         "category_pair_counts": dict(cats),
         "same_category_fraction": 1.0 if pairs else None,
