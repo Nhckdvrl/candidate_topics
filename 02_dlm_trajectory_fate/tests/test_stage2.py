@@ -5,7 +5,7 @@ import numpy as np
 sys.path.append(str(Path(__file__).resolve().parents[1] / 'src'))
 from stage2_generate import select_indices, dream_transfer_count, question_and_gold
 from fate_labels import fate_from_correctness
-from stage2_surface_gate import locked_support
+from stage2_surface_gate import locked_support, apply_support_gate
 from stage2_confirm import evaluate_locked_task, SPECS
 
 
@@ -33,6 +33,25 @@ def test_dream_transfer_schedule_matches_official_linear_maskgit_plus():
     assert sum(moved) == 128
     assert SPECS['dream']['transient_recovery']['layer'] == 22
     assert SPECS['dream']['transient_overwrite']['layer'] == 25
+
+
+def test_full_support_gate_allows_one_task_without_moving_locked_cells():
+    rows=[
+        {'task':'transient_recovery','step':16,'min_lead':4,'n':80,'positive':30,'negative':50},
+        {'task':'transient_overwrite','step':4,'min_lead':16,'n':35,'positive':10,'negative':25},
+    ]
+    status, annotated=apply_support_gate(rows,25,25)
+    assert status == 'GO_ONE'
+    assert annotated[0]['support_ok'] is True
+    assert annotated[1]['support_ok'] is False
+
+    status, _=apply_support_gate(rows,31,51)
+    assert status == 'STOP_LOW_LOCKED_SUPPORT'
+
+    both=[dict(rows[0]), {'task':'transient_overwrite','step':4,'min_lead':16,'n':70,'positive':30,'negative':40}]
+    status, annotated=apply_support_gate(both,25,25)
+    assert status == 'GO_BOTH'
+    assert all(r['support_ok'] for r in annotated)
 
 
 def _synthetic_data():

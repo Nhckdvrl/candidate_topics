@@ -45,12 +45,30 @@ def locked_support(labels: dict[str, np.ndarray], capture_steps: np.ndarray) -> 
     return rows
 
 
+def apply_support_gate(
+    rows: list[dict],
+    min_positive: int,
+    min_negative: int,
+) -> tuple[str, list[dict]]:
+    """Apply the support rule without changing any locked scientific variable."""
+    annotated = []
+    for row in rows:
+        r = dict(row)
+        r["support_ok"] = (
+            r["positive"] >= min_positive and r["negative"] >= min_negative
+        )
+        annotated.append(r)
+    passed = sum(bool(r["support_ok"]) for r in annotated)
+    status = "GO_BOTH" if passed == 2 else "GO_ONE" if passed == 1 else "STOP_LOW_LOCKED_SUPPORT"
+    return status, annotated
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--input-dir", required=True)
     p.add_argument("--output-dir", required=True)
-    p.add_argument("--min-positive", type=int, default=6)
-    p.add_argument("--min-negative", type=int, default=20)
+    p.add_argument("--min-positive", type=int, default=25)
+    p.add_argument("--min-negative", type=int, default=25)
     args = p.parse_args()
 
     data = load_shards(Path(args.input_dir), require_hidden=False)
@@ -60,11 +78,8 @@ def main() -> None:
         np.asarray(data["observed_strict"]),
     )
     rows = locked_support(labels, np.asarray(data["capture_steps"]))
-    for r in rows:
-        r["support_ok"] = r["positive"] >= args.min_positive and r["negative"] >= args.min_negative
+    status, rows = apply_support_gate(rows, args.min_positive, args.min_negative)
 
-    passed = sum(bool(r["support_ok"]) for r in rows)
-    status = "GO_BOTH" if passed == 2 else "GO_ONE" if passed == 1 else "STOP_LOW_LOCKED_SUPPORT"
     result = {
         "status": status,
         "min_positive": args.min_positive,
@@ -75,7 +90,10 @@ def main() -> None:
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(out / "locked_surface_support.csv", index=False)
-    (out / "locked_surface_gate.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    (out / "locked_surface_gate.json").write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     print(json.dumps(result, indent=2, sort_keys=True))
 
 
