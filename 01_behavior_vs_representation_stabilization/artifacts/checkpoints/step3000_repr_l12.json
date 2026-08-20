@@ -1,0 +1,12 @@
+{
+  "model": "EleutherAI/pythia-410m",
+  "revision": "step3000",
+  "mode": "representation",
+  "layer_idx": 12,
+  "num_examples": 1000,
+  "positions_per_text": 4,
+  "mean_input_bytes": 979.657,
+  "corpus": "artifacts/corpus/pile_chunks_seed42.jsonl",
+  "corpus_sha256": "2e121b2a329df30b4d50212da610f0ce7496a610fc8316019ce6fa8f578a534e",
+  "output": "artifacts/checkpoints/step3000_repr_l12.npz"
+}

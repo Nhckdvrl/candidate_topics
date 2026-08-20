@@ -1,0 +1,9 @@
+{
+  "layer_idx": 12,
+  "fixed_horizon": 1000,
+  "cosine_first_to_last_ratio": 0.030191810114661984,
+  "standardized_first_to_last_ratio": 0.03428068738004767,
+  "cka_movement_first_to_last_ratio": 0.00036972828318340055,
+  "note": "CKA is a rotation/scale-tolerant control, not a falsifier by itself. G0-B is promising only when behavior is clearly stable while matched/standardized representation movement remains systematically elevated.",
+  "behavior_robust_first_to_last_ratio": 0.05367043191364188
+}

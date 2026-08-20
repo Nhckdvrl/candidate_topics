@@ -1,0 +1,12 @@
+{
+  "dataset": "NeelNanda/pile-10k",
+  "split": "train",
+  "num_examples": 1000,
+  "eligible_chunks_seen": 62171,
+  "chunk_bytes": 1024,
+  "min_bytes": 256,
+  "seed": 42,
+  "mean_bytes": 979.657,
+  "sha256": "2e121b2a329df30b4d50212da610f0ce7496a610fc8316019ce6fa8f578a534e",
+  "output": "artifacts/corpus/pile_chunks_seed42.jsonl"
+}
