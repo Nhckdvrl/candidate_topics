@@ -182,10 +182,6 @@ def example_average_hidden(h: np.ndarray, example_ids: np.ndarray, n_examples: i
     return out
 
 
-def projected_cka(x: np.ndarray, y: np.ndarray, projection: np.ndarray) -> float:
-    return linear_cka(x @ projection, y @ projection)
-
-
 def bootstrap_mean_ci(per_example: np.ndarray, n_boot: int, rng) -> tuple[float, float]:
     n = len(per_example)
     vals = np.empty(n_boot, dtype=np.float64)
@@ -195,14 +191,14 @@ def bootstrap_mean_ci(per_example: np.ndarray, n_boot: int, rng) -> tuple[float,
     return tuple(np.quantile(vals, [0.025, 0.975]).tolist())
 
 
-def bootstrap_cka_ci(x, y, projection, n_boot, rng):
+def bootstrap_cka_ci(x_proj, y_proj, n_boot, rng):
     if n_boot <= 0:
         return float("nan"), float("nan")
-    n = len(x)
+    n = len(x_proj)
     vals = np.empty(n_boot, dtype=np.float64)
     for b in range(n_boot):
         idx = rng.integers(0, n, size=n)
-        vals[b] = projected_cka(x[idx], y[idx], projection)
+        vals[b] = linear_cka(x_proj[idx], y_proj[idx])
     return tuple(np.quantile(vals, [0.025, 0.975]).tolist())
 
 
@@ -247,8 +243,10 @@ def analyze_representation(args, in_dir: Path, out_dir: Path, steps: list[int], 
 
         x_ex = example_average_hidden(x, base_obs_ids, n_examples)
         y_ex = example_average_hidden(y, base_obs_ids, n_examples)
-        cka = projected_cka(x_ex, y_ex, projection)
-        cka_ci = bootstrap_cka_ci(x_ex, y_ex, projection, args.cka_bootstrap, rng)
+        x_proj = x_ex @ projection
+        y_proj = y_ex @ projection
+        cka = linear_cka(x_proj, y_proj)
+        cka_ci = bootstrap_cka_ci(x_proj, y_proj, args.cka_bootstrap, rng)
         rows.append(
             {
                 "step_from": start,
@@ -273,7 +271,11 @@ def analyze_representation(args, in_dir: Path, out_dir: Path, steps: list[int], 
 
     xstep = df["step_from"].to_numpy()
     plt.figure(figsize=(7, 4))
-    for metric, label in [("cosine_drift", "matched cosine drift"), ("standardized_drift", "pooled-standardized drift"), ("cka_movement", "1 - projected CKA")]:
+    for metric, label in [
+        ("cosine_drift", "matched cosine drift"),
+        ("standardized_drift", "pooled-standardized drift"),
+        ("cka_movement", "1 - projected CKA"),
+    ]:
         plt.plot(xstep, df[metric], marker="o", label=label)
     plt.xscale("log")
     plt.yscale("log")
