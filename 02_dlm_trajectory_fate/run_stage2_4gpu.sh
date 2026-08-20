@@ -6,6 +6,7 @@ GPUS=${GPUS:-"0 1 2 3"}
 read -r -a GPU_IDS <<< "$GPUS"
 NUM_SHARDS=${#GPU_IDS[@]}
 BOOTSTRAP=${BOOTSTRAP:-2000}
+FULL_N=${FULL_N:-1205}
 
 run_sharded() {
   local family=$1 dataset=$2 offset=$3 count=$4 out=$5 surface=$6
@@ -34,56 +35,65 @@ run_sharded() {
   fi
 }
 
-# G1-A: untouched in-distribution selection audit (G0 used GSM8K ids 0..999).
+check_support() {
+  local gate_json=$1 label=$2
+  python - "$gate_json" "$label" <<'PY'
+import json, sys
+from pathlib import Path
+p=Path(sys.argv[1]); label=sys.argv[2]
+s=json.loads(p.read_text())
+print(label, 'support:', s['status'])
+for t in s['tasks']:
+    print(' ', t['task'], 'pos=', t['positive'], 'neg=', t['negative'], 'ok=', t['support_ok'])
+if s['status'] == 'STOP_LOW_LOCKED_SUPPORT':
+    raise SystemExit(f'{label}: both locked tasks have insufficient full-dataset support; stop.')
+PY
+}
+
+check_confirmation() {
+  local result_json=$1 label=$2
+  python - "$result_json" "$label" <<'PY'
+import json, sys
+from pathlib import Path
+p=Path(sys.argv[1]); label=sys.argv[2]
+s=json.loads(p.read_text())
+print(label, 'confirmation:', s['status'])
+if s['status'] not in {'CONFIRM_BOTH','CONFIRM_ONE'}:
+    raise SystemExit(f'{label}: locked confirmation did not survive; stop before the next model.')
+PY
+}
+
+# G1-A: untouched GSM8K tail. This remains a directional audit only.
 run_sharded llada gsm8k 1000 319 artifacts/g1a_gsm8k_holdout/raw 0
 python src/stage2_confirm.py \
   --input-dir artifacts/g1a_gsm8k_holdout/raw \
   --output-dir artifacts/g1a_gsm8k_holdout/confirm \
   --model-family llada --mode audit --min-class-count 8 --bootstrap "$BOOTSTRAP"
 
-# G1-B: decisive independent-data confirmation on distribution-matched GSM1K.
-run_sharded llada gsm1k 0 200 artifacts/g1b_gsm1k_preflight/raw 1
+# G1-B: decisive independent-data confirmation on ALL GSM1K examples.
+# Protocol revision: no 200-example stopping gate. We generate the 1,205 locked
+# trajectories once, capture only 4 steps x 2 layers, inspect surface support
+# first, and fit hidden probes only if at least one locked task has >=25/25 support.
+run_sharded llada gsm1k 0 "$FULL_N" artifacts/g1b_gsm1k_confirm/raw 0
 python src/stage2_surface_gate.py \
-  --input-dir artifacts/g1b_gsm1k_preflight/raw \
-  --output-dir artifacts/g1b_gsm1k_preflight \
-  --min-positive 6 --min-negative 20
-python - <<'PY'
-import json
-from pathlib import Path
-s=json.loads(Path('artifacts/g1b_gsm1k_preflight/locked_surface_gate.json').read_text())
-if s['status'] == 'STOP_LOW_LOCKED_SUPPORT':
-    raise SystemExit('GSM1K locked transient events are too rare; stop before full hidden confirmation.')
-PY
-
-run_sharded llada gsm1k 0 1205 artifacts/g1b_gsm1k_confirm/raw 0
+  --input-dir artifacts/g1b_gsm1k_confirm/raw \
+  --output-dir artifacts/g1b_gsm1k_confirm/support \
+  --min-positive 25 --min-negative 25
+check_support artifacts/g1b_gsm1k_confirm/support/locked_surface_gate.json G1-B
 python src/stage2_confirm.py \
   --input-dir artifacts/g1b_gsm1k_confirm/raw \
   --output-dir artifacts/g1b_gsm1k_confirm/confirm \
   --model-family llada --mode confirm --min-class-count 25 --bootstrap "$BOOTSTRAP"
-python - <<'PY'
-import json
-from pathlib import Path
-s=json.loads(Path('artifacts/g1b_gsm1k_confirm/confirm/locked_confirmation.json').read_text())
-print('G1-B:', s['status'])
-if s['status'] not in {'CONFIRM_BOTH','CONFIRM_ONE'}:
-    raise SystemExit('Same-model independent-data confirmation failed; do not spend Dream replication yet.')
-PY
+check_confirmation artifacts/g1b_gsm1k_confirm/confirm/locked_confirmation.json G1-B
 
-# G1-C: cross-model replication. Dream uses official deterministic maskgit_plus.
-run_sharded dream gsm1k 0 200 artifacts/g1c_dream_preflight/raw 1
+# G1-C: only after same-model independent-data confirmation survives.
+# Dream likewise uses the full GSM1K support count, not a noisy 200-example gate.
+run_sharded dream gsm1k 0 "$FULL_N" artifacts/g1c_dream_gsm1k/raw 0
 python src/stage2_surface_gate.py \
-  --input-dir artifacts/g1c_dream_preflight/raw \
-  --output-dir artifacts/g1c_dream_preflight \
-  --min-positive 6 --min-negative 20
-python - <<'PY'
-import json
-from pathlib import Path
-s=json.loads(Path('artifacts/g1c_dream_preflight/locked_surface_gate.json').read_text())
-if s['status'] == 'STOP_LOW_LOCKED_SUPPORT':
-    raise SystemExit('Dream deterministic geometry has too little locked transient support; record as limited generality.')
-PY
-
-run_sharded dream gsm1k 0 1205 artifacts/g1c_dream_gsm1k/raw 0
+  --input-dir artifacts/g1c_dream_gsm1k/raw \
+  --output-dir artifacts/g1c_dream_gsm1k/support \
+  --min-positive 25 --min-negative 25
+check_support artifacts/g1c_dream_gsm1k/support/locked_surface_gate.json G1-C
 python src/stage2_confirm.py \
   --input-dir artifacts/g1c_dream_gsm1k/raw \
   --output-dir artifacts/g1c_dream_gsm1k/confirm \
