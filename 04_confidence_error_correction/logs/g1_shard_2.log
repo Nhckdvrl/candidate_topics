@@ -1,0 +1,5 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:  62%|██████▏   | 210/338 [00:00<00:00, 2088.46it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 2210.07it/s]
+K=10 prompts=12480 label_token_lengths=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+wrote 1248 scored items -> 04_confidence_error_correction/results/g1/shard_2.jsonl

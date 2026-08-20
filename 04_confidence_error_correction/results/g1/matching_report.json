@@ -1,0 +1,45 @@
+{
+  "n_scored_input": 9981,
+  "n_eligible_wrong": 716,
+  "wrong_concentration_low_cut": 0.7947229483058278,
+  "wrong_concentration_high_cut": 0.9357612992775136,
+  "n_low_pool": 215,
+  "n_high_pool": 215,
+  "n_pairs": 61,
+  "mean_abs_p_correct_diff": 0.005473496366849102,
+  "median_abs_p_correct_diff": 0.0037591042196027046,
+  "mean_commitment_separation": 0.2529164170566112,
+  "median_commitment_separation": 0.24316400403432592,
+  "split_counts": {
+    "discovery": 43,
+    "confirmation": 18
+  },
+  "category_pair_counts": {
+    "biology": 1,
+    "business": 1,
+    "economics": 3,
+    "health": 9,
+    "history": 11,
+    "law": 7,
+    "math": 1,
+    "other": 12,
+    "philosophy": 7,
+    "psychology": 9
+  },
+  "same_category_fraction": 1.0,
+  "settings": {
+    "input": "04_confidence_error_correction/results/g1/base_scores.jsonl",
+    "pairs_output": "04_confidence_error_correction/results/g1/matched_pairs.jsonl",
+    "eligible_output": "04_confidence_error_correction/results/g1/eligible_wrong.jsonl",
+    "report_output": "04_confidence_error_correction/results/g1/matching_report.json",
+    "require_k": 10,
+    "min_stability": 0.8,
+    "p_caliper": 0.02,
+    "question_length_ratio": 1.35,
+    "answer_length_ratio": 1.5,
+    "high_quantile": 0.7,
+    "low_quantile": 0.3,
+    "discovery_fraction": 0.7,
+    "seed": 20260821
+  }
+}

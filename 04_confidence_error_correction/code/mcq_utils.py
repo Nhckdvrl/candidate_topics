@@ -71,6 +71,14 @@ def chat_prompt_ids(tokenizer, question: str, choices: list[str], template: str 
         # Explicit fallback for tokenizers without a chat template.
         text = user + "\nAnswer:"
         ids = tokenizer.encode(text, add_special_tokens=True)
+    # Newer Transformers/tokenizer combinations may return a BatchEncoding or
+    # rendered text even when tokenize=True and return_tensors=None. The
+    # scientific prompt and scoring boundary are unchanged; normalize those
+    # representations here.
+    if hasattr(ids, "get") and ids.get("input_ids") is not None:
+        ids = ids["input_ids"]
+    if isinstance(ids, str):
+        ids = tokenizer.encode(ids, add_special_tokens=False)
     if ids and isinstance(ids[0], list):
         ids = ids[0]
     return list(ids)

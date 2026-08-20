@@ -1,0 +1,7 @@
+{
+  "status": "not_run",
+  "reason": "G-1 measurement failure: only 61 matched pairs survived; protocol requires STOP before prompt audit/training when fewer than 200 pairs.",
+  "n_matched_pairs": 61,
+  "required_minimum_for_continuation": 200,
+  "protocol": "VALIDATION.md §3.8"
+}

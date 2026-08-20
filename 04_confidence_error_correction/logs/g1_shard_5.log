@@ -1,0 +1,6 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:  69%|██████▉   | 233/338 [00:00<00:00, 2312.03it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 2609.47it/s]
+K=10 prompts=12470 label_token_lengths=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+[W821 06:48:24.448177568 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 8252293120 bytes (free: 7154958336, total: 101971722240).
+wrote 1247 scored items -> 04_confidence_error_correction/results/g1/shard_5.jsonl

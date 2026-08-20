@@ -48,6 +48,10 @@ class TokenizedSFTDataset(Dataset):
                 )
             except Exception:
                 prompt_ids = tokenizer.encode(row["prompt"] + "\nAnswer:", add_special_tokens=True)
+            if hasattr(prompt_ids, "get") and prompt_ids.get("input_ids") is not None:
+                prompt_ids = prompt_ids["input_ids"]
+            if isinstance(prompt_ids, str):
+                prompt_ids = tokenizer.encode(prompt_ids, add_special_tokens=False)
             if prompt_ids and isinstance(prompt_ids[0], list):
                 prompt_ids = prompt_ids[0]
             response_ids = tokenizer.encode(row["response"], add_special_tokens=False)
