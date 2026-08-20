@@ -16,13 +16,15 @@ def main():
     p.add_argument("--limit", type=int, default=1000)
     args = p.parse_args()
 
-    df = pd.read_parquet(args.input).head(args.limit)
-    out = Path(args.output); out.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.read_parquet(args.input).head(args.limit).reset_index(drop=True)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
     rows = []
-    for i, row in df.iterrows():
+    # question_id in upstream test.json is positional. Do not inherit a parquet index.
+    for problem_id, row in enumerate(df.to_dict(orient="records")):
         f = parse_first_fork(row["question"])
         rows.append({
-            "problem_id": int(i),
+            "problem_id": problem_id,
             "question": row["question"],
             "target": f.target,
             "premise": f.premise,
