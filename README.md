@@ -1,6 +1,6 @@
 # Candidate Research Topics
 
-This repository collects research-topic candidates that are still in the **hypothesis / pilot** stage.
+This repository collects research-topic candidates in the **hypothesis / pilot** stage, together with archived negative results.
 
 The default workflow for each topic is:
 
@@ -15,25 +15,20 @@ The default workflow for each topic is:
 
 | Priority | Topic | Core question | First falsification test |
 | --- | --- | --- | --- |
-| active | [Behavior vs. Representation Stabilization](./01_behavior_vs_representation_stabilization/) | After global output-distribution movement enters a low late-training regime, does non-trivial feature-level learning continue? | First establish fixed-horizon behavioral KL on Pythia-410M; only then test middle-layer residual movement with matched cosine, standardized drift and CKA control. |
-| 2 | [DLM Trajectory Fate](./02_dlm_trajectory_fate/) | Can hidden states distinguish recoverable/doomed and stable/overwritten states before the surface transition happens? | On 1,000 GSM8K examples, conditional hidden-state probes must beat entropy/confidence baselines with non-trivial lead time. |
-| 3 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
+| 1 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
 
-## Topic 01 implementation status
+## Archived topics
 
-`01_behavior_vs_representation_stabilization` uses a staged falsification pipeline:
+| Topic | Final decision | Why it was stopped | Summary |
+| --- | --- | --- | --- |
+| [01 — Behavior vs. Representation Stabilization](./01_behavior_vs_representation_stabilization/) | **ARCHIVED / KILLED** | Behavioral KL stabilized as expected, but matched residual representation movement stabilized at least as fast; no temporal decoupling survived robustness checks. | [Archive summary](./01_behavior_vs_representation_stabilization/ARCHIVE_SUMMARY.md) |
+| [02 — DLM Trajectory Fate](./02_dlm_trajectory_fate/) | **ARCHIVED / FALSIFIED AS A BROAD CLAIM** | Exploratory signal did not survive preregistered independent GSM1K confirmation, while the positive control remained strong. | [Archive summary](./02_dlm_trajectory_fate/ARCHIVE_SUMMARY.md) |
 
-```text
-G0-A: fixed-Δ behavior premise
-  ↓ pass only
-G0-B: cheap one-layer representation screen
-  ↓ pass only
-G1: sparse feature / crosscoder analysis
-```
+## What the archived topics are for
 
-The implementation uses constant-horizon checkpoint pairs, a fixed byte-chunk corpus, raw + robust KL with cluster bootstrap confidence intervals, one explicit GPT-NeoX `resid_pre` layer, and CKA as a control rather than the sole falsifier.
+Archived folders are intentionally kept with their code, validation contracts, results, and failure analyses. They serve two purposes:
 
-See:
+1. preserve reusable experimental infrastructure;
+2. record why a natural-looking research question failed, so the same weak premise is not repeatedly rediscovered.
 
-- [Topic 01 README](./01_behavior_vs_representation_stabilization/README.md)
-- [Topic 01 validation contract](./01_behavior_vs_representation_stabilization/VALIDATION.md)
+A failed topic should not be revived by post-hoc metric/layer/model sweeps unless a genuinely new external observation changes the scientific premise.
