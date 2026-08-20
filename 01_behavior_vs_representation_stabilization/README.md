@@ -2,7 +2,7 @@
 
 ## Status
 
-**Candidate topic — audited G0 implementation ready.**
+**Candidate topic — G0 validation implementation ready.**
 
 The broad question, “do representations keep changing after behavior stabilizes?”, is too close to existing Pythia training-dynamics work such as PolyPythias and concept-evolution studies. The version worth testing is narrower:
 
@@ -79,11 +79,11 @@ That final feature-level step is not part of G0. G0 only decides whether it is w
 
 ---
 
-## 3. Audited validation design
+## 3. Validation design
 
 The validation is deliberately split into two gates.
 
-### G0-A — reproduce the behavioral premise first
+### G0-A — establish the behavioral premise first
 
 Do **not** inspect representation results until this passes.
 
@@ -111,7 +111,7 @@ Every pair has:
 Δ = 1,000 steps
 ```
 
-This avoids the previous invalid comparison where checkpoint intervals grew from 1k to 16k.
+Using a constant horizon makes movement at different training stages directly comparable.
 
 Data:
 
@@ -135,7 +135,7 @@ G0-A passes only when:
 - raw and robust curves tell the same qualitative story;
 - the result is not driven by a handful of pathological text chunks.
 
-If this premise does not reproduce, stop and debug the behavior measurement. Do not interpret representations.
+If this premise does not hold, stop and debug the behavior measurement. Do not interpret representations.
 
 ### G0-B — cheap representation screen
 
@@ -147,7 +147,7 @@ To keep the screen fast, the default uses one explicit residual-stream location:
 middle GPT-NeoX block, resid_pre
 ```
 
-This matches the type of hook used by Crosscoding Through Time more closely than relying on an ambiguous `hidden_states[k]` tuple.
+This matches the type of hook used by Crosscoding Through Time and makes the representation point explicit.
 
 For each text we sample four deterministic interior token positions and compare matched states across the same fixed-1k checkpoint pairs.
 
@@ -284,7 +284,7 @@ GATE=all ./run_pilot.sh
 
 | Result | Decision |
 | --- | --- |
-| Fixed-horizon KL premise does not reproduce | stop; implementation / corpus issue |
+| Fixed-horizon KL premise does not hold | stop; implementation / corpus issue or seed phenomenon not robust in this setup |
 | KL stabilizes; all representation measures stabilize similarly | stop topic |
 | KL stabilizes; only raw/direct activation movement remains | weak; likely coordinate drift; stop unless stronger evidence appears |
 | KL stabilizes; matched + standardized geometry movement remains systematically elevated | continue to G1 |
