@@ -18,7 +18,7 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 | Priority | Topic | Natural question | First validation gate |
 | --- | --- | --- | --- |
 | 1 | [Confidence and Error Correction](./04_confidence_error_correction/) | If two learners are equally far from the correct answer, does being strongly committed to one wrong answer make corrective learning easier or harder? | Before SFT, build >=300 high/low wrong-conviction pairs matched on base `p(correct)` under balanced option permutations. |
-| 2 | [Temporal Forgetting: Lost Skill or Lost Entry Point?](./05_temporal_forgetting_reentry/) | If a learner once solved a problem reliably but later fails, has the skill been lost or mainly become inaccessible? | Under repeated sampling, require >=50 robust forgotten MATH-500 items before any re-entry experiment; then compare old-self prefixes against matched correct/wrong and never-correct controls. |
+| **Active validation** | [Temporal Forgetting: Lost Skill or Lost Entry Point?](./05_temporal_forgetting_reentry/) | If a learner once solved a problem reliably but later fails, has the skill been lost or mainly become inaccessible? | **READY FOR FAST VALIDATION.** MATH-500 × all 8 public Qwen2.5-7B RL checkpoints × 16 samples/problem/checkpoint; require `F>=50, N>=50, S>=50` under frozen `.75/.125` state thresholds before re-entry. |
 | 3 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
 
 ## Archived topics
