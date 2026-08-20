@@ -44,6 +44,8 @@ data size      6400
 save_steps     data_size / batch_size = 200
 ```
 
+Inspection of `src/training/sft.py` additionally confirms **full-parameter fine-tuning** (`full_finetuning=True`, no 4-bit loading), BF16 when supported, max sequence length 2048, cosine LR scheduling, and response-only loss masking via `train_on_responses_only`. These details matter if the checkpoint trajectory is regenerated rather than downloaded.
+
 Thus one 16-epoch run naturally produces one saved checkpoint per epoch:
 
 ```text
@@ -54,7 +56,7 @@ epoch 4  -> checkpoint-800
 epoch 16 -> checkpoint-3200
 ```
 
-`run_sft_dynamics_example.sh` uses the sparse preregistered subset 1,2,4,6,...,16.
+`run_sft_dynamics_example.sh` uses epochs **1,2,4,8,16**, exactly matching the checkpoint set in the upstream `prepare_sampling_synthetic.sh` behavior evaluation.
 
 ### Exact response template / decision point
 
@@ -134,8 +136,9 @@ src/extract_branch_states.py     # hidden state, candidate embeddings, candidate
 src/train_pairwise_probe.py      # candidate-conditioned latent probe vs output-accessibility baseline
 prepare_upstream.sh              # clone/generate official reasoning_forks data
 run_g0.sh                        # base-model feasibility test
-run_sft_dynamics_example.sh      # sparse epoch-trajectory extraction
- tests/test_graph_parser.py
+run_sft_dynamics_example.sh      # epoch 1/2/4/8/16 hidden-state extraction
+run_behavior_passk_forward.sh    # forward-only upstream pass@k reproduction
+tests/test_graph_parser.py
 ```
 
 ## G0 measurement
@@ -231,18 +234,17 @@ Then:
 ./run_sft_dynamics_example.sh
 ```
 
-This extracts `base, e01, e02, e04, ..., e16` and rewrites `artifacts/branch_probe_metrics.csv` with all checkpoints.
+This extracts `base, e01, e02, e04, e08, e16` (the `base` file is produced by `run_g0.sh`) and rewrites `artifacts/branch_probe_metrics.csv` with all aligned checkpoints.
 
-For the behavioral `pass@k` side, use the upstream repository's own workflow rather than reimplementing it:
+For the behavioral `pass@k` side, run:
 
 ```bash
-cd external/reasoning_forks
-bash prepare_sampling_synthetic.sh
-bash spawn_sampling.sh
-bash compute_passk.sh
+GPUS=0,1,2,3 NUM_SAMPLES=64 ./run_behavior_passk_forward.sh
 ```
 
-The representation plot of interest is then not generic hidden similarity. It is the trajectory of **branch-viability AUROC** next to output candidate margin / first-branch behavior / pass@k.
+This wrapper preserves the upstream evaluation choices—epochs 1/2/4/8/16, temperature 1.0, top-p 0.95, max 512 generated tokens, 64 samples/problem, upstream prompt builder, upstream `VLLMSampler`, and upstream `evaluate_pass_k.py`—but schedules only the **forward** checkpoints. This is deliberate: the upstream `prepare_sampling_synthetic.sh` also creates reverse-model jobs, and the upstream `spawn_sampling.sh` hard-codes GPU IDs `4 5 6 7`; neither is necessary for our G0.
+
+The representation plot of interest is then not generic hidden similarity. It is the trajectory of **branch-viability AUROC** next to output candidate margin / first-branch behavior / pass@k at the same five checkpoints.
 
 ## Result interpretation
 
@@ -270,6 +272,7 @@ Stop if only effective-rank/CKA-style collapse appears or if branch viability wa
 - Python syntax/bytecode compilation: passed.
 - graph parser unit test on official-format two-chain question: passed.
 - exact prompt-format unit test: passed.
+- shell syntax checks for both checkpoint and forward-pass@k launchers: passed.
 - synthetic pairwise-probe end-to-end pipeline: passed; the injected signal is recovered in the corresponding layer while the preregistered primary layer remains independent.
 
 The actual Qwen checkpoint forward passes and upstream SFT sampling were not run in the ChatGPT sandbox because external model weights/GPU execution are unavailable there.
