@@ -1,0 +1,28 @@
+{
+  "gate": {
+    "auc": 0.65,
+    "auc_lower_ci": 0.55,
+    "delta_vs_initial": 0.03,
+    "delta_vs_surface": 0.03,
+    "min_class_count": 30,
+    "min_lead": 4
+  },
+  "label_mode": "strict",
+  "max_novel_min_class_support": 121,
+  "metadata": {
+    "block_length": 32,
+    "gen_length": 128,
+    "model": "GSAI-ML/LLaDA-8B-Instruct",
+    "n_regions": 1,
+    "num_examples": 1000,
+    "num_shards": 4,
+    "prompt_style": "midtruth",
+    "seed": 0,
+    "steps": 64,
+    "surface_only": false,
+    "temperature": 0.0
+  },
+  "reference_final_correctness_probe_replicated": true,
+  "status": "CONTINUE",
+  "strong_pretransition_rows": 2
+}
