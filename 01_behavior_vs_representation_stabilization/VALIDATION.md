@@ -2,20 +2,6 @@
 
 This document is the **technical contract** for the G0 experiment. The goal is to decide topic viability quickly without letting an attractive plot survive a bad measurement.
 
-## 0. What changed after audit
-
-The first implementation had several problems that could create false positives or false negatives:
-
-1. adjacent entries had unequal training gaps (`1k→2k`, `2k→4k`, `4k→8k`, ...), so distance was confounded by elapsed training;
-2. whole Pile documents were truncated through the tokenizer, making byte normalization inconsistent with the actual reference corpus;
-3. CKA was treated too strongly as a topic-level falsifier even though it is invariant to orthogonal rotations and insensitive to some feature-level changes;
-4. documentation promised bootstrap robustness but the analysis used point estimates only;
-5. all hidden states were materialized even though G0 only needed a small number of layers;
-6. the code called `torch.cuda.empty_cache()` every batch and left the causal cache enabled, slowing a simple forward-only screen;
-7. no robust outlier sensitivity analysis was implemented even though squared likelihood displacement is vulnerable to pathological text chunks.
-
-The current implementation fixes those issues and narrows the scientific claim.
-
 ---
 
 ## 1. Scientific hypothesis
@@ -34,7 +20,7 @@ G0 tests the residual-geometry premise. G1, if justified, tests sparse features.
 
 ---
 
-## 2. Reference work and what is actually reused
+## 2. Reference work and what is reused
 
 ### Kishino et al. — behavior geometry
 
@@ -87,7 +73,7 @@ blocks.9.hook_resid_pre
 and trains crosscoders on selected checkpoint pairs/triplets rather than sweeping every checkpoint. We follow the same principle:
 
 - G0 uses one explicit `resid_pre` block input;
-- G1, only if needed, will use a few selected checkpoint snapshots.
+- G1, only if needed, uses a few selected checkpoint snapshots.
 
 ### PolyPythias / Evolution of Concepts — novelty boundary
 
@@ -169,7 +155,7 @@ Reasons:
 
 - avoids the learning-rate warmup region near the very beginning;
 - covers early, transition, middle, late, and terminal training;
-- removes the previous fatal confound where elapsed steps increased across pairs;
+- keeps elapsed training identical across all pairwise movement measurements;
 - costs only 14 checkpoint forwards per gate.
 
 Do not replace these with logarithmically spaced adjacent entries unless the reported metric is explicitly divided by / modeled as a function of the interval length.
@@ -268,7 +254,7 @@ Implementation:
 model.gpt_neox.layers[layer_idx].register_forward_pre_hook(...)
 ```
 
-This avoids ambiguity around `output_hidden_states[k]`, especially at the final layer where normalization conventions differ.
+This makes the residual-stream location explicit and aligns with the hook style used by Crosscoding Through Time.
 
 ### Token positions
 
@@ -333,18 +319,18 @@ If all representation metrics fall with behavior, stop the topic.
 
 ---
 
-## 7. Runtime engineering choices
+## 7. Runtime design
 
 The extraction code is optimized for a falsification run, not general-purpose logging.
 
-Changes:
+Key choices:
 
-- one selected hook instead of `output_hidden_states=True` for every layer;
+- one selected residual hook rather than storing all hidden layers;
 - `use_cache=False` because KV cache is unused;
-- no `torch.cuda.empty_cache()` inside the batch loop;
+- no allocator cache flushing inside the batch loop;
 - default batch size 16, adjustable by environment variable;
 - float16 storage for hidden vectors;
-- uncompressed NPZ to avoid spending CPU time compressing small activation files;
+- uncompressed NPZ for small activation artifacts;
 - behavior and representation gates are separate so a failed G0-A does not waste activation extraction compute.
 
 For Pythia-410M on a large-memory GPU, batch size can usually be increased after a 100-example smoke run.
