@@ -1,16 +1,6 @@
-# Validation contract — Topic 04
+# Validation contract — Topic 04 G-1v2
 
-**Freeze date:** before the first G0 correction run.
-
-This document separates:
-
-- **measurement feasibility** (G-1),
-- **discovery** (G0-D),
-- **locked confirmation** (G0-C),
-- **robustness/replication** (G0-R),
-- **durability** (G1).
-
-The purpose is to prevent the failure mode seen in earlier candidate topics: searching a large grid of metrics/settings, selecting a promising cell, and treating it as if it were a preregistered phenomenon.
+**Freeze:** G-1v2 is the single allowed measurement repair after the preregistered G-1v1 failure. No G0 correction outcome has been observed.
 
 ---
 
@@ -20,666 +10,356 @@ Among initially wrong items with matched accessibility of the correct target:
 
 > **Does stronger commitment to one specific wrong hypothesis change the speed or durability of corrective learning?**
 
-The study does **not** assume the direction in advance.
+The direction is not assumed.
 
 ---
 
-# 2. Primary stimulus pool
+# 2. Why G-1v1 failed
 
-## 2.1 Primary
+G-1v1 scored 9981 exact-K=10 MMLU-Pro items and produced only 61 matched pairs, below the hard `<200` stop threshold.
 
-**MMLU-Pro test split, exactly 10 answer options.**
+The failure happened **before G0**.
 
-The split is used as an experimental stimulus pool. No benchmark-generalization claim is made.
+Post-run audit identified two design defects:
 
-Reasons to prefer K=10:
+1. `top_wrong_stability >= 0.8` was not treatment-neutral. A diffuse wrong distribution should have unstable top-1 identity under small perturbations, so this gate selected against the low-commitment construct.
+2. arithmetic averaging of mapped probability vectors did not isolate semantic preference from option-position susceptibility.
 
-- richer wrong-distribution geometry;
-- enough items for tight matching;
-- fixed K avoids entropy/concentration comparability problems;
-- lower reported prompt-format sensitivity than original MMLU.
-
-## 2.2 External replication pools
-
-Only after the primary confirmation:
-
-- MMLU (K=4),
-- ARC-Challenge (usually K=4),
-- OpenBookQA (K=4),
-- MedMCQA (K=4).
-
-Do not mix variable-K items into the primary MMLU-Pro analysis.
+The v1 `results/g0/STOPPED.md` remains valid: G0 was correctly not run.
 
 ---
 
-# 3. G-1 — measurement feasibility
+# 3. G-1v2 primary measurement
 
-## 3.1 Base model
+## 3.1 Stimulus and model
 
 Primary:
 
 ```text
-Qwen/Qwen2.5-1.5B-Instruct
+dataset   MMLU-Pro test, exactly K=10
+model     Qwen/Qwen2.5-1.5B-Instruct
 ```
 
-Optional measurement replication before G0 if resources are abundant:
+One predeclared model-scale replication is allowed:
 
 ```text
 Qwen/Qwen2.5-3B-Instruct
 ```
 
-The same scoring prompt/template and metrics must be used.
+No further model search is allowed to rescue a failed v2.
 
-## 3.2 Candidate schema
+## 3.2 Balanced permutation family
 
-```json
-{
-  "id": "mmlu_pro:123",
-  "dataset": "mmlu_pro",
-  "category": "physics",
-  "question": "...",
-  "choices": ["...", "..."],
-  "answer": 4
-}
-```
-
-Requirements:
-
-- unique correct answer;
-- primary pool has exactly 10 choices;
-- no duplicate IDs;
-- no answer leakage introduced by preprocessing.
-
-## 3.3 How option probabilities are measured
-
-Use the instruct model's **chat template**.
-
-The user message contains:
+Primary family A:
 
 ```text
-Question text
-
-Options:
-A. ...
-B. ...
-...
-
-Choose the single best option. Reply with only its letter.
+cyclic
 ```
 
-The scorer computes the conditional log probability for each allowed answer label and renormalizes over the answer-label set.
+Every semantic choice occupies every label position once.
 
-Important implementation requirements:
-
-1. use `tokenizer.apply_chat_template(..., add_generation_prompt=True)`;
-2. do not re-tokenize `prompt + candidate` in a way that changes the prompt boundary;
-3. if all answer labels are single tokens, gather them from one next-token distribution;
-4. otherwise fall back to exact candidate-sequence scoring;
-5. normalize only over the permitted labels.
-
-## 3.4 Option-position control
-
-For K options, use K cyclic rotations:
+Reliability family B on a deterministic 20% subset:
 
 ```text
-0 1 2 ... K-1
-1 2 3 ... 0
-...
+hashed_cyclic
 ```
 
-Thus every semantic choice occupies every answer-label position exactly once.
+For each item, deterministically hash-shuffle the base semantic order, then take all K cyclic shifts. It is another complete balanced family but not the same set of ordered option lists.
 
-For each rotation:
+## 3.3 Semantic distribution
 
-1. score label probabilities;
-2. map them back to semantic choice identities.
-
-Then average semantic probabilities across rotations.
-
-Primary semantic-stability gate for K=10:
-
-```text
-the same semantic top-wrong option must be top-wrong in >= 8/10 rotations
-```
-
-For K=4 replication:
-
-```text
->= 3/4
-```
-
-## 3.5 Variables
-
-Let averaged semantic probabilities be \(p_i\).
-
-### Target accessibility
+For mapped semantic probability vector `p_r` from permutation `r`:
 
 \[
-a = p_{\text{correct}}
+s_j=\frac1R\sum_r\log(p_{r,j}+\epsilon)
 \]
 
-### Wrong distribution
+and
 
 \[
-q_j=\frac{p_j}{1-a},\quad j\neq\text{correct}
+p^{debias}_j = softmax(s)_j.
 \]
 
-### Primary commitment
+This `p^{debias}` is the **only primary G-1v2 semantic distribution**.
+
+The old arithmetic mean is retained only as a v1 diagnostic.
+
+## 3.4 Why log-space aggregation is justified
+
+Assume an additive position nuisance in label logits:
 
 \[
-c_{\max} = \max_j q_j
+z_{r,j} = \alpha_j + \beta_{\operatorname{position}(r,j)}.
 \]
 
-### Robustness commitment
+Because the balanced set sends every semantic choice through every position exactly once:
 
 \[
-c_H=1-\frac{H(q)}{\log(K-1)}
+\frac1R\sum_r \beta_{\operatorname{position}(r,j)}
 \]
 
-### Additional fixed diagnostics
+is constant across `j`. The normalization term is also common across `j`, so averaging log probabilities and renormalizing recovers the semantic term under this model.
 
-Record, but do not promote post hoc to the primary metric:
+A deterministic unit test in `tests/test_g1v2_math.py` verifies this exact cancellation synthetically.
 
-- top-wrong semantic identity;
-- top-wrong probability;
-- wrong top-1 / top-2 margin;
-- normalized wrong entropy;
-- overall answer entropy;
-- target rank;
-- option-position agreement;
-- question token count;
-- correct-answer token count.
-
-## 3.6 Initially wrong gate
-
-Primary items satisfy:
-
-```text
-argmax averaged semantic probability != correct answer
-```
-
-Do not select items from sampled verbal answers. Selection is entirely from the frozen probability measurement above.
-
-## 3.7 Pair construction
-
-Define high/low commitment using the upper/lower 30% of `c_max` among eligible wrong items.
-
-Pair one high item to one low item with:
-
-```text
-same category if feasible
-|p_correct_high - p_correct_low| <= 0.02
-question token length ratio <= 1.35
-correct-answer token length ratio <= 1.50
-same K
-```
-
-Use optimal / minimum-cost matching within category when possible, not outcome-aware manual pairing.
-
-The matching cost may depend only on frozen **pre-training** covariates.
-
-## 3.8 G-1 pass criteria
-
-Strong pass:
-
-```text
->= 600 matched pairs
-mean |Δ p_correct| <= 0.010
-median |Δ p_correct| <= 0.010
-mean c_max separation >= 0.10
->= 90% pairs same category
-```
-
-Minimal pass:
-
-```text
->= 300 matched pairs
-mean |Δ p_correct| <= 0.015
-mean c_max separation >= 0.08
-```
-
-Measurement failure:
-
-- < 200 pairs;
-- position stability fails broadly;
-- wrong commitment collapses to a narrow range;
-- high/low groups remain systematically unmatched on target accessibility.
-
-If G-1 fails, **do not inspect correction dynamics**. Fix/abandon the measurement first.
-
-## 3.9 Prompt robustness audit
-
-Before G0, rerun a deterministic 20% sample under the predeclared alternate prompt:
-
-```text
-Which option is correct? Return only the option letter.
-```
-
-Pass if:
-
-- Spearman correlation of `c_max` between primary/alternate prompts >= 0.70;
-- semantic top-wrong identity agrees >= 75%;
-- pair membership is not catastrophically unstable.
-
-This is a measurement audit only. The primary prompt remains fixed.
+This is a prespecified nuisance-removal argument, not a metric chosen for a favorable correction result.
 
 ---
 
-# 4. G0 design — corrective learning
+# 4. G-1v2 variables
 
-## 4.1 Why one exposure per cycle
-
-A **correction cycle** means every selected semantic item receives exactly one supervised corrective exposure.
-
-Primary MMLU-Pro uses 10 cycles because K=10. The training-data builder rotates option position so that, across 10 cycles, each semantic answer occupies each label position exactly once.
-
-This prevents "cycle" from secretly meaning different numbers of exposures for different items.
-
-## 4.2 Training target
-
-Input:
-
-```text
-question + rotated options
-```
-
-Assistant target:
-
-```text
-Answer: <rotated label>. <correct answer text>
-```
-
-Loss is applied only to assistant tokens.
-
-Why include answer text:
-
-- supervision is semantic, not only a letter;
-- the correct content remains invariant across rotations.
-
-Why retain the rotated label:
-
-- the model also learns the current option mapping;
-- fixed-letter memorization is impossible because the same semantic answer rotates.
-
-## 4.3 G0 data split
-
-Pairs, not individual items, are split.
-
-Primary:
-
-```text
-70% discovery
-30% locked confirmation
-```
-
-Stratify by category.
-
-### Important
-
-Run discovery and confirmation as **separate fine-tuning jobs from the same base checkpoint**.
-
-The confirmation subset is not used to choose:
-
-- direction;
-- learning rate;
-- metric;
-- number of cycles;
-- threshold;
-- prompt.
-
-## 4.4 Primary training recipe
-
-Initial locked recipe:
-
-```text
-model             Qwen/Qwen2.5-1.5B-Instruct
-optimizer         AdamW
-learning rate     1e-5
-weight decay      0.0
-precision         bf16
-cycles            10
-max length        1024
-gradient clipping 1.0
-scheduler         constant
-training          full-parameter
-```
-
-Use three independent order/random seeds if possible:
-
-```text
-17, 29, 43
-```
-
-Each seed can run on a separate GPU/node. Do not use slow cross-node DDP.
-
-### LR sanity condition
-
-The primary `1e-5` is not changed based on the high-vs-low effect.
-
-If aggregate learning is obviously broken:
-
-```text
-mean p(correct) barely changes by cycle 10
-```
-
-or instantly saturated:
-
-```text
->95% of all items are top-1 correct after cycle 1
-```
-
-then the whole G0 run is an **optimization-invalid run**, not evidence for/against the scientific hypothesis.
-
-In that case, use an unrelated calibration subset to compare exactly:
-
-```text
-5e-6, 1e-5, 2e-5
-```
-
-Choose a recipe based only on aggregate learning geometry, then restart G0 from scratch and document the change.
-
-Do not choose LR based on which gives the desired group difference.
-
----
-
-# 5. G0 evaluation
-
-Evaluate:
-
-```text
-cycle 0 (base)
-cycle 1
-...
-cycle 10
-```
-
-using the same permutation-robust semantic scorer from G-1.
-
-For each item and cycle record:
-
-```text
-p_correct
-p_old_wrong
-top1_correct
-correct_rank
-answer_entropy
-```
-
-The `old_wrong` identity is frozen from G-1 and never redefined after training.
-
----
-
-# 6. Primary endpoint and statistics
-
-## 6.1 Primary endpoint
-
-For item \(i\), define correction gain relative to its own frozen base state:
+Correct-target accessibility:
 
 \[
-G_i=\frac{1}{10}\sum_{e=1}^{10}
-\left[p_{i,e}(\text{correct})-p_{i,0}(\text{correct})\right]
+a=p^{debias}_{correct}.
 \]
 
-Primary paired effect:
+Wrong distribution:
 
 \[
-\Delta_G
-=
-G_{\text{high-commitment}}
--
-G_{\text{low-commitment}}
+q_j=\frac{p^{debias}_j}{1-a},\quad j\ne correct.
 \]
 
-Raw probability AUC is reported descriptively, but **AUC gain is primary** because it measures learning from each item's own starting point.
-
-within matched pairs.
-
-Report:
-
-- mean paired difference;
-- 95% pair-cluster bootstrap CI;
-- each seed separately;
-- pooled mean across seeds.
-
-## 6.2 Secondary endpoints fixed in advance
-
-### Immediate correction
+Primary wrong commitment:
 
 \[
-\Delta_1=p_1(\text{correct})-p_0(\text{correct})
+c_{\max}=\max_j q_j.
 \]
 
-### Early correction
-
-Mean gain over cycles 1–2.
-
-### Late correction
-
-Mean \(p(\text{correct})\) over cycles 8–10.
-
-### Behavioral correction time
-
-`T_top1`:
-
-```text
-first cycle where correct option becomes semantic top-1
-and remains top-1 at the next evaluation
-```
-
-This replaces an arbitrary `p >= .5` threshold.
-
-### Original-error suppression
+Robustness-only commitment:
 
 \[
-S=p_0(y_{\text{old wrong}})-p_{10}(y_{\text{old wrong}})
+c_H=1-\frac{H(q)}{\log(K-1)}.
 \]
 
-### Continuous model
+Position susceptibility:
 
-Predeclared regression:
+\[
+S_{pos}=\frac1R\sum_r JS(p_r\|p^{debias}).
+\]
 
-```text
-AUC_correct
-  ~ wrong_concentration
-  + base_p_correct
-  + wrong_concentration * base_p_correct
-  + question_token_count
-  + correct_answer_token_count
-  + category fixed effects
-```
+`S_pos` is a separate nuisance/phenotype. Do not redefine low commitment as high positional instability.
 
-Cluster SE / bootstrap by matched pair.
+The following are diagnostics only:
 
-The interaction is secondary. Do not search additional nonlinear terms unless clearly labeled exploratory.
-
----
-
-# 7. Discovery → confirmation decision
-
-## 7.1 Directional result
-
-A candidate directional effect proceeds to confirmation if discovery shows:
-
-- same sign in >= 2/3 seeds;
-- paired bootstrap CI for pooled \(\Delta_G\) excludes 0;
-- absolute mean \(|\Delta_G| >= 0.02\).
-
-The 0.02 threshold is a **screening threshold**, not a universal scientific constant.
-
-## 7.2 Locked confirmation
-
-Confirmation succeeds if:
-
-- same direction as discovery;
-- confirmation 95% CI excludes 0;
-- effect is not driven by one category or one seed;
-- primary prompt-position diagnostics remain healthy.
-
-If discovery is strong and confirmation flips sign or collapses near zero:
-
-```text
-KILL the directional claim.
-```
-
-Do not rescue with another threshold, entropy metric, prompt, or hand-picked domain.
-
-## 7.3 Equivalence-style null
-
-If discovery suggests near-zero effect, do not claim "commitment does not matter" from `p > .05`.
-
-A potentially interesting **accessibility-dominance** result requires:
-
-1. a prespecified smallest effect of interest (screening default ±0.02 AUC);
-2. the 90% CI on \(\Delta_G\) lies entirely inside [-0.02, +0.02];
-3. the same equivalence pattern holds in locked confirmation;
-4. preferably replicate on a second model/dataset.
-
-Only then is "target accessibility dominates wrong commitment" worth serious analysis.
+- `top_wrong_stability`;
+- modal top-wrong identity;
+- arithmetic-mean v1 metrics;
+- wrong top-1/top-2 margin;
+- answer entropy;
+- target rank.
 
 ---
 
-# 8. Predeclared alternative natural phenomena
+# 5. Response-channel diagnostics
 
-The user goal is rapid scientific triage, not forcing one directional hypothesis. The following patterns may motivate a **new natural question** if they are strong and replicated.
+For single-token answer labels, save for every permutation:
 
-## 8.1 Early–late reversal
+\[
+M_{label}=\sum_{\ell\in A..J}p_{vocab}(\ell)
+\]
 
-Example:
+and whether the unconstrained greedy next token is one of A..J.
 
-```text
-high commitment learns faster at cycle 1–2
-but ends lower / relapses more by cycle 8–10
-```
-
-Natural question:
-
-> Does surprise accelerate initial correction while entrenched memory preserves the old error long-term?
-
-This is especially relevant to human hypercorrection / return-of-error findings.
-
-## 8.2 Accessibility × commitment interaction
-
-Example:
+Aggregate per item:
 
 ```text
-commitment matters only when p(correct) is moderate,
-not when the target is nearly inaccessible
+mean_label_mass
+min_label_mass
+greedy_is_allowed_label_rate
 ```
 
-Natural question:
+Interpretation:
 
-> Does conviction matter only after the learner already has partial access to the correction?
+- conditional A-J probabilities are the experimental choice distribution;
+- low label mass means this distribution is highly conditional on an artificial constraint;
+- if the model broadly refuses the requested answer channel, do not treat sharp A-J ratios as clean belief evidence.
 
-This connects directly to the prior-knowledge account of hypercorrection.
-
-## 8.3 Correct-target learning and misconception suppression dissociate
-
-Example:
+Before G0, manually inspect the audit subset if:
 
 ```text
-p(correct) rises similarly,
-but the original wrong answer decays at different rates
+median mean_label_mass < 0.50
+or
+median greedy_is_allowed_label_rate < 0.80
 ```
 
-Natural question:
-
-> Is learning a correction different from unlearning the misconception it replaces?
-
-This can be pursued even if final accuracy is similar.
-
-## 8.4 Domain-specific effect
-
-Only take seriously if:
-
-- visible in >=2 seeds;
-- replicated on held-out pairs;
-- not found by scanning dozens of domains for the best result.
-
-A strong domain interaction may suggest that structured misconceptions differ from diffuse ignorance.
+These are diagnostic warning thresholds, not post-hoc exclusion rules. If the requested response format is broadly not obeyed, stop and judge the measurement invalid rather than filtering favorable items.
 
 ---
 
-# 9. G1 — durability / return of error
+# 6. Existing-data zero-GPU gate
 
-Run only after a reproducible G0 result or a strong early–late pattern.
+The v1 `base_scores.jsonl` already contains all mapped `permutation_probs`.
 
-## 9.1 Corrected set
+First run:
 
-Freeze items that are semantic top-1 correct at cycle 10.
-
-## 9.2 Interference phase
-
-Starting from the corrected checkpoint, train on a fixed unrelated instruction/filler corpus.
-
-Predeclare budgets, e.g.:
-
-```text
-0, 250, 1000, 4000 optimizer steps
+```bash
+python code/reaggregate_g1v2.py \
+  --input results/g1/base_scores.jsonl \
+  --output results/g1v2/base_scores_reaggregated.jsonl
 ```
 
-Do not include the original correction questions or obvious paraphrases.
+Then pair using no top-wrong stability filter:
 
-## 9.3 Outcomes
-
-At each budget evaluate:
-
-```text
-p_correct
-p_original_wrong
-top1 identity
+```bash
+python code/build_matched_pairs.py \
+  --input results/g1v2/base_scores_reaggregated.jsonl \
+  --pairs-output results/g1v2/matched_pairs.jsonl \
+  --eligible-output results/g1v2/eligible_wrong.jsonl \
+  --report-output results/g1v2/matching_report.json \
+  --require-k 10 \
+  --p-caliper 0.02 \
+  --question-length-ratio 1.35 \
+  --answer-length-ratio 1.50 \
+  --high-quantile 0.70 \
+  --low-quantile 0.30 \
+  --discovery-fraction 0.70 \
+  --seed 20260821
 ```
 
-Primary durability event:
+Do not use `--susceptibility-caliper` in the primary v2 screen. We do not know a justified threshold yet; reliability is assessed independently.
+
+## 6.1 Pair common-support gate
+
+Strong:
 
 ```text
-original wrong semantic option becomes top-1 again
+>= 600 pairs
+mean |Δ p_correct| <= .010
+median |Δ p_correct| <= .010
+mean c_max separation >= .10
 ```
 
-This is stronger than simply losing the corrected answer.
-
-Interesting pattern:
+Minimal:
 
 ```text
-high commitment corrects quickly
-but old errors return more often after interference
+>= 300 pairs
+mean |Δ p_correct| <= .015
+mean c_max separation >= .08
 ```
 
-This would parallel a classic distinction between immediate hypercorrection and persistence of entrenched errors.
+Hard failure:
+
+```text
+< 200 pairs
+```
+
+If `<200`, **KILL Topic 04**. Do not change quantiles, K, dataset, caliper, or commitment definition.
+
+If `200–299`, run reliability audit but do not proceed to G0 unless there is a preregistered reason to accept a reduced-power pilot. Default decision remains stop.
 
 ---
 
-# 10. G2 — external replication
+# 7. Independent reliability audits
 
-Priority:
+Only if the zero-GPU common-support screen is not a hard failure.
 
-1. Qwen2.5-3B-Instruct on the same MMLU-Pro protocol;
-2. original MMLU / MedMCQA as fixed-K=4 domain replication;
-3. different model family if available.
+Select a deterministic 20% item subset by hash of item ID.
 
-For K=4 use four cyclic rotations and the `>=3/4` semantic-stability gate.
+Run three measurements on exactly the same subset:
 
-Do not pool K=10 and K=4 commitment values without normalization and a predefined cross-K analysis.
+```text
+A: primary prompt   + cyclic
+B: primary prompt   + hashed_cyclic
+C: alternate prompt + cyclic
+```
+
+For A vs B and A vs C require:
+
+```text
+Spearman c_max        >= .70
+Spearman p_correct    >= .90
+median semantic JS    <= .05
+```
+
+Exact semantic top-wrong identity agreement is diagnostic only.
+
+If either audit fails, **KILL Topic 04**.
+
+Do not replace the reliability gate with a new one after seeing the values.
 
 ---
 
-# 11. Final kill rules
+# 8. 3B replication
 
-The topic should be archived rather than rescued if:
+`Qwen/Qwen2.5-3B-Instruct` was allowed before G0 outcomes existed.
 
-1. G-1 measurement is unstable.
-2. Pair matching cannot separate commitment from accessibility cleanly.
-3. Discovery does not survive locked confirmation.
-4. The sign is learning-rate or prompt-template specific without a stable explanation.
-5. "Null" results are too imprecise for equivalence.
-6. The effect is entirely a label-position artifact.
-7. A recent direct paper closes the exact gap.
+Run the exact same G-1v2 protocol if:
 
-No post-hoc:
+- 1.5B v2 passes; or
+- 1.5B is borderline but not a hard failure and there is enough compute to determine whether poor semantic commitment is scale-specific.
 
-- hidden-state probe;
-- layer sweep;
-- alternative "confidence" measure selected by outcome;
-- arbitrary category cherry-picking;
-- model shopping for a positive sign.
+The 3B result is reported regardless of direction.
 
-A genuinely new external observation can justify a new topic, but it should be registered as a new hypothesis rather than used to rewrite this one.
+If both 1.5B and 3B fail measurement reliability/common support, **KILL Topic 04**.
+
+Do not escalate to 7B/14B.
+
+---
+
+# 9. G0 is unchanged in scientific logic
+
+Only after G-1v2 passes.
+
+Use the v2 matched pairs and the same `p^{debias}` scorer for cycle 0 through cycle 10.
+
+One semantic item receives exactly one corrective exposure per cycle. High and low groups train together.
+
+Primary outcome remains per-item correction gain AUC:
+
+\[
+G_i=\frac1{10}\sum_{e=1}^{10}(p_{i,e}(y^*)-p_{i,0}(y^*)).
+\]
+
+Primary contrast:
+
+\[
+\Delta_G=G_{high}-G_{low}.
+\]
+
+Discovery/confirmation remain 70/30 and start independently from the same base model.
+
+Discovery continuation criterion:
+
+```text
+>= 2/3 seeds same direction
+pooled pair-bootstrap 95% CI excludes 0
+|mean Δ_G| >= .02
+```
+
+Freeze before confirmation.
+
+A failed confirmation kills the directional claim. No hidden-state or model rescue.
+
+---
+
+# 10. Predeclared interpretable G0 outcomes
+
+Only after a valid v2 measurement:
+
+1. high commitment corrects faster → hypercorrection-like plasticity;
+2. high commitment corrects slower → entrenchment;
+3. early advantage but late reversal / relapse → uptake differs from durable replacement;
+4. equivalence after accessibility control → accessibility dominates commitment;
+5. correct-target growth and original-error suppression dissociate → learning the correction and suppressing the misconception may be distinct processes.
+
+These outcomes must not be used to justify a bad G-1 measurement.
+
+---
+
+# 11. No-rescue rule
+
+If G-1v2 fails, Topic 04 is archived.
+
+Do not rescue by:
+
+- lowering the old 8/10 stability gate;
+- using 7B/14B because 1.5B/3B fail;
+- changing from K=10 to K=4;
+- changing to free-response confidence;
+- selecting a new confidence metric from the same data;
+- adding hidden-state probes;
+- loosening accessibility matching;
+- choosing only domains with more pairs.
+
+A future free-response misconception study would be a **new topic**, not Topic 04 continuation.
