@@ -51,3 +51,22 @@ new: all 1,205 GSM1K -> require >=25 positives and >=25 negatives per locked tas
 The full run stores the four preregistered steps and two preregistered layers once, checks surface support first, and fits hidden probes only if at least one task has adequate full-dataset support.
 
 The large raw artifacts remain excluded by `.gitignore`.
+
+## Retry — full GSM1K locked confirmation
+
+Following protocol revision 1, the complete 1,205-example GSM1K run was performed without rerunning G1-A. The full-data support gate passed:
+
+| task | positives | negatives |
+|---|---:|---:|
+| transient recovery (step 16, layer 25, lead >= 4) | 33 | 163 |
+| transient overwrite (step 4, layer 28, lead >= 16) | 34 | 100 |
+
+The positive control also passed (AUC 0.896 at both locked layers, with step-0 deltas above 0.04). The locked confirmation result was:
+
+```text
+FAIL_BOTH
+```
+
+Recovery had AUC 0.498, delta versus surface -0.135, and delta versus step 0 -0.017. Overwrite had AUC 0.434, delta versus surface -0.119, and delta versus step 0 -0.011. Both 97.5% bootstrap lower bounds for the confirmation margin were below zero.
+
+This is a valid negative confirmation under the preregistered geometry, not a geometry failure. The retry runner therefore stopped before Dream, as required. The broad Topic 02 claim should be treated as falsified or sharply demoted; no new cell search was performed.
