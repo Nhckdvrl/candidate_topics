@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Prepare standard MATH-500 generation requests with stable problem IDs."""
+"""Prepare MATH-500 requests matching the seed repository's lm-eval prompt."""
 from __future__ import annotations
 
 import argparse
 
 from common import write_jsonl
 
-PROMPT = """Please reason step by step and put your final answer within \\boxed{{}}.\n\n{problem}"""
+# Exact doc_to_text from uw-nsl/Temporal_Forgetting's
+# lm_eval/tasks/MATH-500/hendrycks_math_500.yaml.
+PROMPT = (
+    "Solve the following math problem. Present the final answer in the format: "
+    "Final Answer: \\boxed{{your_answer}}.\nProblem: {problem}\nAnswer:"
+)
 
 
 def main() -> None:
@@ -30,6 +35,7 @@ def main() -> None:
                 "gold_solution": x.get("solution"),
                 "subject": x.get("subject"),
                 "level": x.get("level"),
+                "stop": ["Problem:"],
             }
         )
     write_jsonl(args.output, rows)
