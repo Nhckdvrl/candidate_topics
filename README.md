@@ -15,10 +15,10 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 ## Current candidates
 
-| Priority | Topic | Natural question | First validation gate |
+| Priority | Topic | Natural question | Current gate |
 | --- | --- | --- | --- |
-| 1 | [Confidence and Error Correction](./04_confidence_error_correction/) | If two learners are equally far from the correct answer, does being strongly committed to one wrong answer make corrective learning easier or harder? | Before SFT, build >=300 high/low wrong-conviction pairs matched on base `p(correct)` under balanced option permutations. |
-| **Active validation** | [Temporal Forgetting: Lost Skill or Lost Entry Point?](./05_temporal_forgetting_reentry/) | If a learner once solved a problem reliably but later fails, has the skill been lost or mainly become inaccessible? | **READY FOR FAST VALIDATION.** MATH-500 × all 8 public Qwen2.5-7B RL checkpoints × 16 samples/problem/checkpoint; require `F>=50, N>=50, S>=50` under frozen `.75/.125` state thresholds before re-entry. |
+| **Measurement repair** | [Confidence and Error Correction](./04_confidence_error_correction/) | If two learners are equally far from the correct answer, does being strongly committed to one wrong answer make corrective learning easier or harder? | **G-1v1 failed before training (61 pairs). One locked G-1v2 repair is allowed:** log-space balanced-permutation debiasing + independent permutation/prompt reliability. `<200` v2 pairs or failed reliability ⇒ archive. |
+| **Active validation** | [Temporal Forgetting: Lost Skill or Lost Entry Point?](./05_temporal_forgetting_reentry/) | If a learner once solved a problem reliably but later fails, has the skill been lost or mainly become inaccessible? | MATH-500 × all 8 public Qwen2.5-7B RL checkpoints × repeated samples; require robust F/N/S groups before re-entry. |
 | 3 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
 
 ## Archived topics
@@ -30,9 +30,6 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 ## What the archived topics are for
 
-Archived folders are intentionally kept with their code, validation contracts, results, and failure analyses. They serve two purposes:
-
-1. preserve reusable experimental infrastructure;
-2. record why a natural-looking research question failed, so the same weak premise is not repeatedly rediscovered.
+Archived folders keep code, validation contracts, results, and failure analyses so the same weak premise is not repeatedly rediscovered.
 
 A failed topic should not be revived by post-hoc metric/layer/model sweeps unless a genuinely new external observation changes the scientific premise.
