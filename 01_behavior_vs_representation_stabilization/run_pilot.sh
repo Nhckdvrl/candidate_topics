@@ -24,7 +24,15 @@ mapfile -t STEPS < <(printf '%s\n' "${STEPS[@]}" | sort -n -u)
 
 mkdir -p "$OUT" "$ANALYSIS" "$(dirname "$CORPUS")"
 
-if [[ ! -f "$CORPUS" ]]; then
+CORPUS_EXAMPLES=0
+if [[ -f "$CORPUS" ]]; then
+  CORPUS_EXAMPLES=$(awk 'NF { n += 1 } END { print n + 0 }' "$CORPUS")
+fi
+
+if [[ "$CORPUS_EXAMPLES" -ne "$NUM_EXAMPLES" ]]; then
+  if [[ -f "$CORPUS" ]]; then
+    echo "[corpus] rebuilding $CORPUS: found $CORPUS_EXAMPLES examples, requested $NUM_EXAMPLES"
+  fi
   python src/prepare_corpus.py \
     --num-examples "$NUM_EXAMPLES" \
     --output "$CORPUS"
