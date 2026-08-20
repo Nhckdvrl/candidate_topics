@@ -1,195 +1,178 @@
 # Topic 04 — Confidence and Error Correction
 
-**Status: READY FOR G-1 / G0 IMPLEMENTED**
+**Status: G-1v1 MEASUREMENT FAILURE → ONE LOCKED G-1v2 REPAIR**
 
 > **If two learners are equally far from the correct answer, does being strongly committed to one wrong answer make corrective learning easier or harder?**
 
-This topic studies a natural learning question. The LLM is a controlled learner, not the scientific object of interest.
+The natural scientific question remains alive, but **G0 has not been run**. The first measurement design failed before corrective training.
 
-## Why this question exists independently of LLMs
+## What G-1v1 actually found
 
-Human memory research reports the **hypercorrection effect**: an error held with high subjective confidence can be corrected *better* after feedback than a low-confidence error. Two broad explanations have competed for years:
-
-1. **surprise / attention** — violating a strong expectation makes corrective feedback unusually salient;
-2. **prior / partial knowledge** — confidence may merely proxy how much relevant knowledge is already available.
-
-The second explanation matters because "high confidence" and "distance from the correct answer" are usually entangled.
-
-Recent LLM work gives the opposite-looking clue. Strong model-internal priors can be sticky under prompt correction, and SFT can fail on samples that conflict with pretrained knowledge. This creates a concrete question:
-
-> **After holding target accessibility fixed, does commitment to a specific wrong hypothesis change the speed or durability of learning the correction?**
-
-## Seed literature
-
-### Human learning
-
-- Butterfield & Metcalfe (2006), **The correction of errors committed with high confidence**.
-- Fazio & Marsh (2009), **Surprising feedback improves later memory**.
-- Metcalfe & Finn (2011), **People's Hypercorrection of High Confidence Errors: Did They Know it All Along?**
-- Sitzman, Rhodes & Tauber (2014), **Prior knowledge is more predictive of error correction than subjective confidence**.
-- Butler, Fazio & Marsh (2011), **The hypercorrection effect persists over a week, but high-confidence errors return**.
-
-### AI evidence that motivates, but does not answer, the question
-
-- Xue et al. (ACL 2026), **Why Supervised Fine-Tuning Fails to Learn**: incomplete learning includes conflicts between SFT supervision and pretrained knowledge.
-- Casanova et al. (2026), **On the Limits of LLM Adaptability**: high-confidence zero-shot annotation errors are especially resistant to **prompt-level** correction.
-- Kumaran et al. (Nature Machine Intelligence 2026), **Competing Biases underlie Overconfidence and Underconfidence in LLMs**: initial confidence predicts reduced flexibility in revising answers.
-- Ren & Sutherland, **Learning Dynamics of LLM Finetuning**: SFT probability changes depend on the current predictive distribution and cross-example interactions.
-
-None of these isolates **weight-level corrective learning after matching the initial accessibility of the correct target**.
-
-## The key operational distinction
-
-Do **not** use raw `max_wrong_probability` as the independent variable.
-
-For a multiple-choice item with correct answer \(y^*\), define:
-
-### Target accessibility
-
-\[
-a(x)=p(y^*\mid x)
-\]
-
-### Wrong-belief concentration
-
-Normalize only over wrong options:
-
-\[
-q_j(x)=\frac{p(y_j\mid x)}{1-p(y^*\mid x)}, \qquad y_j\neq y^*
-\]
-
-Primary commitment measure:
-
-\[
-c_{\max}(x)=\max_j q_j(x)
-\]
-
-Robustness measure:
-
-\[
-c_H(x)=1-\frac{H(q)}{\log(K-1)}
-\]
-
-Intuition:
-
-- same \(a(x)\): both learners are equally far from the correct target;
-- different \(c(x)\): one learner strongly commits to one misconception, the other spreads belief over many wrong alternatives.
-
-The main experiment asks whether \(c(x)\) predicts **correction dynamics after conditioning/matching on \(a(x)\)**.
-
-## Why MMLU-Pro is the primary stimulus pool
-
-The primary G-1 pool is the exactly-10-option subset of **MMLU-Pro**.
-
-Reasons:
-
-1. with 10 options, wrong-answer concentration has much more dynamic range than in binary or 4-choice tasks;
-2. the dataset is large enough to construct hundreds of tightly matched wrong-item pairs;
-3. the published dataset analysis reports lower prompt-format sensitivity than original 4-choice MMLU;
-4. each item has a single correct answer and rich domain labels.
-
-The test split is used only as a **pool of supervised learning stimuli**, not to claim benchmark generalization.
-
-External replication can later use original MMLU / ARC-Challenge / OpenBookQA / MedMCQA.
-
-## Validation overview
+On `Qwen/Qwen2.5-1.5B-Instruct` × MMLU-Pro exact-K=10:
 
 ```text
-G-1a  Can we measure stable semantic wrong commitment?
-      Score all exact-10-option MMLU-Pro items under balanced option rotations.
-
-G-1b  Can we separate wrong commitment from target accessibility?
-      Construct high/low commitment pairs tightly matched on p(correct),
-      category, question length, and correct-answer length.
-
-G0-D  Discovery correction experiment
-      One identical corrective exposure per item per cycle.
-      Track the whole probability trajectory for 10 cycles.
-
-LOCK  Freeze primary direction, effect definition, LR, and analysis.
-
-G0-C  Locked confirmation
-      Repeat from the same base model on held-out matched pairs.
-
-G0-R  Robustness
-      Independent training seeds; then a second model or second dataset.
-
-G1    Durability / return of the old error
-      Only if G0 establishes a reproducible correction-dynamics effect.
+scored items                 9981
+v1 stable initially-wrong     716
+high pool                     215
+low pool                      215
+matched pairs                  61
+mean |Δ p(correct)|          0.00547
+mean commitment separation   0.2529
 ```
 
-The exact stop rules and alternative scientifically interesting outcomes are in `VALIDATION.md`.
+The surviving 61 pairs were well matched, so the main problem was **not** the Hungarian matcher. The bottleneck was the v1 operationalization itself.
 
-## Fast path for a many-GPU server
+Two structural problems were identified before any correction outcome existed:
 
-The code is designed so that **scoring shards, discovery/confirmation runs, and seeds can be assigned to separate GPUs/nodes**. Cross-node communication is unnecessary.
+1. **The 8/10 top-wrong stability gate was treatment-dependent.**  
+   Truly diffuse wrong distributions should naturally have unstable argmax identities, so requiring a stable top-wrong mechanically removed the low-commitment end of the construct.
 
-Recommended first screen:
+2. **Arithmetic averaging over option permutations confounded semantic diffuseness with position susceptibility.**  
+   A model can be extremely confident on every permutation yet switch *which semantic option* receives that confidence when labels move. Arithmetic averaging makes this look like a diffuse semantic belief.
+
+Therefore the current result is:
+
+> **G-1v1 failed to measure semantic wrong commitment cleanly enough for a paired correction experiment.**
+
+It is **not** evidence that wrong commitment has no effect on correction.
+
+## The one allowed repair: G-1v2
+
+G-1v2 changes the measurement for a specific mathematical reason, not because a G0 effect was disappointing.
+
+For each semantic option `j` and balanced permutation `r`, we already have mapped conditional probability `p[r,j]`.
+
+The primary semantic score is now
+
+\[
+s_j = \frac{1}{R}\sum_r \log(p_{r,j}+\epsilon)
+\]
+
+followed by
+
+\[
+p^{debias} = softmax(s).
+\]
+
+Equivalently this is a normalized geometric mean.
+
+Under the additive nuisance model
+
+\[
+z_{r,j} = \alpha_j + \beta_{\text{position}(r,j)},
+\]
+
+a complete balanced permutation family gives every semantic option every position exactly once. The mean position term is then constant across semantic choices and cancels after the final softmax.
+
+The old arithmetic mean does **not** have this cancellation property because softmax is nonlinear.
+
+## Commitment and position susceptibility are now separate axes
+
+Primary semantic commitment remains
+
+\[
+a = p^{debias}(y^*)
+\]
+
+\[
+q_j=\frac{p^{debias}(y_j)}{1-a},\quad j\ne y^*
+\]
+
+\[
+c_{\max}=\max_j q_j.
+\]
+
+But permutation sensitivity is measured separately as
+
+\[
+S_{pos}=\frac1R\sum_r JS(p_r\;\|\;p^{debias}).
+\]
+
+`top_wrong_stability` is retained only as a diagnostic. It is **not** an inclusion criterion.
+
+This distinction matters:
+
+- low `c_max`, low `S_pos`: genuinely diffuse semantic uncertainty;
+- high `c_max`, low `S_pos`: stable concentrated misconception;
+- high/variable per-permutation confidence, high `S_pos`: position-driven response geometry rather than clean semantic commitment.
+
+## Zero-GPU first step
+
+The v1 repository already stores all 10 mapped permutation distributions per item. Therefore the first v2 test does not require new inference:
+
+```bash
+python code/reaggregate_g1v2.py \
+  --input results/g1/base_scores.jsonl \
+  --output results/g1v2/base_scores_reaggregated.jsonl
+
+python code/build_matched_pairs.py \
+  --input results/g1v2/base_scores_reaggregated.jsonl \
+  --pairs-output results/g1v2/matched_pairs.jsonl \
+  --eligible-output results/g1v2/eligible_wrong.jsonl \
+  --report-output results/g1v2/matching_report.json \
+  --require-k 10 \
+  --p-caliper 0.02 \
+  --high-quantile 0.70 \
+  --low-quantile 0.30 \
+  --discovery-fraction 0.70 \
+  --seed 20260821
+```
+
+Do **not** run G0 from these pairs yet. This only tests common support and dynamic range.
+
+## Reliability audit before G0
+
+If the zero-GPU reaggregation yields enough pairs, run a deterministic 20% audit subset under:
+
+1. primary prompt + `cyclic` balanced family A;
+2. primary prompt + `hashed_cyclic` balanced family B;
+3. alternate prompt + `cyclic`.
+
+For both family and prompt audits, predeclared pass criteria are:
 
 ```text
-base model       Qwen/Qwen2.5-1.5B-Instruct
-primary pool     MMLU-Pro exact-10-option test items
-G-1 scoring      8 shards in parallel
-matched pairs    target >= 600, minimum useful >= 300
-G0 cycles        10 (one semantic exposure/item/cycle)
-G0 discovery     70% of pairs
-G0 confirmation  30% of pairs, not inspected until recipe is frozen
-training         full-parameter SFT, bf16
-seeds            3 if resources allow; run different seeds on independent GPUs/nodes
+Spearman c_max       >= 0.70
+Spearman p(correct)  >= 0.90
+median semantic JS   <= 0.05
 ```
 
-A 1.5B full-parameter run fits easily on a single large-memory accelerator, so independent single-GPU jobs are preferable to slow cross-node distributed training.
+Exact top-wrong agreement is diagnostic only.
 
-## Four primary scientific outcomes
+The v2 scorer also records:
 
-| Pattern | Interpretation |
-|---|---|
-| higher wrong commitment → faster correction | **hypercorrection-like** plasticity after accessibility matching |
-| higher wrong commitment → slower correction | **entrenchment**: concentrated incorrect priors resist weight revision |
-| immediate advantage reverses later / old error returns more often | **fast uptake ≠ durable replacement** |
-| after matching accessibility, wrong commitment has reproducibly negligible effect | **accessibility dominance**: the apparent confidence effect is mostly explained by how reachable the target already was |
+```text
+mean_label_mass
+min_label_mass
+greedy_is_allowed_label_rate
+```
 
-The last outcome is only scientifically useful if an **equivalence-style null** replicates on locked confirmation / another setting. A single nonsignificant coefficient is not a result.
+so a sharp conditional A-J distribution is not silently treated as meaningful when the model is not actually using the answer-letter response channel.
 
-## Predeclared secondary patterns worth checking
+## Hard decision rule
 
-These are allowed because they are specified **before running G0**, not invented after a weak primary result.
+This is the **only** repair allowed for Topic 04.
 
-1. **Early-vs-late reversal**  
-   Compare cycle-1/2 gains with cycle-8/10 gains. A sign reversal suggests different mechanisms for initial uptake and consolidation.
+After G-1v2:
 
-2. **Accessibility × commitment interaction**  
-   Commitment may matter only when the correct answer is partially accessible. Test one continuous interaction; do not search arbitrary bins.
+- if `<200` matched pairs remain, **KILL Topic 04**;
+- if balanced-family or prompt reliability fails, **KILL Topic 04**;
+- if response-channel diagnostics show the label probabilities are not a valid answer distribution, **KILL / redesign as a new topic**;
+- if 1.5B is ambiguous, the already-predeclared `Qwen2.5-3B-Instruct` replication may be run once under the same v2 protocol;
+- do not move to 7B/14B, free response, hidden states, a new confidence metric, or a looser stability threshold as a rescue.
 
-3. **Old-error suppression vs correct-target growth**  
-   Learning the correct answer and suppressing the original misconception may be separable dynamics.
+Only after v2 measurement passes do we return to the already-implemented G0 correction experiment.
 
-4. **Domain heterogeneity**  
-   Only after the pooled primary test. A domain effect is interesting if it replicates across seeds and has a natural explanation; do not cherry-pick the best subject.
+## Why the underlying question remains worth one repair
 
-## What kills the topic
+Human hypercorrection research asks whether confidently held errors are easier to correct because feedback is surprising, or whether apparent confidence effects are actually driven by prior/partial knowledge.
 
-Kill or radically reinterpret if any of the following holds:
+The proposed AI experiment still offers a useful controlled decomposition:
 
-1. G-1 cannot produce a stable commitment measure after option-position controls.
-2. Fewer than ~300 matched pairs survive from the primary pool and no larger clean pool solves this without changing the measurement.
-3. Discovery suggests an effect but locked confirmation does not preserve the direction.
-4. The apparent effect disappears under the predeclared accessibility adjustment and an equivalence-style null replicates only weakly / inconsistently.
-5. The sign depends arbitrarily on prompt wording, label position, or a narrow learning-rate choice.
-6. A direct contemporaneous paper is found that already performs accessibility-matched **weight-level** correction curves and durability analysis.
+- correct-target accessibility;
+- concentration on a particular wrong hypothesis;
+- corrective-learning dynamics.
 
-## Novelty boundary
-
-Do not claim:
-
-- "LLMs can be confident";
-- "high-confidence LLM errors are sticky";
-- "SFT can overwrite knowledge";
-- "LLMs reproduce human hypercorrection."
-
-The intended contribution is narrower and more scientific:
-
-> **Separate access to the correct target from commitment to a particular wrong hypothesis, then ask how each variable shapes the time course and durability of corrective learning.**
+But that decomposition is only scientifically meaningful if the first two can be measured separately and reliably.
 
 ## Repository layout
 
@@ -198,11 +181,15 @@ The intended contribution is narrower and more scientific:
 ├── README.md
 ├── VALIDATION.md
 ├── SERVER_RUNBOOK.md
+├── MEASUREMENT_REPAIR.md
 ├── requirements.txt
+├── tests/
+│   └── test_g1v2_math.py
 └── code/
     ├── prepare_candidates.py
     ├── mcq_utils.py
     ├── score_mcq.py
+    ├── reaggregate_g1v2.py
     ├── merge_jsonl.py
     ├── audit_prompt_robustness.py
     ├── build_matched_pairs.py
@@ -211,5 +198,3 @@ The intended contribution is narrower and more scientific:
     ├── evaluate_checkpoints.py
     └── analyze_correction.py
 ```
-
-`SERVER_RUNBOOK.md` contains the exact end-to-end commands.
