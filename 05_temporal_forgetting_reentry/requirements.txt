@@ -1,0 +1,7 @@
+torch>=2.4
+transformers>=4.51
+datasets>=2.19
+vllm>=0.6.5
+numpy>=1.26
+sympy>=1.12
+pylatexenc>=2.10
