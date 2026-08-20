@@ -3,13 +3,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-NUM_EXAMPLES=${NUM_EXAMPLES:-1000}
+NUM_EXAMPLES=${NUM_EXAMPLES:-200}
 GPUS=${GPUS:-"0 1 2 3"}
 read -r -a GPU_IDS <<< "$GPUS"
 NUM_SHARDS=${#GPU_IDS[@]}
-OUT_ROOT=${OUT_ROOT:-artifacts/g0_midtruth}
+OUT_ROOT=${OUT_ROOT:-artifacts/preflight_midtruth}
 RAW="$OUT_ROOT/raw"
-PROBES="$OUT_ROOT/probes"
 
 rm -rf "$OUT_ROOT"
 mkdir -p "$RAW"
@@ -26,6 +25,7 @@ for IDX in "${!GPU_IDS[@]}"; do
     --block-length 32 \
     --temperature 0 \
     --prompt-style midtruth \
+    --surface-only \
     --output-dir "$RAW" \
     > "$RAW/shard_${IDX}.log" 2>&1 &
   pids+=("$!")
@@ -42,9 +42,8 @@ if (( status != 0 )); then
   exit 1
 fi
 
-python src/train_probes.py \
+python src/summarize_surface.py \
   --input-dir "$RAW" \
-  --output-dir "$PROBES" \
+  --output-dir "$OUT_ROOT" \
   --label-mode strict \
-  --min-class-count "${MIN_CLASS_COUNT:-30}" \
-  --bootstrap "${BOOTSTRAP:-500}"
+  --min-novel-class "${MIN_NOVEL_CLASS:-10}"
