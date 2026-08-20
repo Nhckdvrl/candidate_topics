@@ -1,263 +1,177 @@
-# DLM Trajectory Fate: Can Hidden States Predict Recovery and Overwrite Before They Happen?
+# DLM Trajectory Fate
 
-## Status
+**Question:** before a visible denoising transition happens, does a DLM hidden state contain information about whether the current answer will recover or be overwritten?
 
-Candidate topic. **Highest-priority pilot** because the phenomenon, probe setup, models, and code all already exist. The key test is whether hidden states contain information about the **future fate of the current denoising state**, not merely final correctness.
+## Why this is a candidate topic
 
----
+Two 2026 results leave a narrow adjacent gap:
 
-## 1. Background
+1. **Time Is a Feature** / `dLLM-MidTruth` shows that complete intermediate `x0` predictions can oscillate during denoising: an answer can become correct and later become wrong again.
+2. **Probing Functional Correctness in Diffusion Language Models** / `dlm-probing` shows that DLM hidden states increasingly predict **final** functional correctness.
 
-Diffusion Language Models (DLMs) expose an explicit denoising trajectory, which makes it possible to study how an answer evolves over generation time.
+The tempting next question is to replace the target `final correctness` with `future fate of the current state`.
 
-### Seed paper 1: temporal oscillation is real
+However, a naive version is confounded: if we label a currently-wrong state as “recoverable” whenever it later becomes correct, the probe can succeed simply by reading the already-known **final-correctness** signal. This repository therefore treats generic recover/overwrite probes as controls and makes the primary novelty test **final-outcome controlled**.
 
-**Time Is a Feature** (ICLR 2026) shows that intermediate DLM predictions can oscillate during denoising. A sample may become correct and later be overwritten, e.g.:
+## Primary scientific test
 
-`wrong -> correct -> wrong`
+At a fixed denoising step, condition on current surface correctness **and final outcome**.
 
-So current surface correctness is not monotonic. A correct intermediate answer is not necessarily stable, and an incorrect intermediate answer is not necessarily doomed.
+### Transient recovery
 
-Paper / project:
-- https://arxiv.org/abs/2508.09138
-- https://github.com/aim-uofa/dLLM-MidTruth
+Among trajectories that are **wrong now and wrong at the end**:
 
-### Seed paper 2: hidden states predict eventual correctness
+- positive: they become observably correct at least once later (`wrong -> correct -> wrong`);
+- negative: they never become observably correct later.
 
-**Probing Functional Correctness in Diffusion Language Models** (ACL 2026 SRW) probes DLM hidden states at multiple denoising steps and finds that they increasingly encode whether the **final output** will be correct.
+Can the current hidden state predict that future transient recovery?
 
-The paper uses a simple and reusable pipeline:
+### Transient overwrite
 
-- LLaDA-8B-Instruct / Dream-7B-Instruct;
-- hidden-state extraction at selected denoising steps;
-- mean pooling over generation regions;
-- PCA to 64 dimensions;
-- logistic regression;
-- AUC evaluation.
+Among trajectories that are **correct now and correct at the end**:
 
-Paper / code:
-- https://aclanthology.org/2026.acl-srw.15/
-- https://github.com/guan404ming/dllm-probing
+- positive: they become observably wrong at least once later (`correct -> wrong -> correct`);
+- negative: they remain observably correct.
 
-The missing neighboring question is:
+Can the current hidden state predict that future transient overwrite?
 
-> **Given the current surface state, does the hidden representation already encode what will happen to it next?**
+Because the final outcome is identical inside each comparison, success cannot be explained by merely reproducing the known final-correctness probe.
 
-This is a one-step rotation from **eventual correctness** to **trajectory fate**.
+## Important implementation choices
 
----
+- **Surface state = complete `x0` before token transfer.** This matches `dLLM-MidTruth` temporal voting. Decoding the partially committed `x` would measure a different process.
+- **No-answer-yet is not wrong.** Strict parsing stores an `observed` mask; a step without the requested `####` / `\\boxed{}` answer field is unavailable rather than incorrect.
+- **Deterministic denoising is the primary G0.** `temperature=0` removes future Gumbel randomness that is invisible to the current hidden state. The stochastic `dlm-probing` geometry is retained as a reference/robustness run.
+- **Same-step comparisons.** Pre-transition positives and negatives are compared at the same absolute denoising step, preventing a probe from exploiting the fact that diffusion time itself is encoded.
+- **Three controls per probe.** Current hidden state is compared with (i) observable uncertainty/progress features and (ii) the same layer at step 0, which controls static problem difficulty.
+- **Problem-level independence.** Fixed-step analyses contain one row per problem; no `(problem, step)` leakage is allowed.
 
-## 2. What we want to study
+## Fast falsification pipeline
 
-The main idea is to condition on the current surface correctness and ask about the future transition.
+The validation is deliberately staged so we do not spend an 8B hidden-state run before knowing that the required classes exist.
 
-### Case A: the current answer is wrong
+### G-1: surface census (200 GSM8K problems)
 
-Among states with `current_correct = 0`, distinguish:
+```bash
+cd 02_dlm_trajectory_fate
+NUM_EXAMPLES=200 ./run_surface_preflight_4gpu.sh
+```
 
-- **recoverable**: the trajectory later reaches a correct answer;
-- **doomed**: the trajectory never recovers, or ends incorrect.
+Primary geometry, chosen for speed and determinism:
 
-Question:
+```text
+model           GSAI-ML/LLaDA-8B-Instruct
+prompt          dLLM-MidTruth GSM8K format
+steps           64
+generation      128 tokens
+block length    32
+temperature     0
+GPUs            4 independent shards
+```
 
-> Among two states that are both wrong right now, can the hidden state tell which one will recover?
+This run stores no hidden states. It asks only whether strict surface trajectories contain enough `transient_recovery` / `transient_overwrite` examples to estimate a probe. Default gate: at least 10 examples in each class at some saved step in the 200-problem preflight.
 
-### Case B: the current answer is correct
+If the gate fails, **do not run the expensive hidden-state G0**. Inspect `surface_class_counts.csv` and either stop or switch geometry.
 
-Among states with `current_correct = 1`, distinguish:
+### G0: hidden-state pilot (1000 problems)
 
-- **stable-correct**: the answer remains correct;
-- **will-be-overwritten**: a later denoising step destroys the correct answer.
+```bash
+NUM_EXAMPLES=1000 ./run_pilot_4gpu.sh
+```
 
-Question:
+For selected steps and upper hidden-state tuple indices `24,25,28`, use the same basic probe family as the reference work:
 
-> Among two states that are both correct right now, can the hidden state tell which one is fragile and will later be overwritten?
+```text
+mean pooled hidden state
+-> StandardScaler
+-> PCA(max 64)
+-> LogisticRegression(C=1, lbfgs)
+-> out-of-fold AUC
+```
 
-This conditional design is important. A naive four-way classifier could cheat by mostly learning whether the current answer is correct or incorrect. We specifically want **future-fate information beyond current surface correctness**.
+Surface baseline:
 
----
+- mean masked-token entropy;
+- probability of the sampled/selected token;
+- clean maximum-token probability;
+- fraction unmasked;
+- prompt token length;
+- current answer availability/correctness.
 
-## 3. Exact measurements
+Initial-state control: the same hidden layer at denoising step 0 on the exact same problem subset.
 
-### 3.1 Hidden-state probe
+Uncertainty is reported with paired bootstrap confidence intervals over out-of-fold predictions.
 
-Follow the existing DLM probing pipeline as closely as possible.
+### G0 control: reproduce the seed measurement
 
-For denoising step `t`, layer `l`, and pooled generation region `r`, extract:
+Before interpreting a negative novelty result, the chosen geometry must reproduce the established **final-correctness** hidden signal. We require a later-step final-correctness probe with approximately:
 
-`h_t^(l,r)`
+```text
+AUC >= 0.65
+and AUC - step0-hidden AUC >= 0.03
+```
 
-Then use:
+If this does not happen in the fast MidTruth geometry, the result is **not** counted as evidence against the topic. Run:
 
-`hidden state -> PCA(64) -> standardization -> logistic regression`
+```bash
+NUM_EXAMPLES=1000 ./run_reference_geometry_4gpu.sh
+```
 
-Evaluate two conditional binary probes:
+which uses the public `dlm-probing`-style GSM8K geometry (`128` steps, `512` generated tokens, block `32`, temperature `0.2`, probing prompt).
 
-1. `AUC_recover(t,l)`: recoverable vs doomed among currently wrong states;
-2. `AUC_overwrite(t,l)`: stable-correct vs will-be-overwritten among currently correct states.
+### One-command staged run
 
-The split must be by **problem ID**, never by `(problem, denoising step)`, otherwise neighboring states from the same problem can leak between train and test.
+```bash
+./run_fast_validation_4gpu.sh
+```
 
-### 3.2 Lead time
+It runs the 200-example surface gate first and exits before the 1000-example hidden run when class support is inadequate.
 
-The strongest claim would not be merely that fate is readable at the moment of transition, but that it is readable **before the surface transition happens**.
+## Decision rule
 
-Let `t*` be the denoising step where recovery or overwrite becomes visible in the decoded answer. Define:
+The novelty claim is based on `transient_recovery` and `transient_overwrite`, not the easier generic recover/overwrite tasks.
 
-`lead_time = t* - t`
+Continue only if:
 
-Then plot predictive performance as a function of lead time:
+1. there is adequate final-controlled class support;
+2. the final-correctness reference probe is reproduced;
+3. at least one novel task is predictable **before** the visible transition (default minimum lead >= 4 steps);
+4. current hidden-state AUC is materially above both the surface baseline and step-0 hidden baseline.
 
-`AUC(lead_time)`
+Default strong-row gate:
 
-A useful signal tens of denoising steps before the transition would be much more interesting than a probe that only succeeds at `t*`.
+```text
+AUC >= 0.65
+95% bootstrap lower bound > 0.55
+AUC - surface baseline >= 0.03
+AUC - step0 hidden baseline >= 0.03
+lead >= 4 denoising steps
+```
 
-### 3.3 Surface baselines
+Stop if the signal exists only in generic recover/overwrite labels, only near/after the visible transition, disappears under final-outcome control, or is explained by surface uncertainty/static difficulty.
 
-The hidden-state probe must beat simple observable quantities such as:
+## Outputs
 
-- mean token entropy;
-- max probability / confidence;
-- probability of the current answer tokens;
-- fraction of unmasked tokens;
-- denoising step index;
-- simple prompt/task difficulty features.
+Surface preflight:
 
-The central question is whether the hidden state contains **extra trajectory-fate information**, not whether confidence correlates with future success.
+```text
+artifacts/preflight_midtruth/surface_class_counts.csv
+artifacts/preflight_midtruth/surface_summary.json
+```
 
----
+Full G0:
 
-## 4. Minimal validation experiment
+```text
+artifacts/g0_midtruth/probes/task_class_counts.csv
+artifacts/g0_midtruth/probes/step_layer_auc.csv
+artifacts/g0_midtruth/probes/pretransition_auc.csv
+artifacts/g0_midtruth/probes/decision.json
+artifacts/g0_midtruth/probes/fate_labels.npz
+```
 
-### Model
+## Reference code
 
-Start with **LLaDA-8B-Instruct** only.
+- Time Is a Feature / dLLM-MidTruth: https://github.com/aim-uofa/dLLM-MidTruth
+- Probing Functional Correctness in Diffusion Language Models / dlm-probing: https://github.com/guan404ming/dlm-probing
 
-Do not begin with multiple DLM families. The first goal is to falsify or support the core premise as cheaply as possible.
-
-### Dataset
-
-Use **1,000 GSM8K test problems**.
-
-This is not intended as a new benchmark. GSM8K is chosen because both seed lines already establish relevant DLM behavior on mathematical reasoning tasks.
-
-### Denoising setup
-
-Use 128 denoising steps.
-
-For the pilot, save intermediate outputs and hidden states at a denser subset than the original probing paper, for example:
-
-`0, 1, 2, 4, 8, 16, 24, 32, 48, 64, 80, 96, 112, 120, 124, 127`
-
-### Layers
-
-To reduce storage, begin with upper LLaDA layers where correctness information is already known to be strongest, e.g.:
-
-- layer 22
-- layer 25
-- layer 28
-
-### For every saved denoising step
-
-Record:
-
-1. current decoded answer;
-2. current correctness;
-3. final correctness;
-4. whether a future recovery occurs;
-5. whether a future overwrite occurs;
-6. entropy / confidence baselines;
-7. hidden-state features from the selected layers.
-
-From this, automatically construct four state categories:
-
-- wrong + recoverable;
-- wrong + doomed;
-- correct + stable;
-- correct + overwritten later.
-
-### Pilot outputs
-
-The minimum useful pilot should produce four plots:
-
-1. **Class counts over denoising time**
-   - are there enough recover / overwrite states to make the question statistically meaningful?
-2. **Recoverability AUC over denoising time**
-3. **Overwrite-risk AUC over denoising time**
-4. **AUC vs lead time**, compared with entropy/confidence baselines
-
----
-
-## 5. Decision rule
-
-### Strong positive result
-
-Continue if hidden states predict one or both trajectory-fate variables **before the corresponding surface transition**, and clearly outperform simple uncertainty baselines.
-
-The strongest case would look like:
-
-- the decoded answer is still wrong;
-- several denoising steps remain before recovery;
-- yet `P(recoverable | h_t)` is already high.
-
-Or:
-
-- the decoded answer is currently correct;
-- no visible corruption has happened yet;
-- yet the hidden state strongly predicts that the answer will later be overwritten.
-
-This would suggest that DLM trajectories contain a latent notion of **state fate / stability** that becomes readable before it is visible at the surface.
-
-### Partial positive result
-
-Still potentially interesting if only one direction is predictable:
-
-- recovery predictable, overwrite not predictable;
-- overwrite predictable, recovery not predictable.
-
-That asymmetry itself could reveal different mechanisms for correction and corruption.
-
-### Stop
-
-Stop if:
-
-- the probes only become predictive at or after the visible transition;
-- entropy/confidence explains essentially all predictive power;
-- the number of recover/overwrite examples is too small for stable estimation;
-- performance disappears under problem-level splits.
-
-Do not inflate a late, near-transition signal into a claim that the model "knows the future".
-
----
-
-## 6. If the pilot works
-
-Only after the basic representation result is established:
-
-1. replicate on Dream-7B-Instruct;
-2. extend to ARC / MATH / Countdown or other tasks already used by the seed work;
-3. test whether a trajectory-fate direction generalizes across tasks or models;
-4. optionally perform activation steering at intermediate denoising steps.
-
-A causal extension could ask whether steering toward a "recoverable" or "stable" direction actually changes:
-
-- probability of recovery;
-- probability of later overwrite;
-- final task correctness.
-
-That would move the story from **readable fate representation** to **causally relevant trajectory state**.
-
----
-
-## 7. Why this topic may matter
-
-DLMs are unusual because their intermediate answers can improve and deteriorate within one generation trajectory. Existing work separately establishes:
-
-- temporal answer oscillation at the surface;
-- hidden-state information about eventual correctness.
-
-The unanswered adjacent question is whether the model's internal state already distinguishes:
-
-> **"wrong but recoverable" from "wrong and doomed", and "correct and stable" from "correct but fragile".**
-
-This keeps the model, task, measurement paradigm, and denoising axis almost unchanged; the main novelty is the scientific variable being probed.
+See [`VALIDATION.md`](VALIDATION.md) for the audit, exact alignment with the reference implementations, known confounds, and validation gates.

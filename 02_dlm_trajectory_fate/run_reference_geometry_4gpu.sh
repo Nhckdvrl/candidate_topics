@@ -7,9 +7,10 @@ NUM_EXAMPLES=${NUM_EXAMPLES:-1000}
 GPUS=${GPUS:-"0 1 2 3"}
 read -r -a GPU_IDS <<< "$GPUS"
 NUM_SHARDS=${#GPU_IDS[@]}
-OUT_ROOT=${OUT_ROOT:-artifacts/g0_midtruth}
+OUT_ROOT=${OUT_ROOT:-artifacts/reference_probing_geometry}
 RAW="$OUT_ROOT/raw"
 PROBES="$OUT_ROOT/probes"
+CAPTURE=(0 1 2 4 8 16 24 32 48 64 80 96 112 120 124 127)
 
 rm -rf "$OUT_ROOT"
 mkdir -p "$RAW"
@@ -21,11 +22,12 @@ for IDX in "${!GPU_IDS[@]}"; do
     --num-examples "$NUM_EXAMPLES" \
     --num-shards "$NUM_SHARDS" \
     --shard-index "$IDX" \
-    --steps 64 \
-    --gen-length 128 \
+    --steps 128 \
+    --gen-length 512 \
     --block-length 32 \
-    --temperature 0 \
-    --prompt-style midtruth \
+    --temperature 0.2 \
+    --prompt-style probing \
+    --capture-steps "${CAPTURE[@]}" \
     --output-dir "$RAW" \
     > "$RAW/shard_${IDX}.log" 2>&1 &
   pids+=("$!")
