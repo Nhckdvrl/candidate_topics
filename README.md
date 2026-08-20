@@ -2,20 +2,24 @@
 
 This repository collects research-topic candidates in the **hypothesis / pilot** stage, together with archived negative results.
 
-The default workflow for each topic is:
+The current topic-selection rule is deliberately stricter than simple "paper + adjacent gap":
 
-1. identify a strong seed paper or established phenomenon;
-2. rotate only one adjacent variable;
-3. define a cheap falsification experiment;
-4. verify the measurement before spending compute;
-5. stop early if the core premise fails;
-6. only then expand into a full paper.
+1. start from a **natural scientific question** that is interesting before mentioning LLMs, DLMs, probes, or checkpoints;
+2. require a strong established phenomenon / empirical tension rather than betting that a new phenomenon exists;
+3. use modern AI systems only when they provide a uniquely clean experimental axis;
+4. check both recent literature collision and collision with our own archived/failed topics;
+5. define the cheapest experiment that can invalidate the proposed interpretation;
+6. freeze the primary measurement before broad search over models/layers/thresholds;
+7. reserve confirmation data whenever discovery involves tuning a measurement;
+8. stop early if the core claim fails; do not rescue it with post-hoc metric/model sweeps.
 
 ## Current candidates
 
-| Priority | Topic | Core question | First falsification test |
+| Priority | Topic | Natural question | First validation gate |
 | --- | --- | --- | --- |
-| 1 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
+| 1 | [Confidence and Error Correction](./04_confidence_error_correction/) | If two learners are equally far from the correct answer, does being strongly committed to one wrong answer make corrective learning easier or harder? | Before SFT, build >=300 high/low wrong-conviction pairs matched on base `p(correct)` under balanced option permutations. |
+| 2 | [Temporal Forgetting: Lost Skill or Lost Entry Point?](./05_temporal_forgetting_reentry/) | If a learner once solved a problem reliably but later fails, has the skill been lost or mainly become inaccessible? | Under repeated sampling, require >=50 robust forgotten MATH-500 items before any re-entry experiment; then compare old-self prefixes against matched correct/wrong and never-correct controls. |
+| 3 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
 
 ## Archived topics
 
