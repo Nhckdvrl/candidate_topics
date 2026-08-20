@@ -1,0 +1,22 @@
+{
+  "final_accuracy_all": 0.635,
+  "final_accuracy_among_observed": 0.7016574585635359,
+  "final_answer_observed_rate": 0.905,
+  "label_mode": "strict",
+  "max_novel_min_class_support": 29,
+  "metadata": {
+    "block_length": 32,
+    "gen_length": 128,
+    "model": "GSAI-ML/LLaDA-8B-Instruct",
+    "n_regions": 1,
+    "num_examples": 200,
+    "num_shards": 4,
+    "prompt_style": "midtruth",
+    "seed": 0,
+    "steps": 64,
+    "surface_only": true,
+    "temperature": 0.0
+  },
+  "min_novel_class_gate": 10,
+  "status": "GO_HIDDEN_G0"
+}
