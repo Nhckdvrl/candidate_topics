@@ -39,9 +39,15 @@ def _replace_query_target(question: str, old_target: str, replacement: str) -> s
     raise ValueError(f"Could not replace query target {old_target!r} in question: {question}")
 
 
-def mask_query_target(question: str, target: str) -> str:
-    """Remove only the query target identity while preserving every graph equation."""
-    return _replace_query_target(question, target, "the requested variable")
+def mask_query_target(question: str, target: str, control_target: str) -> str:
+    """Replace the true query target with an unused single-letter placeholder.
+
+    `control_target` is guaranteed by data preparation not to appear as a graph variable.
+    This removes target identity while keeping the query surface form close to the original.
+    """
+    if not re.fullmatch(r"[a-z]", control_target):
+        raise ValueError(f"control_target must be one lowercase letter, got {control_target!r}")
+    return _replace_query_target(question, target, control_target)
 
 
 def flip_query_target(question: str, target: str, alternative_target: str) -> str:
