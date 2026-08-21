@@ -22,14 +22,14 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 | Priority | Topic | Natural question | Current gate |
 | --- | --- | --- | --- |
-| 1 | [When Does Helplessness Become a Worldview?](./06_helplessness_worldview/) | When repeated experience says actions do not matter, what makes that belief stay local versus generalize across situations? | In a locked 2×2 master–yoked pilot, uncontrollability must transfer to novel-test step 1, and distributed uncontrollability must amplify that transfer beyond generic task-diversity effects. |
-| 2 | [Old Blocks New, or New Erases Old?](./07_memory_interference_architecture/) | When old and new memories conflict, what determines whether old information blocks the new association or new information overwrites the old one? | On one matched 1.3B/100B pretraining family, the shared-stream PI/RI measurement must first reproduce PI > RI in the Transformer and then show a preregistered Transformer–GatedDeltaNet asymmetry gap that survives locked confirmation; otherwise stop rather than add mechanisms. |
-| 3 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
+| 1 | [Old Blocks New, or New Erases Old?](./07_memory_interference_architecture/) | When old and new memories conflict, what determines whether old information blocks the new association or new information overwrites the old one? | On one matched 1.3B/100B pretraining family, the shared-stream PI/RI measurement must first reproduce PI > RI in the Transformer and then show a preregistered Transformer–GatedDeltaNet asymmetry gap that survives locked confirmation; otherwise stop rather than add mechanisms. |
+| 2 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
 
 ## Archived topics
 
 | Topic | Final decision | Why it was stopped | Summary |
 | --- | --- | --- | --- |
+| [06 — When Does Helplessness Become a Worldview?](./06_helplessness_worldview/) | **ARCHIVED / KILLED AT ACQUISITION PREMISE** | Qwen3-8B showed almost no controllability acquisition or transfer. One preregistered Qwen3-32B v2 removed the action ceiling and still produced only +2–5pp late-training C/U separation, with no predicted diversity amplification (`D=-4.17pp`). The higher-order natural question remains unresolved because the chosen LLM agent never robustly instantiated the prerequisite learned-uncontrollability state. | [Archive summary](./06_helplessness_worldview/ARCHIVE_SUMMARY.md) |
 | [01 — Behavior vs. Representation Stabilization](./01_behavior_vs_representation_stabilization/) | **ARCHIVED / KILLED** | Behavioral KL stabilized as expected, but matched residual representation movement stabilized at least as fast; no temporal decoupling survived robustness checks. | [Archive summary](./01_behavior_vs_representation_stabilization/ARCHIVE_SUMMARY.md) |
 | [02 — DLM Trajectory Fate](./02_dlm_trajectory_fate/) | **ARCHIVED / FALSIFIED AS A BROAD CLAIM** | Exploratory signal did not survive preregistered independent GSM1K confirmation, while the positive control remained strong. | [Archive summary](./02_dlm_trajectory_fate/ARCHIVE_SUMMARY.md) |
 | [04 — Confidence and Error Correction](./04_confidence_error_correction/) | **ARCHIVED / KILLED AT MEASUREMENT / IDENTIFICATION GATE** | G-1v1 produced 61 clean matched pairs. One locked log-space measurement repair restored the commitment range but still yielded only 130 pairs, below the predeclared `<200` hard stop. No corrective SFT was run, so the correction hypothesis itself remains untested. | [Archive summary](./04_confidence_error_correction/ARCHIVE_SUMMARY.md) |
@@ -45,6 +45,7 @@ The archive reason should be interpreted precisely:
 - **Topic 02** failed locked independent confirmation of its proposed new claim.
 - **Topic 04** failed before hypothesis testing because the required clean comparison could not be identified at sufficient scale.
 - **Topic 05** was stopped even earlier at the conceptual-identification level: the proposed intervention could not distinguish retained competence from task simplification / conditional continuation, so continuing to sample would not resolve the scientific question.
+- **Topic 06** failed at the prerequisite-acquisition layer: two increasingly capable but locked tests did not produce a strong learned controllability/uncontrollability separation, so the proposed higher-order generalization question was not cleanly instantiated in the chosen AI system.
 
 The main methodological lesson from Topic 05 is important enough to make explicit:
 
@@ -53,5 +54,9 @@ The main methodological lesson from Topic 05 is important enough to make explici
 A second practical lesson is the complexity smell:
 
 > **If the gate and kill line get longer every time the question is clarified, that is evidence to revisit the question itself. Good controls make a clear question rigorous; they should not be responsible for making an unclear construct exist.**
+
+Topic 06 adds a complementary prerequisite lesson:
+
+> **Before studying when a learned phenomenon transfers, abstracts, or generalizes, first verify that the chosen learner robustly acquires the base phenomenon. A strong human/cognitive literature does not guarantee that a vanilla AI system instantiates the same state.**
 
 A failed topic should not be revived by post-hoc metric/layer/model/control sweeps unless a genuinely new external observation changes the scientific premise and motivates a newly registered question or identification strategy.
