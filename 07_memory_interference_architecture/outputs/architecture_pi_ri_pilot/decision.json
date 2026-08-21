@@ -1,0 +1,14 @@
+{
+  "decision": "INCONCLUSIVE_DO_NOT_TUNE",
+  "reason": "effect is neither a clean GO nor a clean KILL; do not change metric/prompt/model roster post hoc",
+  "transformer_mean_I": 0.15625,
+  "gated_deltanet_mean_I": 0.08333333333333333,
+  "transformer_minus_gated_deltanet": {
+    "estimate": 0.07291666666666667,
+    "lo": -0.031249999999999986,
+    "hi": 0.17708333333333331,
+    "n": 96
+  },
+  "sign_flip_levels": 0,
+  "skip_rate": 0.0
+}

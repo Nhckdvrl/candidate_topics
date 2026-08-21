@@ -1,0 +1,66 @@
+[
+  {
+    "model": "deltanet_1.3b",
+    "condition": "RI",
+    "n": 96,
+    "mean_target_token_count": 2.7708333333333335,
+    "max_boundary_shift": 0,
+    "max_prompt_tokens": 961
+  },
+  {
+    "model": "deltanet_1.3b",
+    "condition": "PI",
+    "n": 96,
+    "mean_target_token_count": 2.7708333333333335,
+    "max_boundary_shift": 0,
+    "max_prompt_tokens": 964
+  },
+  {
+    "model": "gated_deltanet_1.3b",
+    "condition": "RI",
+    "n": 96,
+    "mean_target_token_count": 2.7708333333333335,
+    "max_boundary_shift": 0,
+    "max_prompt_tokens": 961
+  },
+  {
+    "model": "gated_deltanet_1.3b",
+    "condition": "PI",
+    "n": 96,
+    "mean_target_token_count": 2.7708333333333335,
+    "max_boundary_shift": 0,
+    "max_prompt_tokens": 964
+  },
+  {
+    "model": "gla_1.3b",
+    "condition": "RI",
+    "n": 96,
+    "mean_target_token_count": 2.7708333333333335,
+    "max_boundary_shift": 0,
+    "max_prompt_tokens": 961
+  },
+  {
+    "model": "gla_1.3b",
+    "condition": "PI",
+    "n": 96,
+    "mean_target_token_count": 2.7708333333333335,
+    "max_boundary_shift": 0,
+    "max_prompt_tokens": 964
+  },
+  {
+    "model": "transformer_1.3b",
+    "condition": "RI",
+    "n": 96,
+    "mean_target_token_count": 2.7708333333333335,
+    "max_boundary_shift": 0,
+    "max_prompt_tokens": 961
+  },
+  {
+    "model": "transformer_1.3b",
+    "condition": "PI",
+    "n": 96,
+    "mean_target_token_count": 2.7708333333333335,
+    "max_boundary_shift": 0,
+    "max_prompt_tokens": 964
+  }
+]

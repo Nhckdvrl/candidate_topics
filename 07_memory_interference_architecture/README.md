@@ -1,6 +1,6 @@
 # 07 — Old Blocks New, or New Erases Old?
 
-**Status:** registered candidate / cheap architecture pilot ready to run  
+**Status:** archived / inconclusive discovery pilot
 **Primary question:** does the memory-update rule of a sequence model systematically change whether conflicting associations produce more **proactive interference (PI)** or **retroactive interference (RI)**?
 
 ## Natural question
@@ -218,3 +218,14 @@ A positive result in the matched M-A-P family would support:
 It would **not yet prove** that a particular learned gate internally “represents forgetting,” nor that recurrent memory is human-like, nor that all Transformers are primacy-biased and all writable memories are recency-biased.
 
 If the effect survives locked confirmation, follow-up can add GDN2 or a controlled update-rule interpolation. If it fails, the topic should be archived rather than rescued with a mechanistic search.
+
+## Final discovery status
+
+The frozen discovery pilot completed with 192 rows per architecture, zero skipped rows, zero duplicate rows, and complete pairing across all 192 episode/query/level/condition cells. The Transformer reproduced positive mean PI>RI asymmetry (`mean I = 0.1563`), but the primary Transformer–GatedDeltaNet contrast was:
+
+```text
+Delta_I = 0.0729
+paired bootstrap 95% CI = [-0.0313, 0.1771]
+```
+
+This is **INCONCLUSIVE**, not falsification: the gap did not reach the preregistered `Delta_I >= 0.10` with CI lower bound above zero, and it was not practically small enough for the preregistered kill threshold `abs(Delta_I) < 0.05`. Locked confirmation was therefore not run, and no post-hoc tuning is authorized.

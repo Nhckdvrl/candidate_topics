@@ -22,7 +22,6 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 | Priority | Topic | Natural question | Current gate |
 | --- | --- | --- | --- |
-| 1 | [Old Blocks New, or New Erases Old?](./07_memory_interference_architecture/) | When old and new memories conflict, what determines whether old information blocks the new association or new information overwrites the old one? | On one matched 1.3B/100B pretraining family, the shared-stream PI/RI measurement must first reproduce PI > RI in the Transformer and then show a preregistered Transformer–GatedDeltaNet asymmetry gap that survives locked confirmation; otherwise stop rather than add mechanisms. |
 | 2 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
 
 ## Archived topics
@@ -34,6 +33,7 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 | [02 — DLM Trajectory Fate](./02_dlm_trajectory_fate/) | **ARCHIVED / FALSIFIED AS A BROAD CLAIM** | Exploratory signal did not survive preregistered independent GSM1K confirmation, while the positive control remained strong. | [Archive summary](./02_dlm_trajectory_fate/ARCHIVE_SUMMARY.md) |
 | [04 — Confidence and Error Correction](./04_confidence_error_correction/) | **ARCHIVED / KILLED AT MEASUREMENT / IDENTIFICATION GATE** | G-1v1 produced 61 clean matched pairs. One locked log-space measurement repair restored the commitment range but still yielded only 130 pairs, below the predeclared `<200` hard stop. No corrective SFT was run, so the correction hypothesis itself remains untested. | [Archive summary](./04_confidence_error_correction/ARCHIVE_SUMMARY.md) |
 | [05 — Temporal Forgetting: Lost Skill or Lost Entry Point?](./05_temporal_forgetting_reentry/) | **ARCHIVED / CONCEPTUAL IDENTIFICATION FAILURE** | Prefix-based rescue changes the task condition and cannot identify whether uncued old competence is still retained; `old route` is not a stable observable, and teacher-forced NLL is conditional on the same cue. The run stopped during partial sampling before scoring or any hypothesis-level gate, so no empirical conclusion is reported. | [Archive summary](./05_temporal_forgetting_reentry/ARCHIVE_SUMMARY.md) |
+| [07 — Old Blocks New, or New Erases Old?](./07_memory_interference_architecture/) | **ARCHIVED / INCONCLUSIVE** | The Transformer reproduced positive mean PI>RI asymmetry, but the preregistered Transformer–GatedDeltaNet gap was `ΔI=0.0729` with paired bootstrap 95% CI `[-0.0313, 0.1771]`; it did not reach the `0.10` positive gate or the `<0.05` kill threshold. No locked confirmation was authorized. This is inconclusive, not falsification. | [Archive summary](./07_memory_interference_architecture/ARCHIVE_SUMMARY.md) |
 
 ## What the archived topics are for
 

@@ -1,0 +1,55 @@
+{
+  "run_name": "architecture_pi_ri_pilot",
+  "output_root": "outputs",
+  "data_file": "data/dict_category_double-word_46-400_v1-1.json",
+  "seed": 20260821,
+  "num_keys": 8,
+  "num_updates": [
+    1,
+    3,
+    7,
+    15
+  ],
+  "episodes_per_level": 6,
+  "queries_per_episode": 4,
+  "candidate_batch_size": 16,
+  "candidate_metric": "mean_logprob",
+  "max_boundary_shift": 0,
+  "context_safety_margin": 64,
+  "require_shared_tokenizer": true,
+  "resume": false,
+  "models": [
+    {
+      "name": "transformer_1.3b",
+      "architecture": "softmax_transformer",
+      "model_id": "m-a-p/transformer_1.3B_baseline",
+      "backend": "hf",
+      "requires_fla": true,
+      "dtype": "bf16"
+    },
+    {
+      "name": "gla_1.3b",
+      "architecture": "gated_linear_attention",
+      "model_id": "m-a-p/1.3B-100B-GLA-pure",
+      "backend": "hf",
+      "requires_fla": true,
+      "dtype": "bf16"
+    },
+    {
+      "name": "deltanet_1.3b",
+      "architecture": "delta_rule",
+      "model_id": "m-a-p/1.3B-100B-DeltaNet-pure",
+      "backend": "hf",
+      "requires_fla": true,
+      "dtype": "bf16"
+    },
+    {
+      "name": "gated_deltanet_1.3b",
+      "architecture": "gated_delta_rule",
+      "model_id": "m-a-p/1.3B-100B-GatedDeltaNet-pure",
+      "backend": "hf",
+      "requires_fla": true,
+      "dtype": "bf16"
+    }
+  ]
+}

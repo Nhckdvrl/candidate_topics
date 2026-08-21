@@ -1,0 +1,11 @@
+{
+  "counts": {
+    "transformer": 192,
+    "gla": 192,
+    "deltanet": 192,
+    "gated_deltanet": 192
+  },
+  "total_rows": 768,
+  "duplicate_rows": 0,
+  "paired_cells": 192
+}
