@@ -7,6 +7,7 @@ set -euo pipefail
 
 N="${N:-8}"
 MAX_TOKENS="${MAX_TOKENS:-8192}"
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-16384}"
 NUM_SHARDS="${NUM_SHARDS:-4}"
 SHARD_OFFSET="${SHARD_OFFSET:-0}"
 
@@ -20,6 +21,7 @@ for gpu in 0 1 2 3; do
     --output "$OUTDIR/shard_${shard_index}.jsonl" \
     --n "$N" \
     --max-tokens "$MAX_TOKENS" \
+    --max-model-len "$MAX_MODEL_LEN" \
     --num-shards "$NUM_SHARDS" \
     --shard-index "$shard_index" \
     > "$OUTDIR/shard_${shard_index}.log" 2>&1 &

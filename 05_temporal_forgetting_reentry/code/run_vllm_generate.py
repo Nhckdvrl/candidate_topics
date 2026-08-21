@@ -26,8 +26,9 @@ def main() -> None:
     ap.add_argument("--temperature", type=float, default=0.6)
     ap.add_argument("--top-p", type=float, default=0.95)
     ap.add_argument("--max-tokens", type=int, default=8192)
+    ap.add_argument("--max-model-len", type=int, default=16384)
     ap.add_argument("--tensor-parallel-size", type=int, default=1)
-    ap.add_argument("--gpu-memory-utilization", type=float, default=0.90)
+    ap.add_argument("--gpu-memory-utilization", type=float, default=0.70)
     ap.add_argument("--shard-index", type=int, default=0)
     ap.add_argument("--num-shards", type=int, default=1)
     ap.add_argument("--seed", type=int, default=12345)
@@ -57,6 +58,7 @@ def main() -> None:
         trust_remote_code=True,
         gpu_memory_utilization=args.gpu_memory_utilization,
         dtype="bfloat16",
+        max_model_len=args.max_model_len,
     )
     tok = llm.get_tokenizer()
     prompts = []
