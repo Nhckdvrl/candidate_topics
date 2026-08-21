@@ -21,7 +21,9 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 ## Current candidates
 
-No active candidate is currently promoted from the frozen pilot stage.
+| Priority | Topic | Natural question | Current gate |
+| --- | --- | --- | --- |
+| 1 | [Generative Policy Diversity Has Task Geometry](./08_generative_policy_task_geometry/) | When a generative robot policy produces diverse actions from the same state, does that diversity reflect task uncertainty or goal-equivalent redundancy? | Establish whether similar scalar action entropy can correspond to different actual task-outcome dispersion, then test whether task-sensitive vs task-null geometry explains the difference. |
 
 ## Archived topics
 
