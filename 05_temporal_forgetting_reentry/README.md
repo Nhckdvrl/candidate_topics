@@ -10,6 +10,7 @@ See:
 
 - [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md) — final project summary, failure analysis, and lessons;
 - [`VALIDATION_FAILURE.md`](./VALIDATION_FAILURE.md) — contemporaneous stop record from the partial server run;
+- [`../FAILURES_AND_LESSONS.md`](../FAILURES_AND_LESSONS.md) — cross-topic failure taxonomy and reusable topic-selection lessons;
 - [`VALIDATION.md`](./VALIDATION.md) — historical preregistered validation design;
 - [`RUNBOOK.md`](./RUNBOOK.md) and [`SERVER_AGENT_PROMPT.md`](./SERVER_AGENT_PROMPT.md) — historical execution plan;
 - `code/`, `scripts/`, and `tests/` — preserved reusable infrastructure.
