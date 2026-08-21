@@ -22,6 +22,7 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 | Priority | Topic | Natural question | Current gate |
 | --- | --- | --- | --- |
+| 1 | [When Does Uncontrollability Generalize?](./06_uncontrollability_generalization/) | With the same amount of uncontrollable experience, does spreading it across many unrelated contexts make passivity transfer more strongly to a novel controllable task than concentrating it in one context? | Run the yoked 2x2 behavioral pilot: first establish local controllability sensitivity, then cross-task transfer, then the frozen first-action diversity interaction. |
 | 3 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
 
 ## Archived topics
