@@ -101,14 +101,19 @@ def summarize(rows: Sequence[Mapping]) -> List[Dict]:
 def bootstrap_model_gap(
     rows: Sequence[Mapping], model_a: str, model_b: str, *, n_boot: int = 2000, seed: int = 0
 ) -> Dict[str, float]:
-    """Paired episode/query bootstrap of mean-level asymmetry difference when cells align."""
+    """Paired, level-stratified bootstrap of the mean-level asymmetry gap.
+
+    The primary estimand gives each frozen interference level equal weight. Bootstrap
+    resampling therefore occurs within level, preserving that weighting instead of
+    letting random resamples over/under-represent a level.
+    """
 
     def keyed(model: str):
         out = defaultdict(dict)
         for r in rows:
             if r["model"] != model or r.get("skipped", False):
                 continue
-            key = (r["episode_id"], r["query_key"], r["num_updates"])
+            key = (r["episode_id"], r["query_key"], int(r["num_updates"]))
             out[key][r["condition"]] = int(bool(r["correct"]))
         return {k: v for k, v in out.items() if "RI" in v and "PI" in v}
 
@@ -117,21 +122,26 @@ def bootstrap_model_gap(
     if not common:
         return {"estimate": float("nan"), "lo": float("nan"), "hi": float("nan"), "n": 0}
 
-    def estimate(keys):
-        by_level_a, by_level_b = defaultdict(list), defaultdict(list)
-        for k in keys:
-            n = k[2]
-            by_level_a[n].append(a[k]["RI"] - a[k]["PI"])
-            by_level_b[n].append(b[k]["RI"] - b[k]["PI"])
-        ia = np.mean([np.mean(v) for _, v in sorted(by_level_a.items())])
-        ib = np.mean([np.mean(v) for _, v in sorted(by_level_b.items())])
-        return float(ia - ib)
+    by_level = defaultdict(list)
+    for key in common:
+        by_level[key[2]].append(key)
 
-    point = estimate(common)
+    def estimate(level_samples):
+        level_gaps = []
+        for _, keys in sorted(level_samples.items()):
+            a_i = np.mean([a[k]["RI"] - a[k]["PI"] for k in keys])
+            b_i = np.mean([b[k]["RI"] - b[k]["PI"] for k in keys])
+            level_gaps.append(a_i - b_i)
+        return float(np.mean(level_gaps))
+
+    point = estimate(by_level)
     rng = random.Random(seed)
     boots = []
     for _ in range(n_boot):
-        sample = [common[rng.randrange(len(common))] for _ in common]
-        boots.append(estimate(sample))
+        sampled = {
+            level: [keys[rng.randrange(len(keys))] for _ in keys]
+            for level, keys in by_level.items()
+        }
+        boots.append(estimate(sampled))
     lo, hi = np.percentile(boots, [2.5, 97.5])
     return {"estimate": point, "lo": float(lo), "hi": float(hi), "n": len(common)}
