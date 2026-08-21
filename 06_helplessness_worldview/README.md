@@ -1,6 +1,8 @@
 # 06 — When Does Helplessness Become a Worldview?
 
-**Status:** active candidate / falsification-first pilot
+**Status:** **ARCHIVED / KILLED AT ACQUISITION PREMISE**
+
+> Final record: [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md). The Qwen3-8B v1 pilot failed to produce meaningful controllability acquisition/transfer. One preregistered v2 with Qwen3-32B non-thinking inference and a decision-theoretically better-calibrated intervention cost again produced only weak controllability acquisition (`+2.08pp` concentrated, `+4.69pp` distributed late-active separation) and no predicted diversity amplification (`D=-4.17pp`). Do not continue with larger pilots, model sweeps, probes, memories, or further reward/environment redesign.
 
 ## Natural question
 
@@ -31,9 +33,11 @@ We found adjacent but non-colliding work:
 - A 2026 UCLA dissertation reports a behavioral "learned helplessness" analogue in in-context reinforcement learning and proposes yoked controls for future variability experiments; it does not test the present cross-context diversity hypothesis.
 - Agentic-AI "controllability" papers in 2026 mostly study whether humans or harnesses can control AI systems, which is the inverse direction of the present question.
 
-The surviving contribution is therefore narrow and testable:
+The surviving contribution was therefore narrow and testable:
 
 > **Does contextual diversity determine how broadly an LLM agent generalizes learned uncontrollability?**
+
+The archived result is that the chosen ordinary interaction-history LLM-agent setup did not first acquire the controllability distinction strongly enough to support this higher-order question.
 
 ## Core design: 2 × 2 master–yoked experiment
 
@@ -94,19 +98,19 @@ The main quantity is the difference-in-differences:
 D = H_distributed - H_concentrated
 ```
 
-The hypothesis predicts `D > 0`: diversity amplifies cross-task transfer of uncontrollability.
+The hypothesis predicted `D > 0`: diversity amplifies cross-task transfer of uncontrollability.
 
 Secondary outcomes are first-K intervention rate, time to first intervention, discovery of the effective action, and recovery after positive evidence. They cannot replace a failed primary endpoint.
 
 ## Environment
 
-The pilot deliberately uses a small Bernoulli causal environment rather than copying the full continuous Hew & Bramley browser task. Each episode has two active interventions and one wait action. In controllable training, one intervention succeeds with probability `.85`; the other intervention and waiting succeed with probability `.15`. The effective intervention is randomized by episode. Active intervention costs one point; success earns ten.
+The pilot deliberately uses a small Bernoulli causal environment rather than copying the full continuous Hew & Bramley browser task. Each episode has two active interventions and one wait action. In controllable training, one intervention succeeds with probability `.85`; the other intervention and waiting succeed with probability `.15`. The effective intervention is randomized by episode. The original v1 active intervention cost was one point and success earned ten; the final preregistered v2 changed only the active cost to two to remove the obvious test-step ceiling.
 
 The novel test is slightly cleaner (`.90/.10/.10`) to ensure a genuinely controllable environment.
 
-This simple environment is intentional: the first goal is to determine whether the phenomenon exists. If the effect survives, the follow-up should port the same 2×2/yoked logic into the richer continuous causal environment of Hew & Bramley rather than adding complexity to the pilot.
+## Historical run instructions
 
-## Run
+The runnable infrastructure is retained for forensic/reuse purposes, but **Topic 06 should not be rerun to search for a positive result**.
 
 Install:
 
@@ -120,7 +124,7 @@ Smoke test (no model required):
 ./run_smoke.sh
 ```
 
-A vLLM/SGLang/OpenAI-compatible endpoint:
+Historical v1 pilot example:
 
 ```bash
 BASE_URL=http://localhost:8000 \
@@ -130,25 +134,21 @@ CONCURRENCY=32 \
 ./run_pilot.sh
 ```
 
-`PAIRS=50` means 50 master/yoked pairs for concentrated and 50 for distributed: 200 sessions total. The default full pilot uses 100 training interactions + 8 test interactions per session. `src.runner --preflight` reduces training to 40 interactions for a cheaper pipeline/model sanity check.
+The final v2 commands and frozen protocol are preserved in [`V2_PROTOCOL.md`](./V2_PROTOCOL.md), [`V2_DECISION.md`](./V2_DECISION.md), and `logs/commands.txt`.
 
-Outputs:
+## Final decision
 
-```text
-results/pilot.jsonl
-results/pilot.jsonl.meta.json
-results/pilot_summary.json
-```
+The original locked rule already stopped v1 when pooled novel-task transfer was only `1pp`. A final preregistered v2 addressed the two strongest independent concerns from v1 — learner scale and action-utility ceiling — but still failed to produce a strong prerequisite controllability acquisition effect and produced `D=-4.17pp` rather than the predicted positive diversity amplification.
 
-## Decision rule
+Accordingly:
 
-Read [`VALIDATION.md`](./VALIDATION.md) before interpreting results. In short:
+1. **do not run S2 or 250-pair confirmation for v2**;
+2. **do not sweep larger models or temperatures**;
+3. **do not add self-reports, hidden-state probes, memory summaries, or same-family rescue tests**;
+4. **do not keep tuning reward/cost or redesigning the environment to make the phenomenon appear**;
+5. treat the natural psychological question as unresolved, while treating this AI candidate as closed.
 
-1. **technical stop** if test invalid-action rate exceeds 1%;
-2. **stop/downgrade** if pooled uncontrollability transfer on novel-test step 1 is <2 percentage points with adequate precision;
-3. classify a transfer-without-diversity result as a boundary result rather than forcing the worldview story;
-4. continue to locked confirmation when the diversity amplification is practically meaningful (pilot target: ≥5pp) and directionally stable;
-5. never rescue a failed primary result by switching to self-reports, hidden states, prompt summaries, selected task families, or post-hoc thresholds.
+See [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md) for the full failure analysis and reusable lessons.
 
 ## References
 
