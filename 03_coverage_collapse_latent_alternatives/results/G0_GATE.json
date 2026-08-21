@@ -1,0 +1,23 @@
+{
+  "run_id": "g0_flashinfer2_20260821_233956",
+  "status": "stop_or_redesign",
+  "reference_tag": "e04",
+  "late_tag": "e16",
+  "pass_at_half_drop_ref_minus_late": -0.05067171717171717,
+  "pass_at_half_drop_ci95": [-0.08800518648018649, -0.012899145299145284],
+  "branch_entropy_drop_ref_minus_late": 0.0,
+  "branch_entropy_drop_ci95": [0.0, 0.0],
+  "reference_parse_rate": 1.0,
+  "late_parse_rate": 1.0,
+  "thresholds": {
+    "min_pass_drop": 0.03,
+    "min_entropy_drop": 0.05,
+    "min_parse_rate": 0.9
+  },
+  "reasons": [
+    "coverage drop is not positive under paired bootstrap",
+    "coverage drop -0.0507 is below minimum practical effect 0.0300",
+    "first-fork entropy does not reliably decrease",
+    "entropy drop 0.0000 is below minimum practical effect 0.0500"
+  ]
+}

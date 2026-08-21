@@ -4,7 +4,7 @@ set -euo pipefail
 UPSTREAM=${UPSTREAM:-external/reasoning_forks}
 RUN_REL=${RUN_REL:-runs/topic03_paper_exact/qwen2.5_0.5b_sft_arithchain_2_10_forward_lr2e-5_bs32_ga1}
 RUN_ROOT="$UPSTREAM/$RUN_REL"
-RUN_ID=${RUN_ID:-$(cat artifacts/behavior/latest_run.txt 2>/dev/null || true)}
+RUN_ID=${RUN_ID:-$(cat artifacts/behavior/latest_g0_run.txt 2>/dev/null || true)}
 [[ -n "$RUN_ID" ]] || { echo "Run G0 first or set RUN_ID" >&2; exit 1; }
 
 REF_TAG=${REF_TAG:-$(python - "artifacts/behavior/$RUN_ID/gate.json" <<'PY'

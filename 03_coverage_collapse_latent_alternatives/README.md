@@ -1,5 +1,7 @@
 # Coverage Collapse vs. Latent Viability of Suppressed Branches
 
+The completed paper-exact G0-A run is documented in [G0_RESULTS.md](G0_RESULTS.md). It returned `stop_or_redesign`, so the protocol correctly did not run G0-B latent probing.
+
 ## Status
 
 **Candidate topic — falsification-first G0 implemented.**

@@ -1,0 +1,5 @@
+checkpoint,problems,parse_rate,mean_p_viable_first,mean_p_viable_given_candidate,mean_first_branch_entropy,pass_at_1,pass_at_8,pass_at_16
+e01,200,1.0,1.0,1.0,0.0,0.293125,0.540629,0.680
+e02,200,1.0,1.0,1.0,0.0,0.240313,0.776306,0.915
+e04,200,1.0,1.0,1.0,0.0,0.298750,0.850402,0.965
+e16,200,1.0,1.0,1.0,0.0,0.350313,0.901074,0.965
