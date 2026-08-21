@@ -3,22 +3,22 @@ set -euo pipefail
 
 UPSTREAM=${UPSTREAM:-external/reasoning_forks}
 RUN_REL=${RUN_REL:-runs/topic03_paper_exact/qwen2.5_0.5b_sft_arithchain_2_10_forward_lr2e-5_bs32_ga1}
+GPU_CSV=${GPUS:-0,1,2,3}
 export UPSTREAM RUN_REL
 
-[[ -f artifacts/forks.jsonl ]] || ./prepare_upstream.sh
+[[ -f artifacts/forks.jsonl ]] || bash ./prepare_upstream.sh
 
 if [[ ! -d "$UPSTREAM/$RUN_REL/checkpoint-3200" ]]; then
-  TRAIN_GPU=${TRAIN_GPU:-${GPUS%%,*}}
-  TRAIN_GPU=${TRAIN_GPU:-0}
+  TRAIN_GPU=${TRAIN_GPU:-${GPU_CSV%%,*}}
   echo "Paper-exact SFT trajectory missing; training on GPU $TRAIN_GPU."
-  TRAIN_GPU="$TRAIN_GPU" ./run_train_paper_exact.sh
+  TRAIN_GPU="$TRAIN_GPU" bash ./run_train_paper_exact.sh
 fi
 
 if [[ "${RUN_STATE_PREFLIGHT:-0}" == "1" ]]; then
-  ./run_state_preflight.sh
+  bash ./run_state_preflight.sh
 fi
 
-./run_behavior_preflight.sh
+bash ./run_behavior_preflight.sh
 
 RUN_ID=$(cat artifacts/behavior/latest_run.txt)
 STATUS=$(python - "artifacts/behavior/$RUN_ID/gate.json" <<'PY'
@@ -27,11 +27,11 @@ print(json.load(open(sys.argv[1]))["status"])
 PY
 )
 if [[ "$STATUS" != "continue_to_latent" ]]; then
-  echo "G0-A killed the mechanism before probing. See artifacts/behavior/$RUN_ID/gate.json"
+  echo "G0-A stopped the mechanism before probing. See artifacts/behavior/$RUN_ID/gate.json"
   exit 2
 fi
 
-./run_latent_gate.sh
+bash ./run_latent_gate.sh
 
 python - "artifacts/behavior/$RUN_ID/latent_gate_metrics.json" <<'PY'
 import json,sys
