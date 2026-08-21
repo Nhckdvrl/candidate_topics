@@ -27,14 +27,17 @@ def main():
             "problem_id": problem_id,
             "question": row["question"],
             "target": f.target,
+            "alternative_target": f.alternative_target,
             "premise": f.premise,
             "candidate_a": f.candidate_a,
             "candidate_b": f.candidate_b,
+            "candidate_a_target": f.candidate_a_target,
+            "candidate_b_target": f.candidate_b_target,
             "viable": f.viable,
             "label_a_viable": int(f.viable == f.candidate_a),
         })
     out.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
-    print(f"wrote {len(rows)} exact fork labels to {out}")
+    print(f"wrote {len(rows)} exact fork labels + matched target flips to {out}")
 
 
 if __name__ == "__main__":
