@@ -153,6 +153,7 @@ async def amain(args: argparse.Namespace) -> None:
     cfg = ExperimentConfig()
     if args.preflight:
         cfg = replace(cfg, episodes=8, trials_per_episode=5, test_trials=6)
+    cfg = replace(cfg, intervention_cost=args.intervention_cost)
     cfg.validate()
     if args.mock:
         client: ChatClient = MockClient(seed=args.seed)
@@ -200,6 +201,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--pairs", type=int, default=50)
     p.add_argument("--concurrency", type=int, default=16)
     p.add_argument("--temperature", type=float, default=0.7)
+    p.add_argument("--intervention-cost", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=20260821)
     p.add_argument("--output", default="results/pilot.jsonl")
     p.add_argument("--preflight", action="store_true", help="40 training experiences/session instead of 100")

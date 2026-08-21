@@ -1,0 +1,44 @@
+{
+  "invalid_rate_all": 0.0,
+  "invalid_rate_test": 0.0,
+  "step1_active": {
+    "controllable:concentrated": 0.7916666666666666,
+    "controllable:distributed": 0.75,
+    "uncontrollable:concentrated": 0.75,
+    "uncontrollable:distributed": 0.75
+  },
+  "paired_helplessness": {
+    "concentrated": 0.041666666666666664,
+    "distributed": 0.0
+  },
+  "pooled_transfer_C_minus_U": 0.020833333333333332,
+  "diversity_amplification": -0.041666666666666664,
+  "diversity_amplification_bootstrap95": [
+    -0.125,
+    0.0
+  ],
+  "late_training_active": {
+    "controllable:concentrated": 0.609375,
+    "controllable:distributed": 0.6041666666666666,
+    "uncontrollable:concentrated": 0.5885416666666666,
+    "uncontrollable:distributed": 0.5572916666666666
+  },
+  "late_effective_action_rate": {
+    "controllable:concentrated": 0.3385416666666667,
+    "controllable:distributed": 0.3541666666666667,
+    "uncontrollable:concentrated": 0.3177083333333333,
+    "uncontrollable:distributed": 0.3072916666666667
+  },
+  "training_success_rate": {
+    "controllable:concentrated": 0.42083333333333334,
+    "controllable:distributed": 0.4239583333333333,
+    "uncontrollable:concentrated": 0.42083333333333334,
+    "uncontrollable:distributed": 0.4239583333333333
+  },
+  "yoke_mismatch_count": 0,
+  "master_success_gap_distributed_minus_concentrated": 0.003124999999999989,
+  "decision": {
+    "status": "BOUNDARY_RESULT",
+    "reason": "transfer may exist, but little evidence that diversity amplifies it"
+  }
+}

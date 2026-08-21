@@ -37,3 +37,14 @@ PYTHONPATH=. .venv/bin/python -m src.analyze results/qwen3_8b_preflight_fixed.js
 # S2 locked pilot
 PATH="$PWD/.venv/bin:$PATH" PYTHONPATH=. BASE_URL=http://localhost:8000 \
   MODEL=Qwen/Qwen3-8B PAIRS=50 CONCURRENCY=32 TEMPERATURE=0.7 ./run_pilot.sh
+
+# v2 acquisition gate: Qwen3-32B non-thinking, TP=4, cost=2, 24 pairs/diversity
+CUDA_VISIBLE_DEVICES=0,1,2,3 \
+  /home/xiang/miniconda3/envs/verl-clean/bin/vllm serve Qwen/Qwen3-32B \
+  --tensor-parallel-size 4 --port 8000
+PYTHONPATH=. .venv/bin/python -m src.runner --base-url http://localhost:8000 \
+  --api-key EMPTY --model Qwen/Qwen3-32B --pairs 24 --concurrency 128 \
+  --temperature 0.7 --seed 20260821 --preflight --intervention-cost 2 \
+  --output results/qwen3_32b_v2_s1.jsonl
+PYTHONPATH=. .venv/bin/python -m src.analyze results/qwen3_32b_v2_s1.jsonl \
+  --out results/qwen3_32b_v2_s1_summary.json
