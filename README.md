@@ -2,6 +2,8 @@
 
 This repository collects research-topic candidates in the **hypothesis / pilot** stage, together with archived negative results and identification failures.
 
+A cross-topic record of failed candidates and reusable selection lessons is maintained in [`FAILURES_AND_LESSONS.md`](./FAILURES_AND_LESSONS.md). **Read it before registering a new topic.**
+
 The current topic-selection rule is deliberately stricter than simple "paper + adjacent gap":
 
 1. start from a **natural scientific question** that is interesting before mentioning LLMs, DLMs, probes, or checkpoints;
@@ -9,10 +11,12 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 3. use modern AI systems only when they provide a uniquely clean experimental axis;
 4. check both recent literature collision and collision with our own archived/failed topics;
 5. test **conceptual identifiability before scaling experiments**: the proposed observable/intervention must actually distinguish the competing explanations;
-6. define the cheapest experiment that can invalidate the proposed interpretation;
-7. freeze the primary measurement before broad search over models/layers/thresholds;
-8. reserve confirmation data whenever discovery involves tuning a measurement;
-9. stop early if the core claim or identification strategy fails; do not rescue it with post-hoc metric/model/control sweeps.
+6. apply the **complexity-smell rule**: if making the result interpretable requires an expanding chain of gates, matching rules, baselines, and alternative-explanation exclusions, stop adding controls and reconsider whether the question/construct is natural and directly measurable;
+7. prefer a **one-clean-contrast** first experiment whose interpretation is nearly forced by the question;
+8. define the cheapest experiment that can invalidate the proposed interpretation;
+9. freeze the primary measurement before broad search over models/layers/thresholds;
+10. reserve confirmation data whenever discovery involves tuning a measurement;
+11. stop early if the core claim or identification strategy fails; do not rescue it with post-hoc metric/model/control sweeps.
 
 ## Current candidates
 
@@ -43,5 +47,9 @@ The archive reason should be interpreted precisely:
 The main methodological lesson from Topic 05 is important enough to make explicit:
 
 > **Many controls do not rescue a non-identifying intervention. Before running a large pilot, verify that the proposed observation could in principle discriminate the latent explanations of interest.**
+
+A second practical lesson is the complexity smell:
+
+> **If the gate and kill line get longer every time the question is clarified, that is evidence to revisit the question itself. Good controls make a clear question rigorous; they should not be responsible for making an unclear construct exist.**
 
 A failed topic should not be revived by post-hoc metric/layer/model/control sweeps unless a genuinely new external observation changes the scientific premise and motivates a newly registered question or identification strategy.
