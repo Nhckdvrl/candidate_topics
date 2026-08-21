@@ -2,7 +2,7 @@
 set -euo pipefail
 
 UPSTREAM=${UPSTREAM:-external/reasoning_forks}
-RUN_REL=${RUN_REL:-runs/reasoning_forks_sft/qwen2.5_0.5b_sft_arithchain_2_10_forward_lr1e-5_bs32_ga1}
+RUN_REL=${RUN_REL:-runs/topic03_paper_exact/qwen2.5_0.5b_sft_arithchain_2_10_forward_lr2e-5_bs32_ga1}
 NUM_PROBLEMS=${NUM_PROBLEMS:-200}
 NUM_SAMPLES=${NUM_SAMPLES:-16}
 WORKERS=${WORKERS:-8}

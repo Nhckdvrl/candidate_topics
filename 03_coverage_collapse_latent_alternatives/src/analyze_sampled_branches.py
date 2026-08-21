@@ -13,14 +13,17 @@ FIRST_STEP_RE = re.compile(r"(?:^|\n)\s*1\.\s*([a-z])\b", flags=re.IGNORECASE)
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Measure first-fork accessibility and coverage from an isolated Topic03 sampling run.")
+    p = argparse.ArgumentParser(description="Measure first-fork commitment and sampled coverage from an isolated run.")
     p.add_argument("--forks", default="artifacts/forks.jsonl")
-    p.add_argument("--run-root", required=True, help="Run root whose immediate child dirs are checkpoint tags.")
+    p.add_argument("--run-root", required=True)
     p.add_argument("--split", default="arithchain_2_10_g0")
     p.add_argument("--late-tag", default="e16")
     p.add_argument("--output-dir", required=True)
-    p.add_argument("--bootstrap", type=int, default=2000)
+    p.add_argument("--bootstrap", type=int, default=4000)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--min-pass-drop", type=float, default=0.03)
+    p.add_argument("--min-entropy-drop", type=float, default=0.05)
+    p.add_argument("--min-parse-rate", type=float, default=0.90)
     return p.parse_args()
 
 
@@ -64,7 +67,8 @@ def paired_bootstrap_delta(ref, late, col, n_boot, seed):
     if not len(vals):
         return float("nan"), float("nan"), float("nan")
     rng = np.random.default_rng(seed)
-    boots = np.array([vals[rng.integers(0, len(vals), len(vals))].mean() for _ in range(n_boot)])
+    idx = rng.integers(0, len(vals), size=(n_boot, len(vals)))
+    boots = vals[idx].mean(axis=1)
     return float(vals.mean()), float(np.quantile(boots, .025)), float(np.quantile(boots, .975))
 
 
@@ -87,6 +91,7 @@ def main():
             )
         if not processed.exists():
             raise FileNotFoundError(f"Missing upstream processed generation file: {processed}")
+
         df = pd.read_csv(processed)
         for _, r in df.iterrows():
             pid = int(r["question_id"])
@@ -132,6 +137,7 @@ def main():
             "pass_at_half": pass_at_k_from_counts(n_total, c, max(1, n_total // 2)),
             "pass_at_n": float(c > 0),
         })
+
     pp = pd.DataFrame(per_problem)
     summary = pp.groupby("tag", as_index=False).agg(
         problems=("problem_id", "nunique"),
@@ -150,18 +156,34 @@ def main():
     if early.empty:
         raise ValueError("Need at least one non-late checkpoint")
     reference_tag = str(early.iloc[0].tag)
+
     ref_pp = pp[pp.tag == reference_tag]
     late_pp = pp[pp.tag == args.late_tag]
-    pass_drop, pass_lo, pass_hi = paired_bootstrap_delta(ref_pp, late_pp, "pass_at_half", args.bootstrap, args.seed)
-    ent_drop, ent_lo, ent_hi = paired_bootstrap_delta(ref_pp, late_pp, "first_branch_entropy_given_candidate", args.bootstrap, args.seed + 1)
+    pass_drop, pass_lo, pass_hi = paired_bootstrap_delta(
+        ref_pp, late_pp, "pass_at_half", args.bootstrap, args.seed
+    )
+    ent_drop, ent_lo, ent_hi = paired_bootstrap_delta(
+        ref_pp, late_pp, "first_branch_entropy_given_candidate", args.bootstrap, args.seed + 1
+    )
+
+    ref_parse = float(summary.loc[summary.tag == reference_tag, "mean_parse_rate"].iloc[0])
+    late_parse = float(summary.loc[summary.tag == args.late_tag, "mean_parse_rate"].iloc[0])
 
     reasons = []
-    if pass_lo <= 0.0:
+    if not np.isfinite(pass_lo) or pass_lo <= 0.0:
         reasons.append("coverage drop is not positive under paired bootstrap")
-    if ent_lo <= 0.0:
-        reasons.append("first-fork entropy does not reliably decrease; this fork is not linked to shrinkage")
-    if summary.loc[summary.tag == args.late_tag, "mean_parse_rate"].iloc[0] < 0.90:
-        reasons.append("late first-branch parser coverage is below 90%")
+    if pass_drop < args.min_pass_drop:
+        reasons.append(f"coverage drop {pass_drop:.4f} is below minimum practical effect {args.min_pass_drop:.4f}")
+    if not np.isfinite(ent_lo) or ent_lo <= 0.0:
+        reasons.append("first-fork entropy does not reliably decrease")
+    if ent_drop < args.min_entropy_drop:
+        reasons.append(f"entropy drop {ent_drop:.4f} is below minimum practical effect {args.min_entropy_drop:.4f}")
+    if min(ref_parse, late_parse) < args.min_parse_rate:
+        reasons.append(
+            f"first-branch parser coverage too low: reference={ref_parse:.3f}, late={late_parse:.3f}, "
+            f"required>={args.min_parse_rate:.2f}"
+        )
+
     gate = {
         "status": "continue_to_latent" if not reasons else "stop_or_redesign",
         "reference_tag": reference_tag,
@@ -170,6 +192,13 @@ def main():
         "pass_at_half_drop_ci95": [pass_lo, pass_hi],
         "branch_entropy_drop_ref_minus_late": ent_drop,
         "branch_entropy_drop_ci95": [ent_lo, ent_hi],
+        "reference_parse_rate": ref_parse,
+        "late_parse_rate": late_parse,
+        "thresholds": {
+            "min_pass_drop": args.min_pass_drop,
+            "min_entropy_drop": args.min_entropy_drop,
+            "min_parse_rate": args.min_parse_rate,
+        },
         "reasons": reasons,
     }
 

@@ -2,11 +2,26 @@ from __future__ import annotations
 
 import argparse
 import json
+import string
 from pathlib import Path
 
 import pandas as pd
 
-from graph_parser import parse_first_fork
+from graph_parser import parse_equations, parse_first_fork
+
+
+def choose_unused_control_target(question: str, problem_id: int) -> str:
+    """Choose a one-letter query placeholder that is absent from this graph.
+
+    Using an unused single letter preserves the surface form of the original query much
+    better than replacing the target with a multi-word phrase. The choice is determined
+    only by problem_id, not by branch-viability labels.
+    """
+    used = set(parse_equations(question))
+    unused = [c for c in string.ascii_lowercase if c not in used]
+    if not unused:
+        raise ValueError("No unused single-letter variable available for target-blind control")
+    return unused[problem_id % len(unused)]
 
 
 def main():
@@ -27,14 +42,18 @@ def main():
             "problem_id": problem_id,
             "question": row["question"],
             "target": f.target,
+            "alternative_target": f.alternative_target,
+            "control_target": choose_unused_control_target(row["question"], problem_id),
             "premise": f.premise,
             "candidate_a": f.candidate_a,
             "candidate_b": f.candidate_b,
+            "candidate_a_target": f.candidate_a_target,
+            "candidate_b_target": f.candidate_b_target,
             "viable": f.viable,
             "label_a_viable": int(f.viable == f.candidate_a),
         })
     out.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
-    print(f"wrote {len(rows)} exact fork labels to {out}")
+    print(f"wrote {len(rows)} exact fork labels + matched target controls to {out}")
 
 
 if __name__ == "__main__":
