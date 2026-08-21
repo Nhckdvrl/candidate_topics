@@ -73,7 +73,8 @@ def _interleave_updates(
     shuffled key order. This mirrors the balanced interference stream more
     closely than globally shuffling all update events: each key receives the
     same number of intervening update rounds, while within-round position is
-    randomized.
+    randomized. Consecutive update events are also constrained to target
+    different keys, matching the source paradigm.
     """
     lengths = {len(v) for v in per_key_updates.values()}
     if len(lengths) != 1:
@@ -81,10 +82,17 @@ def _interleave_updates(
     n_rounds = next(iter(lengths), 0)
     events: List[Tuple[str, str]] = []
     keys = list(per_key_updates)
+    previous_key = None
     for update_idx in range(n_rounds):
         round_keys = list(keys)
         rng.shuffle(round_keys)
+        if previous_key is not None and round_keys[0] == previous_key and len(round_keys) > 1:
+            swap_idx = next(
+                i for i, key in enumerate(round_keys[1:], start=1) if key != previous_key
+            )
+            round_keys[0], round_keys[swap_idx] = round_keys[swap_idx], round_keys[0]
         events.extend((category, per_key_updates[category][update_idx]) for category in round_keys)
+        previous_key = round_keys[-1]
     return events
 
 
