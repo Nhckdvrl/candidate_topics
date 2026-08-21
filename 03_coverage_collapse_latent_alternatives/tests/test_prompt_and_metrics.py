@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
-from prompt_utils import OPENING_SENTENCES, full_prompt, mask_query_target
+from prompt_utils import OPENING_SENTENCES, flip_query_target, full_prompt, mask_query_target
 from analyze_sampled_branches import pass_at_k_from_counts
 
 
@@ -22,6 +22,15 @@ def test_mask_target_only_changes_query_identity():
     assert "d = c + 5" in masked
     assert "determine the value of d" not in masked
     assert "determine the value of the requested variable" in masked
+
+
+def test_target_flip_changes_only_query_target():
+    q = "Consider: p = 3; c = p + 4; d = c + 5; x = p + 8; y = x + 2. If p = 3, determine the value of d."
+    flipped = flip_query_target(q, "d", "y")
+    assert "d = c + 5" in flipped
+    assert "y = x + 2" in flipped
+    assert "determine the value of y" in flipped
+    assert "determine the value of d" not in flipped
 
 
 def test_pass_at_k_known_cases():
