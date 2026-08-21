@@ -16,12 +16,12 @@ def test_all_upstream_opening_prefixes_end_at_same_decision_slot():
         assert p.endswith("\n1.")
 
 
-def test_mask_target_only_changes_query_identity():
+def test_mask_target_uses_single_letter_without_changing_equations():
     q = "Consider: p = 3; c = p + 4; d = c + 5; x = p + 8; y = x + 2. If p = 3, determine the value of d."
-    masked = mask_query_target(q, "d")
+    masked = mask_query_target(q, "d", "z")
     assert "d = c + 5" in masked
     assert "determine the value of d" not in masked
-    assert "determine the value of the requested variable" in masked
+    assert "determine the value of z" in masked
 
 
 def test_target_flip_changes_only_query_target():
