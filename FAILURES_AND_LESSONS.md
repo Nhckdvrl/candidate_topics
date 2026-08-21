@@ -7,7 +7,8 @@ It is not a list of negative results. Different topics failed for very different
 - a substantive hypothesis can be wrong;
 - an exploratory result can fail confirmation;
 - a clean comparison may not exist at sufficient scale;
-- the proposed experiment may not identify the intended concept at all.
+- the proposed experiment may not identify the intended concept at all;
+- the chosen AI learner may fail to instantiate the prerequisite phenomenon needed for a higher-order question.
 
 Those failure types must not be conflated.
 
@@ -47,11 +48,13 @@ Examples:
 
 A failure here means the hypothesis was **not tested**.
 
-## Layer D — Substantive hypothesis
+## Layer D — Substantive hypothesis / prerequisite phenomenon
 
 Once the construct is identifiable and measurable, does the predicted phenomenon actually occur?
 
-A failure here is a genuine scientific negative.
+This includes a prerequisite phenomenon that a higher-order question depends on. For example, before asking when learned uncontrollability generalizes, the chosen learner must first robustly acquire a controllability-dependent behavioral state.
+
+A failure here is a genuine failure of the candidate in the selected system, but it does not automatically falsify a more general human/cognitive phenomenon that the system never instantiated strongly enough.
 
 ## Layer E — Confirmation / generalization
 
@@ -123,6 +126,10 @@ before the phenomenon can even be named, downgrade the topic and reconsider the 
 Another useful heuristic:
 
 > **Good questions often make the first experiment simpler as they are clarified. Weakly identified questions often make the gate longer as they are clarified.**
+
+Topic 06 adds a complementary warning:
+
+> **A higher-order question can be natural and identifiable, yet still be a bad AI candidate if the selected learner does not robustly instantiate the prerequisite phenomenon. Do not optimize the prerequisite into existence through repeated model/reward/environment changes.**
 
 ---
 
@@ -294,9 +301,78 @@ then stop adding controls and reconsider whether A is directly measurable at all
 
 ---
 
+## Topic 06 — When Does Helplessness Become a Worldview?
+
+**Final status:** archived after the prerequisite controllability-acquisition premise failed across v1 and the one permitted v2.
+
+[Archive summary](./06_helplessness_worldview/ARCHIVE_SUMMARY.md)
+
+### Original idea
+
+If an agent repeatedly experiences that its actions do not affect outcomes, does it learn only that one situation is uncontrollable, or does the experience form a broader cross-situation expectation that actions generally do not matter?
+
+The proposed specific hypothesis was that equal uncontrollable experience distributed across semantically different task families would transfer more strongly to a novel controllable task than the same experience concentrated within one family.
+
+### What happened
+
+The 2×2 master–yoked design itself was technically clean. Controllable and yoked-uncontrollable sessions saw exactly matched external success/failure histories; episode counts, test task, latent randomization and reward exposure were controlled.
+
+In the Qwen3-8B v1 pilot, late-training controllable-vs-uncontrollable intervention behavior differed by only about `2.4pp` in the concentrated condition and `0.3pp` in the distributed condition. The locked novel-test pooled transfer was only `1pp`; diversity amplification was `D=-2pp`, with bootstrap interval `[-8pp,+4pp]`.
+
+Two independently motivated v1 concerns were then handled in one preregistered final v2:
+
+1. move from Qwen3-8B to Qwen3-32B non-thinking inference;
+2. increase active-intervention cost from `1` to `2` to remove the obvious binary-action ceiling.
+
+Everything else stayed frozen. The v2 technical gates all passed, but late controllability acquisition still separated only weakly:
+
+```text
+late active:
+C1  60.94% vs U1  58.85%  (+2.08pp)
+C10 60.42% vs U10 55.73%  (+4.69pp)
+```
+
+The frozen novel-test quantities were:
+
+```text
+H1  = +4.17pp
+H10 =  0pp
+D   = -4.17pp
+bootstrap interval for D = [-12.5pp, 0pp]
+```
+
+The project therefore stopped before any larger v2 pilot or confirmation.
+
+### Failure type
+
+**Layer D — prerequisite phenomenon / acquisition failure in the chosen AI system.**
+
+The higher-order psychological claim was not cleanly falsified because the LLM agent never robustly acquired the local controllability distinction needed to make transfer breadth meaningful.
+
+### Main lessons
+
+1. **Validate prerequisite acquisition before studying abstraction/generalization.** If the question is "when does learned X generalize?", the first hard gate should establish that the selected learner robustly acquires `X`.
+2. A strong human/cognitive literature does not prove that a vanilla LLM interaction-history agent instantiates the analogous latent state.
+3. Before locking a behavioral endpoint, analytically check whether plausible latent-belief changes can actually move it away from floor/ceiling. The v1 test action was too cheap and therefore nearly always active.
+4. One independently motivated preregistered repair can be legitimate. Repeatedly changing model size, reward schedule, memory, prompt, probe, or environment until the prerequisite phenomenon appears is post-hoc optimization, not falsification-first science.
+5. **A natural question can still be a bad AI topic.** Naturalness is necessary but not sufficient; the chosen system must instantiate the phenomenon cleanly enough to study.
+6. Preserve the distinction between "the natural question is unresolved" and "this candidate is not worth continuing." Topic 06 is the latter.
+
+### Reusable warning sign
+
+If the candidate's higher-order claim depends on a base phenomenon that is only weakly visible, do not immediately add transfer conditions, abstraction levels, mechanisms, or probes.
+
+First ask:
+
+> **Does the selected learner robustly instantiate the base phenomenon at all?**
+
+If the answer remains weak after one principled locked repair, archive the topic rather than searching for a model/environment combination that makes it true.
+
+---
+
 # 4. Cross-topic lessons
 
-The four archived projects reveal four different ways a research candidate can fail:
+The five archived projects reveal distinct ways a research candidate can fail:
 
 | Topic | Failure layer | What failed |
 |---|---|---|
@@ -304,11 +380,14 @@ The four archived projects reveal four different ways a research candidate can f
 | 02 | Confirmation | the exploratory hidden-state signal did not survive a locked independent test |
 | 04 | Measurement/common support | the intended high/low commitment comparison could not be constructed cleanly at sufficient scale |
 | 05 | Conceptual identification | the proposed observable could not distinguish retained competence from task simplification/conditional continuation |
+| 06 | Prerequisite phenomenon / acquisition | the chosen LLM agent did not robustly acquire the controllability-dependent state required for the higher-order generalization question |
 
 The ordering matters. Future projects should try to fail **as early as possible**:
 
 ```text
 Natural question
+    ↓
+Does the selected AI system clearly instantiate the prerequisite phenomenon?
     ↓
 Conceptual identifiability
     ↓
@@ -320,6 +399,8 @@ Locked confirmation
     ↓
 Only then scale up mechanisms / models / training
 ```
+
+For some topics, prerequisite-instantiation and substantive G0 are the same experiment. For higher-order questions about transfer, abstraction, forgetting, interference, or meta-learning, they may need to be separated explicitly.
 
 Do not spend GPU to answer a question that has already failed one of the earlier layers.
 
@@ -341,7 +422,26 @@ Identify the empirical observation or established tension that motivates the que
 
 Do not infer a new phenomenon merely because two papers leave an empty combinatorial cell.
 
-## 5.3 One-clean-contrast
+Then separate two claims:
+
+1. the phenomenon exists in the source domain (human cognition, another model family, another task, etc.);
+2. the **selected AI system** robustly instantiates the prerequisite phenomenon needed for this candidate.
+
+Do not treat evidence for (1) as evidence for (2).
+
+## 5.3 Prerequisite-instantiation gate
+
+For any higher-order question of the form:
+
+```text
+when does X transfer / generalize / abstract / disappear / interfere?
+```
+
+state the cheapest experiment showing that the selected learner first exhibits a strong, directly measurable `X`.
+
+If this prerequisite is weak, stop before adding the higher-order manipulation.
+
+## 5.4 One-clean-contrast
 
 What is the simplest observation that separates the main explanations?
 
@@ -353,7 +453,7 @@ A vs B → one primary contrast
 
 over a chain requiring many conditional exclusions.
 
-## 5.4 Identifiability counterfactual
+## 5.5 Identifiability counterfactual
 
 Assume the experiment produces the strongest hoped-for result.
 
@@ -363,7 +463,7 @@ Write at least the two strongest alternative explanations. Then ask:
 
 If yes, and distinguishing them requires an expanding family of controls that all modify the original condition, the topic is not ready.
 
-## 5.5 Complexity smell
+## 5.6 Complexity smell
 
 Count how much scaffolding is required before the result is interpretable:
 
@@ -383,19 +483,21 @@ Ask:
 
 That distinction is crucial.
 
-## 5.6 Measurement validity
+## 5.7 Measurement validity and decision calibration
 
 Check whether nuisance variation is mechanically entangled with the treatment/target variable.
 
+For behavioral decisions, also inspect whether the reward/cost structure forces the observable toward floor or ceiling over the plausible range of latent beliefs. A theoretically clean endpoint is useless if realistic belief changes cannot move the action.
+
 Do this before training.
 
-## 5.7 Common support
+## 5.8 Common support
 
 If the question requires matched comparisons, confirm that the comparison actually exists in the chosen model/data system at useful scale.
 
 Do not loosen the defining confound control to rescue sample size.
 
-## 5.8 Discovery budget
+## 5.9 Discovery budget
 
 List every dimension that will be searched:
 
@@ -405,15 +507,19 @@ model × layer × step × threshold × prompt × metric × dataset
 
 If this grid is large, pre-split discovery and confirmation before looking at results.
 
-## 5.9 Kill line
+## 5.10 Kill line
 
 Write what observation would make the topic **not worth continuing**.
 
 The kill line should ideally be short and tied directly to the natural question. If the kill contract itself needs a page of branching logic before the first experiment, invoke the complexity-smell rule and reconsider the topic.
 
-## 5.10 No-rescue rule
+For higher-order topics, include a separate prerequisite-acquisition kill line. Do not let failure of the prerequisite automatically trigger model/reward/environment sweeps.
+
+## 5.11 No-rescue rule
 
 After a locked gate fails, do not reopen layer/model/metric/threshold search to preserve the same claim.
+
+One narrowly defined repair is defensible only when the defect is independently identifiable before the new outcome is inspected and the repair itself is frozen. If that repaired gate fails again, stop.
 
 A genuinely new observation may motivate a **new separately registered topic**, but it does not retroactively rescue the old one.
 
@@ -424,14 +530,16 @@ A genuinely new observation may motivate a **new separately registered topic**, 
 The repository should increasingly prefer questions with these properties:
 
 1. **Natural before technical.** The question survives deletion of AI-specific vocabulary.
-2. **Phenomenon before mechanism.** There is a real observation to explain, not merely an unfilled measurement cell.
-3. **Short inferential distance.** The primary observable is close to the scientific concept.
-4. **One clean contrast.** A main result has a direct interpretation without a long chain of exclusions.
-5. **Complex methods explain; they do not create.** SAE/probes/hidden-state analyses come after a clear phenomenon.
-6. **Cheap falsification first.** Use small models/data when they can genuinely kill the claim.
-7. **Locked confirmation immediately after discovery.** Do not invest in a large story around an exploratory cell.
-8. **Failure labels stay precise.** `hypothesis false`, `measurement failed`, and `question not identifiable` are different outcomes.
-9. **Protocol complexity is evidence.** If clarification makes the gate continually longer rather than the experiment cleaner, reconsider the question.
-10. **Stop means stop.** Preserve code and lessons, then move on.
+2. **System instantiation before higher-order claims.** A source-domain phenomenon is not enough; the chosen AI learner must robustly exhibit the prerequisite phenomenon before studying its transfer, abstraction, or mechanism.
+3. **Phenomenon before mechanism.** There is a real observation to explain, not merely an unfilled measurement cell.
+4. **Short inferential distance.** The primary observable is close to the scientific concept.
+5. **One clean contrast.** A main result has a direct interpretation without a long chain of exclusions.
+6. **Behavioral readouts must be calibrated.** Plausible latent-state changes should be capable of moving the measured decision away from floor/ceiling.
+7. **Complex methods explain; they do not create.** SAE/probes/hidden-state analyses come after a clear phenomenon.
+8. **Cheap falsification first.** Use small models/data when they can genuinely kill the claim.
+9. **Locked confirmation immediately after discovery.** Do not invest in a large story around an exploratory cell.
+10. **Failure labels stay precise.** `hypothesis false`, `measurement failed`, `prerequisite absent`, and `question not identifiable` are different outcomes.
+11. **Protocol complexity is evidence.** If clarification makes the gate continually longer rather than the experiment cleaner, reconsider the question.
+12. **Stop means stop.** Preserve code and lessons, then move on.
 
 This file should be updated whenever a candidate is archived.
