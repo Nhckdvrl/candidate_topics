@@ -94,8 +94,8 @@ def conditioned_question_and_label(r: dict, condition: str) -> tuple[str, int, s
         q = flip_query_target(r["question"], r["target"], r["alternative_target"])
         return q, 1 - y, r["alternative_target"]
     if condition == "target_blind":
-        q = mask_query_target(r["question"], r["target"])
-        return q, y, ""
+        q = mask_query_target(r["question"], r["target"], r["control_target"])
+        return q, y, r["control_target"]
     raise ValueError(condition)
 
 
