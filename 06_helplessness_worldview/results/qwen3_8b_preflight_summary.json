@@ -1,0 +1,44 @@
+{
+  "invalid_rate_all": 0.7672101449275363,
+  "invalid_rate_test": 0.8663194444444444,
+  "step1_active": {
+    "controllable:concentrated": 1.0,
+    "controllable:distributed": 1.0,
+    "uncontrollable:concentrated": 1.0,
+    "uncontrollable:distributed": 1.0
+  },
+  "paired_helplessness": {
+    "concentrated": 0.0,
+    "distributed": 0.0
+  },
+  "pooled_transfer_C_minus_U": 0.0,
+  "diversity_amplification": 0.0,
+  "diversity_amplification_bootstrap95": [
+    0.0,
+    0.0
+  ],
+  "late_training_active": {
+    "controllable:concentrated": 1.0,
+    "controllable:distributed": 1.0,
+    "uncontrollable:concentrated": 1.0,
+    "uncontrollable:distributed": 1.0
+  },
+  "late_effective_action_rate": {
+    "controllable:concentrated": 0.543859649122807,
+    "controllable:distributed": 0.5555555555555556,
+    "uncontrollable:concentrated": 0.609375,
+    "uncontrollable:distributed": 0.6285714285714286
+  },
+  "training_success_rate": {
+    "controllable:concentrated": 0.5052083333333334,
+    "controllable:distributed": 0.5052083333333334,
+    "uncontrollable:concentrated": 0.5052083333333334,
+    "uncontrollable:distributed": 0.5052083333333334
+  },
+  "yoke_mismatch_count": 0,
+  "master_success_gap_distributed_minus_concentrated": 0.0,
+  "decision": {
+    "status": "TECHNICAL_STOP",
+    "reason": "test invalid-action rate > 1%"
+  }
+}

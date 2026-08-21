@@ -1,0 +1,44 @@
+{
+  "invalid_rate_all": 0.0,
+  "invalid_rate_test": 0.0,
+  "step1_active": {
+    "controllable:concentrated": 1.0,
+    "controllable:distributed": 1.0,
+    "uncontrollable:concentrated": 1.0,
+    "uncontrollable:distributed": 1.0
+  },
+  "paired_helplessness": {
+    "concentrated": 0.0,
+    "distributed": 0.0
+  },
+  "pooled_transfer_C_minus_U": 0.0,
+  "diversity_amplification": 0.0,
+  "diversity_amplification_bootstrap95": [
+    0.0,
+    0.0
+  ],
+  "late_training_active": {
+    "controllable:concentrated": 0.625,
+    "controllable:distributed": 0.8125,
+    "uncontrollable:concentrated": 0.625,
+    "uncontrollable:distributed": 0.8125
+  },
+  "late_effective_action_rate": {
+    "controllable:concentrated": 0.3125,
+    "controllable:distributed": 0.3125,
+    "uncontrollable:concentrated": 0.3125,
+    "uncontrollable:distributed": 0.3125
+  },
+  "training_success_rate": {
+    "controllable:concentrated": 0.4,
+    "controllable:distributed": 0.35,
+    "uncontrollable:concentrated": 0.4,
+    "uncontrollable:distributed": 0.35
+  },
+  "yoke_mismatch_count": 0,
+  "master_success_gap_distributed_minus_concentrated": -0.050000000000000044,
+  "decision": {
+    "status": "SCIENTIFIC_STOP_OR_REDESIGN",
+    "reason": "<2pp pooled transfer of uncontrollability to novel test"
+  }
+}

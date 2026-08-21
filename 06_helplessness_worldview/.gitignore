@@ -1,0 +1,6 @@
+.venv/
+.model-venv/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+logs/*.log

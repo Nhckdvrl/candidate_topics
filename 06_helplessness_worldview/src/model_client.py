@@ -33,6 +33,10 @@ class OpenAICompatibleClient:
             "messages": messages,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
+            # Qwen3 otherwise spends the short action budget on hidden
+            # reasoning and gets truncated before emitting the required JSON.
+            # This changes only response formatting, not the task or endpoint.
+            "chat_template_kwargs": {"enable_thinking": False},
         }
         headers = {"Authorization": f"Bearer {self.api_key}"}
         if self._client is None:

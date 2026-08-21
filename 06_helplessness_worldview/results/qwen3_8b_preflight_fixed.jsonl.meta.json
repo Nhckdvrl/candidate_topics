@@ -1,0 +1,22 @@
+{
+  "config": {
+    "episodes": 8,
+    "trials_per_episode": 5,
+    "test_trials": 6,
+    "success_reward": 10.0,
+    "intervention_cost": 1.0,
+    "p_effective": 0.85,
+    "p_other": 0.15,
+    "p_wait": 0.15,
+    "test_p_effective": 0.9,
+    "test_p_other": 0.1,
+    "test_p_wait": 0.1,
+    "test_family": "orbital_station"
+  },
+  "seed": 20260821,
+  "pairs_per_diversity": 24,
+  "model": "Qwen/Qwen3-8B",
+  "base_url": "http://localhost:8000",
+  "temperature": 0.7,
+  "mock": false
+}
