@@ -22,7 +22,7 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 | Priority | Topic | Natural question | Current gate |
 | --- | --- | --- | --- |
-| 2 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
+| 1 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
 
 ## Archived topics
 
@@ -33,7 +33,7 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 | [02 — DLM Trajectory Fate](./02_dlm_trajectory_fate/) | **ARCHIVED / FALSIFIED AS A BROAD CLAIM** | Exploratory signal did not survive preregistered independent GSM1K confirmation, while the positive control remained strong. | [Archive summary](./02_dlm_trajectory_fate/ARCHIVE_SUMMARY.md) |
 | [04 — Confidence and Error Correction](./04_confidence_error_correction/) | **ARCHIVED / KILLED AT MEASUREMENT / IDENTIFICATION GATE** | G-1v1 produced 61 clean matched pairs. One locked log-space measurement repair restored the commitment range but still yielded only 130 pairs, below the predeclared `<200` hard stop. No corrective SFT was run, so the correction hypothesis itself remains untested. | [Archive summary](./04_confidence_error_correction/ARCHIVE_SUMMARY.md) |
 | [05 — Temporal Forgetting: Lost Skill or Lost Entry Point?](./05_temporal_forgetting_reentry/) | **ARCHIVED / CONCEPTUAL IDENTIFICATION FAILURE** | Prefix-based rescue changes the task condition and cannot identify whether uncued old competence is still retained; `old route` is not a stable observable, and teacher-forced NLL is conditional on the same cue. The run stopped during partial sampling before scoring or any hypothesis-level gate, so no empirical conclusion is reported. | [Archive summary](./05_temporal_forgetting_reentry/ARCHIVE_SUMMARY.md) |
-| [07 — Old Blocks New, or New Erases Old?](./07_memory_interference_architecture/) | **ARCHIVED / INCONCLUSIVE** | The Transformer reproduced positive mean PI>RI asymmetry, but the preregistered Transformer–GatedDeltaNet gap was `ΔI=0.0729` with paired bootstrap 95% CI `[-0.0313, 0.1771]`; it did not reach the `0.10` positive gate or the `<0.05` kill threshold. No locked confirmation was authorized. This is inconclusive, not falsification. | [Archive summary](./07_memory_interference_architecture/ARCHIVE_SUMMARY.md) |
+| [07 — Old Blocks New, or New Erases Old?](./07_memory_interference_architecture/) | **ARCHIVED / INCONCLUSIVE AT FROZEN DISCOVERY GATE** | The Transformer reproduced positive mean PI>RI asymmetry, but the preregistered Transformer–GatedDeltaNet gap was only `ΔI=0.0729` with paired bootstrap 95% CI `[-0.0313, 0.1771]`, below the `0.10` GO threshold, with `0/4` sign-transition levels. The seed phenomenon was real, but the proposed architecture explanatory axis was not strong or clean enough to justify confirmation or post-hoc expansion. | [Archive summary](./07_memory_interference_architecture/ARCHIVE_SUMMARY.md) |
 
 ## What the archived topics are for
 
@@ -46,6 +46,7 @@ The archive reason should be interpreted precisely:
 - **Topic 04** failed before hypothesis testing because the required clean comparison could not be identified at sufficient scale.
 - **Topic 05** was stopped even earlier at the conceptual-identification level: the proposed intervention could not distinguish retained competence from task simplification / conditional continuation, so continuing to sample would not resolve the scientific question.
 - **Topic 06** failed at the prerequisite-acquisition layer: two increasingly capable but locked tests did not produce a strong learned controllability/uncontrollability separation, so the proposed higher-order generalization question was not cleanly instantiated in the chosen AI system.
+- **Topic 07** passed the prerequisite/measurement layer and reproduced the motivating Transformer PI>RI phenomenon, but the frozen explanatory contrast landed in the preregistered gray zone. This is not falsification; it is a **resource-allocation stop** because the architecture effect was not large, stable, or qualitative enough to justify a confirmation campaign.
 
 The main methodological lesson from Topic 05 is important enough to make explicit:
 
@@ -59,4 +60,8 @@ Topic 06 adds a complementary prerequisite lesson:
 
 > **Before studying when a learned phenomenon transfers, abstracts, or generalizes, first verify that the chosen learner robustly acquires the base phenomenon. A strong human/cognitive literature does not guarantee that a vanilla AI system instantiates the same state.**
 
-A failed topic should not be revived by post-hoc metric/layer/model/control sweeps unless a genuinely new external observation changes the scientific premise and motivates a newly registered question or identification strategy.
+Topic 07 adds a different lesson:
+
+> **Replicating the phenomenon is not evidence that the proposed explanatory axis matters. After establishing the phenomenon, require the explanatory manipulation to create a large, clean separation before investing in mechanisms or scale.**
+
+A failed or inconclusive topic should not be revived by post-hoc metric/layer/model/control sweeps unless a genuinely new external observation changes the scientific premise and motivates a newly registered question or identification strategy.
