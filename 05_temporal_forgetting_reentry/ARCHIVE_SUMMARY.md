@@ -139,6 +139,64 @@ The selection lesson is therefore:
 
 A future revival would require a genuinely different identification strategy that can distinguish retained competence from lost competence **without defining retention by performance after supplying the missing solution information**. Merely adding stronger matching, more checkpoints, more samples, hidden-state probes, or additional prefix controls is not sufficient reason to reopen this topic.
 
+## Additional lesson: gate complexity is itself a warning signal
+
+This project also exposed a useful higher-level heuristic for topic selection:
+
+> **If the gate and kill line keep becoming more complicated as the question is clarified, that complexity may be evidence that the problem has drifted away from a natural, directly observable phenomenon.**
+
+The dangerous pattern is:
+
+```text
+we want to prove A
+-> first rule out B
+-> then control C
+-> then match D
+-> then add a baseline for E
+-> then prove the effect is not F
+-> only then can the result be interpreted as A
+```
+
+This does not mean that every good causal study must be simple. Some genuinely difficult questions require many controls. The stronger warning sign is that **the construct itself only becomes interpretable after a growing chain of exclusions**.
+
+That happened here. We wanted to ask a simple natural question — whether a previously demonstrated skill remained available — but the observable was performance after providing part of the solution. Every attempt to make that observation more diagnostic introduced another control:
+
+- old-self vs baseline;
+- old-self vs another correct solution;
+- final-wrong controls;
+- never-correct controls;
+- token-budget matching;
+- teacher-forced NLL;
+- additional prefix lengths;
+- discovery/confirmation separation.
+
+Those controls improved rigor around local alternative explanations, but they did not shorten the inferential distance between the actual observation and the target concept. The protocol became more elaborate while the core inference remained non-identifying.
+
+This suggests a practical **complexity-smell rule** for future candidate topics:
+
+> **A strong early-stage question should become experimentally cleaner as it is clarified. If clarification instead causes the validation tree to grow continually because every result needs another exclusion before it can mean what we want, pause and reconsider the question itself.**
+
+A useful ideal is a **one-clean-contrast** design:
+
+```text
+A vs B
+-> one primary contrast whose interpretation is nearly forced by the question
+```
+
+If the real structure looks more like:
+
+```text
+A vs B | C,D,E,F,G
+```
+
+before A and B can even be named reliably, the project should be downgraded at the topic-selection stage rather than automatically receiving more controls.
+
+The key diagnostic question is:
+
+> **Are the controls making a clear causal question rigorous, or are they trying to make an unclear construct exist?**
+
+For Topic 05, it was the latter.
+
 ## Repository disposition
 
 The folder is intentionally retained as an archive containing:
