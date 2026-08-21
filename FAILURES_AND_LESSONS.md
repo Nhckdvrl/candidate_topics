@@ -1,18 +1,18 @@
 # Failure Log and Lessons for Topic Selection
 
-This document records **why candidate topics failed, at what layer they failed, and what lesson should transfer to future topic selection**.
+This document records **why candidate topics failed or were stopped, at what layer they failed, and what lesson should transfer to future topic selection**.
 
-It is not a list of negative results. Different topics failed for very different reasons:
+It is deliberately not a flat list of negative results. Different candidates can stop for very different reasons:
 
-- a substantive hypothesis can be wrong;
-- an exploratory result can fail confirmation;
-- a clean comparison may not exist at sufficient scale;
-- the proposed experiment may not identify the intended concept at all;
-- the chosen AI learner may fail to instantiate the prerequisite phenomenon needed for a higher-order question.
+- the natural question may be weak or method-driven;
+- the proposed experiment may not identify the intended concept;
+- the clean comparison may not exist at sufficient scale;
+- the selected AI system may fail to instantiate a prerequisite phenomenon;
+- the substantive hypothesis may be wrong;
+- the motivating phenomenon may replicate while the proposed explanatory axis is too weak or unstable to justify further work;
+- an exploratory result may fail locked confirmation.
 
-Those failure types must not be conflated.
-
-The goal of this file is to prevent the repository from repeatedly rediscovering the same weak research pattern under new terminology.
+Those outcomes must not be conflated. In particular, **“not falsified” does not mean “worth continuing.”** This repository is a candidate-selection system, so a preregistered gray-zone result can legitimately be an archive decision even when a broader scientific question remains unresolved.
 
 ---
 
@@ -22,7 +22,7 @@ Before running a large experiment, classify the candidate along the following st
 
 ## Layer A — Naturalness
 
-Can the scientific question be stated clearly **without mentioning the model, probe, hidden state, checkpoint, SAE, or metric**?
+Can the scientific question be stated clearly **without mentioning the model, probe, hidden state, checkpoint, SAE, metric, or implementation trick**?
 
 A good candidate should first look like a real question about learning, memory, reasoning, information, behavior, or computation. AI is the experimental system, not the reason the question exists.
 
@@ -43,18 +43,33 @@ Can the variables required by the question actually be measured and compared cle
 Examples:
 
 - can two treatment groups be matched on the confound that defines the scientific comparison?
-- is the measurement itself contaminated by position, prompt, or formatting artifacts?
+- is the measurement contaminated by position, prompt, formatting, tokenizer, or selection artifacts?
 - does the supposedly low/high variable really have sufficient dynamic range?
+- do all compared systems share enough common support for a paired test?
 
-A failure here means the hypothesis was **not tested**.
+A failure here means the scientific hypothesis was **not cleanly tested**.
 
-## Layer D — Substantive hypothesis / prerequisite phenomenon
+## Layer D — Prerequisite phenomenon / substantive or explanatory strength
 
-Once the construct is identifiable and measurable, does the predicted phenomenon actually occur?
+Once the construct is identifiable and measurable, two distinct questions remain.
 
-This includes a prerequisite phenomenon that a higher-order question depends on. For example, before asking when learned uncontrollability generalizes, the chosen learner must first robustly acquire a controllability-dependent behavioral state.
+First, does the selected AI system robustly instantiate the prerequisite phenomenon that the higher-order question depends on? Before asking when learned uncontrollability generalizes, for example, the learner must first acquire a strong controllability-dependent behavioral state.
 
-A failure here is a genuine failure of the candidate in the selected system, but it does not automatically falsify a more general human/cognitive phenomenon that the system never instantiated strongly enough.
+Second, if the motivating phenomenon is present, does the proposed explanatory axis produce a **large, clean, scientifically worthwhile separation**?
+
+This second point matters because:
+
+> **phenomenon replicated != explanatory variable matters.**
+
+A discovery pilot can therefore produce three useful outcomes:
+
+```text
+GO          effect large/clean enough to justify locked confirmation
+KILL        effect clearly too small or opposite
+GRAY ZONE   neither condition is met -> INCONCLUSIVE_DO_NOT_TUNE
+```
+
+The gray zone is not an invitation to add samples, swap models, or search a better contrast. For candidate screening, it can itself be a stop condition when the frozen result is not compelling enough to justify a larger research program.
 
 ## Layer E — Confirmation / generalization
 
@@ -68,51 +83,48 @@ A failure here usually indicates winner's curse, over-selection, or a localized/
 
 A central lesson from Topic 05 is:
 
-> **When the gate and kill line become more and more complicated, pause and reconsider whether the question itself is still natural and well identified.**
+> **When the gate and kill line become more and more complicated, reconsider whether the question itself is still natural and well identified.**
 
 The dangerous pattern is:
 
 ```text
 we want to show A
-→ first prove it is not B
-→ then match C
-→ then control D
-→ then rule out E
-→ then add another baseline for F
-→ only then can the observed effect be called A
+-> first prove it is not B
+-> then match C
+-> then control D
+-> then rule out E
+-> then add another baseline for F
+-> only then can the observed effect be called A
 ```
 
-This is not automatically wrong — difficult causal questions can require many controls. The warning sign is more specific:
+This is not automatically wrong; difficult causal questions can require many controls. The warning sign is more specific:
 
 > **the construct itself only becomes interpretable after accumulating many exclusions.**
 
-In that case, one of two things is often happening.
+Two common causes are below.
 
 ### 2.1 The target phenomenon is not a stable natural object
 
-For Topic 05, `old route` looked intuitive in prose but was not a stable observable. A continuation could begin old-like, switch strategies, and still finish correctly. The more precisely we tried to define re-entry, the less clear the object became.
+For Topic 05, `old route` looked intuitive in prose but was not a stable observable. A continuation could begin old-like, switch strategies, and still finish correctly. The more precisely the route was defined, the less clear the object became.
 
 ### 2.2 The observable is too far from the scientific question
 
 Topic 05 wanted to know whether an uncued skill was retained, but the experiment observed performance after supplying part of a correct solution:
 
-\[
-P(\mathrm{solve}\mid x)
-\neq
-P(\mathrm{solve}\mid x+\mathrm{correct\ prefix}).
-\]
+```text
+P(solve | x) != P(solve | x + correct prefix)
+```
 
 The distance between the target concept and the observable created an expanding list of alternative explanations: task simplification, search-space reduction, intermediate-variable provision, wrong-path exclusion, token compatibility, and generic guidability.
 
-Adding one control for every alternative made the protocol increasingly elaborate, but the central identification problem remained.
+Adding one control for every alternative made the protocol increasingly elaborate, while the central identification problem remained.
 
 ### Practical heuristic
 
 A strong early-stage topic should ideally admit a **one-clean-contrast** experiment:
 
 ```text
-A vs B
-with one primary measurement that is almost forced by the question.
+A vs B -> one primary measurement whose interpretation is nearly forced by the question
 ```
 
 If interpretation instead requires something like:
@@ -121,15 +133,12 @@ If interpretation instead requires something like:
 A vs B | C,D,E,F,G
 ```
 
-before the phenomenon can even be named, downgrade the topic and reconsider the question itself rather than automatically adding more controls.
+before the phenomenon can even be named, downgrade the topic rather than automatically adding controls.
 
-Another useful heuristic:
+A related lesson from Topics 06 and 07 is that a protocol can be conceptually clean and still not be worth continuing:
 
-> **Good questions often make the first experiment simpler as they are clarified. Weakly identified questions often make the gate longer as they are clarified.**
-
-Topic 06 adds a complementary warning:
-
-> **A higher-order question can be natural and identifiable, yet still be a bad AI candidate if the selected learner does not robustly instantiate the prerequisite phenomenon. Do not optimize the prerequisite into existence through repeated model/reward/environment changes.**
+- Topic 06: the selected system did not robustly instantiate the prerequisite state.
+- Topic 07: the prerequisite phenomenon did appear, but the proposed explanatory architecture axis did not create a strong enough frozen separation.
 
 ---
 
@@ -143,7 +152,7 @@ Topic 06 adds a complementary warning:
 
 ### Original idea
 
-Behavior/output distributions appear to stabilize during pretraining while weights continue moving. Representation-dynamics work shows features evolve over checkpoints. The proposed adjacent question was whether meaningful internal representations continue reorganizing after behavior has largely stabilized.
+Behavior/output distributions appear to stabilize during pretraining while weights continue moving. Representation-dynamics work shows features evolve over checkpoints. The adjacent question was whether meaningful internal representations continue reorganizing after behavior has largely stabilized.
 
 ### What happened
 
@@ -157,8 +166,8 @@ The behavior-side premise replicated, but representation movement did **not** re
 
 1. **A clean cross-paper empty cell is a way to generate a question, not evidence that the phenomenon exists.**
 2. `parameter drift != meaningful representation drift`.
-3. Complex feature methods should explain a phenomenon already visible in a cheap screen; they should not be used to manufacture a phenomenon after the screen points the other way.
-4. Predeclared kill criteria worked correctly here: the topic stopped before crosscoder/SAE escalation.
+3. Complex feature methods should explain a phenomenon already visible in a cheap screen; they should not manufacture a phenomenon after the screen points the other way.
+4. Predeclared kill criteria worked correctly: the topic stopped before crosscoder/SAE escalation.
 
 ### Reusable warning sign
 
@@ -192,15 +201,15 @@ The final-correctness positive control remained strong, so the pipeline itself w
 ### Main lessons
 
 1. Penalize topics whose first convincing result requires a large search over `step × layer × threshold × task`.
-2. Bootstrap confidence intervals on a **selected best cell** do not correct for the selection process.
+2. Bootstrap confidence intervals on a selected best cell do not correct for the selection process.
 3. Reserve locked confirmation data before inspecting discovery results.
 4. Run the cheapest locked holdout immediately after a positive exploratory result.
-5. Every negative mechanistic result needs a positive control so that failure cannot be blamed on the measurement pipeline.
-6. Early-stop gates must themselves be power-calibrated; a cheap gate that frequently false-stops a real effect is not a valid kill line.
+5. Every negative mechanistic result needs a positive control so failure cannot be blamed on a broken measurement pipeline.
+6. Early-stop gates must themselves be power-calibrated.
 
 ### Reusable warning sign
 
-If a phenomenon is convincing only at one specially discovered layer/step/threshold with no independent reason that those coordinates should matter, assume winner's curse until proven otherwise.
+If a phenomenon is convincing only at one specially discovered layer/step/threshold with no independent reason those coordinates should matter, assume winner's curse until proven otherwise.
 
 ---
 
@@ -214,13 +223,7 @@ If a phenomenon is convincing only at one specially discovered layer/step/thresh
 
 When two learners are equally far from the correct answer, does being strongly committed to one specific wrong answer make corrective learning easier or harder?
 
-The experiment attempted to separate:
-
-\[
-\text{target accessibility}=p(y^*\mid x)
-\]
-
-from concentration of probability over wrong hypotheses.
+The experiment attempted to separate target accessibility from concentration of probability over wrong hypotheses.
 
 ### What happened
 
@@ -229,7 +232,7 @@ The first measurement was structurally contaminated:
 - top-wrong stability was mechanically correlated with the treatment variable;
 - arithmetic averaging across option rotations could turn a sharp but position-sensitive model into an apparently diffuse semantic belief.
 
-A single locked measurement repair fixed much of this by using log-space aggregation and removing the treatment-dependent inclusion rule. However, after retaining the original identification requirements, only 130 clean high/low matched pairs remained, below the preregistered `<200` hard stop.
+A single locked measurement repair used log-space aggregation and removed the treatment-dependent inclusion rule. After retaining the original identification requirements, only 130 clean high/low matched pairs remained, below the preregistered `<200` hard stop.
 
 Corrective SFT was never run.
 
@@ -268,15 +271,13 @@ The proposed validation supplied prefixes from the model's own earlier correct t
 
 During implementation, the experiment became increasingly elaborate because every apparent rescue result admitted another explanation. The deeper issue was not missing controls; it was that the intervention changed the task:
 
-\[
-P(\mathrm{solve}\mid x)
-\neq
-P(\mathrm{solve}\mid x+\mathrm{correct\ prefix}).
-\]
+```text
+P(solve | x) != P(solve | x + correct prefix)
+```
 
 Even a perfect old-self rescue could reflect reduced search, supplied intermediate variables, lexical/continuation compatibility, or generic guidability. In addition, `old route` was not a stable observable object, and teacher-forced NLL remained conditional on the same cue.
 
-The run was stopped during partial checkpoint sampling, before scoring or any claim-level gate. There is therefore **no empirical result** about storage loss vs retrieval failure.
+The run stopped during partial checkpoint sampling, before scoring or any claim-level gate. There is therefore **no empirical result** about storage loss vs retrieval failure.
 
 ### Failure type
 
@@ -295,7 +296,7 @@ The run was stopped during partial checkpoint sampling, before scoring or any cl
 
 If the main interpretation is repeatedly phrased as:
 
-> "the result would indicate A, **provided that it is not B, C, D, E...**"
+> "the result would indicate A, provided that it is not B, C, D, E..."
 
 then stop adding controls and reconsider whether A is directly measurable at all.
 
@@ -311,11 +312,11 @@ then stop adding controls and reconsider whether A is directly measurable at all
 
 If an agent repeatedly experiences that its actions do not affect outcomes, does it learn only that one situation is uncontrollable, or does the experience form a broader cross-situation expectation that actions generally do not matter?
 
-The proposed specific hypothesis was that equal uncontrollable experience distributed across semantically different task families would transfer more strongly to a novel controllable task than the same experience concentrated within one family.
+The specific hypothesis was that equal uncontrollable experience distributed across semantically different task families would transfer more strongly to a novel controllable task than the same experience concentrated within one family.
 
 ### What happened
 
-The 2×2 master–yoked design itself was technically clean. Controllable and yoked-uncontrollable sessions saw exactly matched external success/failure histories; episode counts, test task, latent randomization and reward exposure were controlled.
+The 2×2 master–yoked design itself was technically clean. Controllable and yoked-uncontrollable sessions saw exactly matched external success/failure histories; episode counts, test task, latent randomization, and reward exposure were controlled.
 
 In the Qwen3-8B v1 pilot, late-training controllable-vs-uncontrollable intervention behavior differed by only about `2.4pp` in the concentrated condition and `0.3pp` in the distributed condition. The locked novel-test pooled transfer was only `1pp`; diversity amplification was `D=-2pp`, with bootstrap interval `[-8pp,+4pp]`.
 
@@ -353,34 +354,118 @@ The higher-order psychological claim was not cleanly falsified because the LLM a
 
 1. **Validate prerequisite acquisition before studying abstraction/generalization.** If the question is "when does learned X generalize?", the first hard gate should establish that the selected learner robustly acquires `X`.
 2. A strong human/cognitive literature does not prove that a vanilla LLM interaction-history agent instantiates the analogous latent state.
-3. Before locking a behavioral endpoint, analytically check whether plausible latent-belief changes can actually move it away from floor/ceiling. The v1 test action was too cheap and therefore nearly always active.
-4. One independently motivated preregistered repair can be legitimate. Repeatedly changing model size, reward schedule, memory, prompt, probe, or environment until the prerequisite phenomenon appears is post-hoc optimization, not falsification-first science.
+3. Before locking a behavioral endpoint, analytically check whether plausible latent-belief changes can move it away from floor/ceiling. The v1 test action was too cheap and therefore nearly always active.
+4. One independently motivated preregistered repair can be legitimate. Repeatedly changing model size, reward schedule, memory, prompt, probe, or environment until the prerequisite appears is post-hoc optimization.
 5. **A natural question can still be a bad AI topic.** Naturalness is necessary but not sufficient; the chosen system must instantiate the phenomenon cleanly enough to study.
 6. Preserve the distinction between "the natural question is unresolved" and "this candidate is not worth continuing." Topic 06 is the latter.
 
 ### Reusable warning sign
 
-If the candidate's higher-order claim depends on a base phenomenon that is only weakly visible, do not immediately add transfer conditions, abstraction levels, mechanisms, or probes.
+If a higher-order claim depends on a base phenomenon that is only weakly visible, do not immediately add transfer conditions, abstraction levels, mechanisms, or probes. First establish that the selected learner robustly instantiates the base phenomenon. If it remains weak after one principled locked repair, archive rather than searching for a model/environment combination that makes it true.
+
+---
+
+## Topic 07 — Old Blocks New, or New Erases Old?
+
+**Final status:** archived as `INCONCLUSIVE_DO_NOT_TUNE` at the frozen discovery gate.
+
+[Archive summary](./07_memory_interference_architecture/ARCHIVE_SUMMARY.md)
+
+### Original idea
+
+Classical memory distinguishes proactive interference (old information blocks new learning/retrieval) from retroactive interference (new information damages old memory). A 2026 LLM study reported a robust Transformer tendency toward `PI > RI`, creating a natural question:
+
+> When old and new memories conflict, what determines which side survives?
+
+The candidate hypothesis was that the sequence model's memory-update rule is an important determinant of interference direction. A matched M-A-P family allowed a relatively clean first comparison among Transformer, GLA, DeltaNet, and Gated DeltaNet under the same shared-stream PI/RI measurement.
+
+### What happened
+
+The frozen pilot was technically clean:
+
+```text
+4 architectures × 192 rows = 768 rows
+skip rate = 0%
+duplicate rows = 0
+paired cells/model = 192
+tokenizer boundary shift = 0
+```
+
+The motivating Transformer phenomenon reproduced:
+
+```text
+Transformer mean I = +0.1563
+I = Accuracy_RI - Accuracy_PI
+```
+
+So this was not a prerequisite or measurement failure.
+
+However, the preregistered primary comparison was Transformer vs Gated DeltaNet:
+
+```text
+mean I Transformer       = 0.1563
+mean I Gated DeltaNet    = 0.0833
+Delta_I                  = 0.0729
+paired bootstrap 95% CI  = [-0.0313, 0.1771]
+sign-transition levels   = 0 / 4
+```
+
+The frozen rules required `Delta_I >= 0.10` and a positive CI lower bound to enter locked confirmation. They required `abs(Delta_I) < 0.05` for a clean kill. The observed result lay between them, so the only permitted decision was:
+
+```text
+INCONCLUSIVE_DO_NOT_TUNE
+```
+
+The broader architecture pattern was also not a clean monotonic memory-editability story:
+
+```text
+Transformer       0.1563
+DeltaNet          0.1250
+Gated DeltaNet    0.0833
+GLA               0.0208
+```
+
+In particular, DeltaNet remained close to Transformer, and there were no frozen levels showing the hoped-for qualitative Transformer-positive/GatedDeltaNet-negative sign transition.
+
+### Failure / stop type
+
+**Layer D — explanatory-axis strength unresolved at frozen discovery gate.**
+
+This is deliberately not called falsification. The phenomenon was real in the Transformer, but the proposed architecture axis did not produce a large, stable, qualitative enough separation to justify further investment under the preregistered candidate-selection contract.
+
+### Main lessons
+
+1. **Phenomenon existence and explanatory importance are separate gates.** Reproducing PI>RI established that the measurement was active; it did not establish that memory-update architecture is the main determinant.
+2. **Do not replace a minimum-worthy-effect criterion with a significance criterion after seeing the result.** The point estimate `0.0729` was already below the frozen `0.10` GO threshold. More samples could narrow the CI without making the effect scientifically large enough.
+3. **A gray zone can be a legitimate archive outcome.** Research screening does not require every candidate to be classified as true or false. `INCONCLUSIVE_DO_NOT_TUNE` means the evidence is not compelling enough to spend the next unit of research effort.
+4. **Do not shop the architecture pair after seeing results.** Transformer–GLA looked numerically larger than the frozen Transformer–GatedDeltaNet contrast, but switching the primary comparison post hoc would invalidate the falsification-first logic.
+5. **Qualitative predictions are valuable.** The hoped-for sign transition occurred at `0/4` levels. Its absence made the “different memory medium -> different interference regime” story substantially less compelling even though mean values differed.
+6. **Not falsified != worth continuing.** A broad scientific question may remain open while the current candidate is correctly archived.
+
+### Reusable warning sign
+
+If the motivating phenomenon replicates but the proposed explanatory variable only changes its magnitude modestly, gives heterogeneous ordering across variants, and fails the frozen minimum-worthy-effect gate, do not automatically answer with `n↑`, more models, or mechanistic probes.
 
 First ask:
 
-> **Does the selected learner robustly instantiate the base phenomenon at all?**
+> **Is the explanatory axis itself strong enough to deserve a paper?**
 
-If the answer remains weak after one principled locked repair, archive the topic rather than searching for a model/environment combination that makes it true.
+If the answer is not clearly yes under the frozen discovery contract, archive and move on.
 
 ---
 
 # 4. Cross-topic lessons
 
-The five archived projects reveal distinct ways a research candidate can fail:
+The six archived projects now cover distinct ways a research candidate can stop:
 
-| Topic | Failure layer | What failed |
+| Topic | Failure / stop layer | What failed or remained unresolved |
 |---|---|---|
 | 01 | Substantive hypothesis | the expected behavior/representation temporal decoupling did not occur |
 | 02 | Confirmation | the exploratory hidden-state signal did not survive a locked independent test |
 | 04 | Measurement/common support | the intended high/low commitment comparison could not be constructed cleanly at sufficient scale |
 | 05 | Conceptual identification | the proposed observable could not distinguish retained competence from task simplification/conditional continuation |
-| 06 | Prerequisite phenomenon / acquisition | the chosen LLM agent did not robustly acquire the controllability-dependent state required for the higher-order generalization question |
+| 06 | Prerequisite phenomenon / acquisition | the chosen LLM agent did not robustly acquire the controllability-dependent state required for the higher-order question |
+| 07 | Frozen discovery / explanatory-axis strength | the seed PI>RI phenomenon replicated, but the preregistered memory-architecture contrast was not large, robust, or qualitative enough to justify confirmation |
 
 The ordering matters. Future projects should try to fail **as early as possible**:
 
@@ -393,7 +478,9 @@ Conceptual identifiability
     ↓
 Measurement validity / common support
     ↓
-Cheap substantive G0
+Cheap substantive phenomenon test
+    ↓
+Does the proposed explanatory axis create a minimum-worthwhile clean effect?
     ↓
 Locked confirmation
     ↓
@@ -402,7 +489,17 @@ Only then scale up mechanisms / models / training
 
 For some topics, prerequisite-instantiation and substantive G0 are the same experiment. For higher-order questions about transfer, abstraction, forgetting, interference, or meta-learning, they may need to be separated explicitly.
 
-Do not spend GPU to answer a question that has already failed one of the earlier layers.
+A second separation is equally important:
+
+```text
+phenomenon exists
+!=
+our favorite explanation is important
+```
+
+Topic 07 is the clean example. The seed phenomenon replicated; the proposed explanatory axis did not earn continuation.
+
+Do not spend GPU to answer a question that has already failed one of the earlier layers or landed in a frozen no-tune gray zone.
 
 ---
 
@@ -424,7 +521,7 @@ Do not infer a new phenomenon merely because two papers leave an empty combinato
 
 Then separate two claims:
 
-1. the phenomenon exists in the source domain (human cognition, another model family, another task, etc.);
+1. the phenomenon exists in the source domain;
 2. the **selected AI system** robustly instantiates the prerequisite phenomenon needed for this candidate.
 
 Do not treat evidence for (1) as evidence for (2).
@@ -448,7 +545,7 @@ What is the simplest observation that separates the main explanations?
 Prefer:
 
 ```text
-A vs B → one primary contrast
+A vs B -> one primary contrast
 ```
 
 over a chain requiring many conditional exclusions.
@@ -481,8 +578,6 @@ Ask:
 
 > **Are these controls making a clear causal question rigorous, or are they trying to make an unclear construct exist?**
 
-That distinction is crucial.
-
 ## 5.7 Measurement validity and decision calibration
 
 Check whether nuisance variation is mechanically entangled with the treatment/target variable.
@@ -507,17 +602,31 @@ model × layer × step × threshold × prompt × metric × dataset
 
 If this grid is large, pre-split discovery and confirmation before looking at results.
 
-## 5.10 Kill line
+## 5.10 Minimum-worthwhile effect, GO/KILL line, and gray zone
 
-Write what observation would make the topic **not worth continuing**.
+Do not define only statistical significance. State in advance:
 
-The kill line should ideally be short and tied directly to the natural question. If the kill contract itself needs a page of branching logic before the first experiment, invoke the complexity-smell rule and reconsider the topic.
+- what effect would be large/clean enough to justify confirmation (`GO`);
+- what effect would make the topic not worth continuing (`KILL`);
+- what intermediate region should be labeled `INCONCLUSIVE_DO_NOT_TUNE`.
 
-For higher-order topics, include a separate prerequisite-acquisition kill line. Do not let failure of the prerequisite automatically trigger model/reward/environment sweeps.
+The minimum worthwhile effect should reflect the strength needed for the **scientific story**, not merely the sample size needed for `p<0.05`.
 
-## 5.11 No-rescue rule
+If the discovery lands in the gray zone, do not reinterpret it as “almost GO” and increase `n` solely to chase significance. For candidate screening, archive unless an independently motivated new observation changes the question.
 
-After a locked gate fails, do not reopen layer/model/metric/threshold search to preserve the same claim.
+## 5.11 Explanatory-axis gate
+
+After the motivating phenomenon is established, explicitly ask:
+
+> **Does the variable we actually want to explain the phenomenon with create a large, clean separation?**
+
+Do not proceed to mechanisms merely because the base phenomenon replicated.
+
+This is especially important for architecture, representation, memory, optimizer, or training-dynamics explanations where many technical axes can be correlated with the same behavior.
+
+## 5.12 No-rescue rule
+
+After a locked gate fails or lands in a frozen no-tune region, do not reopen layer/model/metric/threshold search to preserve the same claim.
 
 One narrowly defined repair is defensible only when the defect is independently identifiable before the new outcome is inspected and the repair itself is frozen. If that repaired gate fails again, stop.
 
@@ -532,14 +641,16 @@ The repository should increasingly prefer questions with these properties:
 1. **Natural before technical.** The question survives deletion of AI-specific vocabulary.
 2. **System instantiation before higher-order claims.** A source-domain phenomenon is not enough; the chosen AI learner must robustly exhibit the prerequisite phenomenon before studying its transfer, abstraction, or mechanism.
 3. **Phenomenon before mechanism.** There is a real observation to explain, not merely an unfilled measurement cell.
-4. **Short inferential distance.** The primary observable is close to the scientific concept.
-5. **One clean contrast.** A main result has a direct interpretation without a long chain of exclusions.
-6. **Behavioral readouts must be calibrated.** Plausible latent-state changes should be capable of moving the measured decision away from floor/ceiling.
-7. **Complex methods explain; they do not create.** SAE/probes/hidden-state analyses come after a clear phenomenon.
-8. **Cheap falsification first.** Use small models/data when they can genuinely kill the claim.
-9. **Locked confirmation immediately after discovery.** Do not invest in a large story around an exploratory cell.
-10. **Failure labels stay precise.** `hypothesis false`, `measurement failed`, `prerequisite absent`, and `question not identifiable` are different outcomes.
-11. **Protocol complexity is evidence.** If clarification makes the gate continually longer rather than the experiment cleaner, reconsider the question.
-12. **Stop means stop.** Preserve code and lessons, then move on.
+4. **Explanatory axis after phenomenon.** Once the phenomenon is real, the proposed explanation must itself produce a large, clean separation before mechanisms are studied.
+5. **Short inferential distance.** The primary observable is close to the scientific concept.
+6. **One clean contrast.** A main result has a direct interpretation without a long chain of exclusions.
+7. **Behavioral readouts must be calibrated.** Plausible latent-state changes should be capable of moving the measured decision away from floor/ceiling.
+8. **Minimum-worthy effect before significance.** Decide what effect is worth a paper before looking at the result; do not substitute sample-size-driven significance later.
+9. **Complex methods explain; they do not create.** SAE/probes/hidden-state analyses come after a clear phenomenon and a compelling explanatory contrast.
+10. **Cheap falsification first.** Use small models/data when they can genuinely kill the claim.
+11. **Locked confirmation immediately after a real GO.** Do not invest in a large story around an exploratory or gray-zone cell.
+12. **Failure labels stay precise.** `hypothesis false`, `measurement failed`, `prerequisite absent`, `inconclusive explanatory axis`, and `confirmation failed` are different outcomes.
+13. **Protocol complexity is evidence.** If clarification makes the gate continually longer rather than the experiment cleaner, reconsider the question.
+14. **Stop means stop.** Preserve code, outputs, and lessons, then move on.
 
 This file should be updated whenever a candidate is archived.
