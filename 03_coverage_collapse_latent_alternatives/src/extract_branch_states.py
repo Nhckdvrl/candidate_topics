@@ -136,7 +136,8 @@ def main():
         text = full_prompt(question, prefix_variant=args.prefix_variant)
         enc = tokenizer(text, return_tensors="pt", add_special_tokens=True)
         prompt_ids = enc["input_ids"].to(device)
-        out = model(prompt_ids, output_hidden_states=True, use_cache=False)
+        with torch.inference_mode():
+            out = model(prompt_ids, output_hidden_states=True, use_cache=False)
 
         # hidden_states[0] is embedding output; block k is hidden_states[k+1].
         for li in range(n_layers):

@@ -1,0 +1,31 @@
+{
+  "status": "archived",
+  "decision": "FIRST_FORK_BEHAVIORAL_PREMISE_NOT_PRESENT",
+  "run_b_g0": false,
+  "protocol": {
+    "problems": 200,
+    "samples_per_problem": 64,
+    "checkpoints": ["e01", "e02", "e04", "e08", "e16"],
+    "learning_rates": ["1e-5", "2e-5"],
+    "paired_bootstrap_resamples": 100000,
+    "paired_bootstrap_seed": 42
+  },
+  "r1": {
+    "status": "fail",
+    "pass32_e08_minus_e16": {
+      "1e-5": 0.000000054,
+      "2e-5": 0.006973930
+    },
+    "ci95_e08_minus_e16": {
+      "1e-5": [-0.000000001, 0.000000158],
+      "2e-5": [-0.006857007, 0.024345629]
+    }
+  },
+  "r2": {
+    "status": "fail",
+    "all_checkpoints_mean_viable_first": 1.0,
+    "all_checkpoints_first_branch_entropy": 0.0,
+    "teacher_forced_wrong_commit_rate": 0.0,
+    "teacher_forced_strong_wrong_commit_rate": 0.0
+  }
+}

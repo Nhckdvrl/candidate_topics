@@ -2,6 +2,14 @@
 
 The completed paper-exact G0-A run is documented in [G0_RESULTS.md](G0_RESULTS.md). It returned `stop_or_redesign`, so the protocol correctly did not run G0-B latent probing.
 
+The final seed-paper reproduction audit is documented in
+[results/REPRODUCTION_AUDIT.md](results/REPRODUCTION_AUDIT.md). It tested both the
+official-code learning rate (`1e-5`) and the paper-text learning rate (`2e-5`),
+with 64 samples/problem and the missing e08 checkpoint restored. Neither
+trajectory reproduced late coverage degradation, and teacher-forced decision
+points contained no incorrect branch commitments. **Topic 03 is archived;
+G0-B is not authorized.**
+
 ## Status
 
 **Candidate topic — falsification-first G0 implemented.**
