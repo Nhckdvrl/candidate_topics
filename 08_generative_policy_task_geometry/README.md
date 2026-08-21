@@ -70,15 +70,15 @@ If they pass, the next experiment must move beyond the easy objection “just ma
 
 ```bash
 pip install -r requirements.txt
-GPU=0 SEED=0 ./run_g0.sh
+GPU=0 SEED=0 bash run_g0.sh
 ```
 
 For parallel seeds on separate GPUs/nodes:
 
 ```bash
-GPU=0 SEED=0 ./run_g0.sh
-GPU=1 SEED=1 ./run_g0.sh
-GPU=2 SEED=2 ./run_g0.sh
+GPU=0 SEED=0 bash run_g0.sh
+GPU=1 SEED=1 bash run_g0.sh
+GPU=2 SEED=2 bash run_g0.sh
 ```
 
 See `SERVER_HANDOFF.md` for the exact server workflow and `VALIDATION.md` for the frozen measurements.
