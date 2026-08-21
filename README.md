@@ -16,13 +16,12 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 8. define the cheapest experiment that can invalidate the proposed interpretation;
 9. freeze the primary measurement before broad search over models/layers/thresholds;
 10. reserve confirmation data whenever discovery involves tuning a measurement;
-11. stop early if the core claim or identification strategy fails; do not rescue it with post-hoc metric/model/control sweeps.
+11. stop early if the core claim or identification strategy fails; do not rescue it with post-hoc metric/model/control sweeps;
+12. for mechanism work, require **mechanism-level phenomenon replication** before hidden-state analysis: the exact decision point / failure event being explained must actually occur in the chosen system, not merely an aggregate metric that could be produced by another failure mode.
 
 ## Current candidates
 
-| Priority | Topic | Natural question | Current gate |
-| --- | --- | --- | --- |
-| 1 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
+No active candidate is currently promoted from the frozen pilot stage.
 
 ## Archived topics
 
@@ -30,6 +29,7 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 | --- | --- | --- | --- |
 | [01 — Behavior vs. Representation Stabilization](./01_behavior_vs_representation_stabilization/) | **ARCHIVED / KILLED** | Behavioral KL stabilized as expected, but matched residual representation movement stabilized at least as fast; no temporal decoupling survived robustness checks. | [Archive summary](./01_behavior_vs_representation_stabilization/ARCHIVE_SUMMARY.md) |
 | [02 — DLM Trajectory Fate](./02_dlm_trajectory_fate/) | **ARCHIVED / FALSIFIED AS A BROAD CLAIM** | Exploratory signal did not survive preregistered independent GSM1K confirmation, while the positive control remained strong. | [Archive summary](./02_dlm_trajectory_fate/ARCHIVE_SUMMARY.md) |
+| [03 — Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | **ARCHIVED / KILLED AT BEHAVIORAL PREMISE** | Final seed-paper reproduction audit tested both official-code `1e-5` and paper-text `2e-5`, e01/e02/e04/e08/e16, 64 samples/problem, `pass@32`, and teacher-forced first-fork probabilities. No meaningful late coverage degradation reproduced, and every checkpoint had essentially perfect viable first-branch choice with `wrong_commit_rate=0`. The intended suppressed-alternative mechanism therefore had no experimental object. | [Archive summary](./03_coverage_collapse_latent_alternatives/ARCHIVE_SUMMARY.md) |
 | [04 — Confidence and Error Correction](./04_confidence_error_correction/) | **ARCHIVED / KILLED AT MEASUREMENT / IDENTIFICATION GATE** | G-1v1 produced 61 clean matched pairs. One locked log-space measurement repair restored the commitment range but still yielded only 130 pairs, below the predeclared `<200` hard stop. No corrective SFT was run, so the correction hypothesis itself remains untested. | [Archive summary](./04_confidence_error_correction/ARCHIVE_SUMMARY.md) |
 | [05 — Temporal Forgetting: Lost Skill or Lost Entry Point?](./05_temporal_forgetting_reentry/) | **ARCHIVED / CONCEPTUAL IDENTIFICATION FAILURE** | Prefix-based rescue changes the task condition and cannot identify whether uncued old competence is still retained; `old route` is not a stable observable, and teacher-forced NLL is conditional on the same cue. The run stopped during partial sampling before scoring or any hypothesis-level gate, so no empirical conclusion is reported. | [Archive summary](./05_temporal_forgetting_reentry/ARCHIVE_SUMMARY.md) |
 | [06 — When Does Helplessness Become a Worldview?](./06_helplessness_worldview/) | **ARCHIVED / KILLED AT ACQUISITION PREMISE** | Qwen3-8B showed almost no controllability acquisition or transfer. One preregistered Qwen3-32B v2 removed the action ceiling and still produced only +2–5pp late-training C/U separation, with no predicted diversity amplification (`D=-4.17pp`). The higher-order natural question remains unresolved because the chosen LLM agent never robustly instantiated the prerequisite learned-uncontrollability state. | [Archive summary](./06_helplessness_worldview/ARCHIVE_SUMMARY.md) |
@@ -43,6 +43,7 @@ The archive reason should be interpreted precisely:
 
 - **Topic 01** failed its substantive G0 hypothesis.
 - **Topic 02** failed locked independent confirmation of its proposed new claim.
+- **Topic 03** failed at the mechanism-level behavioral premise: after resolving reproduction ambiguities, the exact first-fork wrong-commitment event the latent story needed was absent. Aggregate correctness variation came from downstream execution noise instead.
 - **Topic 04** failed before hypothesis testing because the required clean comparison could not be identified at sufficient scale.
 - **Topic 05** was stopped even earlier at the conceptual-identification level: the proposed intervention could not distinguish retained competence from task simplification / conditional continuation, so continuing to sample would not resolve the scientific question.
 - **Topic 06** failed at the prerequisite-acquisition layer: two increasingly capable but locked tests did not produce a strong learned controllability/uncontrollability separation, so the proposed higher-order generalization question was not cleanly instantiated in the chosen AI system.
@@ -63,5 +64,9 @@ Topic 06 adds a complementary prerequisite lesson:
 Topic 07 adds a different lesson:
 
 > **Replicating the phenomenon is not evidence that the proposed explanatory axis matters. After establishing the phenomenon, require the explanatory manipulation to create a large, clean separation before investing in mechanisms or scale.**
+
+Topic 03 adds a mechanism-localization lesson:
+
+> **An aggregate metric is not the mechanism. Before probing hidden states for a proposed failure mode, verify that the exact local failure event actually occurs. `pass@k` variation caused by downstream execution noise cannot support a story about suppressed first-fork alternatives.**
 
 A failed or inconclusive topic should not be revived by post-hoc metric/layer/model/control sweeps unless a genuinely new external observation changes the scientific premise and motivates a newly registered question or identification strategy.
