@@ -21,9 +21,9 @@ A single GPU is enough for one seed. The experiment is low-dimensional; use sepa
 Run three independent seeds in parallel:
 
 ```bash
-GPU=0 SEED=0 ./run_g0.sh
-GPU=1 SEED=1 ./run_g0.sh
-GPU=2 SEED=2 ./run_g0.sh
+GPU=0 SEED=0 bash run_g0.sh
+GPU=1 SEED=1 bash run_g0.sh
+GPU=2 SEED=2 bash run_g0.sh
 ```
 
 Each command trains two policies:
@@ -48,7 +48,7 @@ Defaults per condition:
 For a cheap runtime sanity check only:
 
 ```bash
-GPU=0 SEED=99 BASE_TASKS=30 MODES=2 TRAIN_STEPS=300 STATES=24 SAMPLES=16 ROLLOUTS=10 ./run_g0.sh
+GPU=0 SEED=99 BASE_TASKS=30 MODES=2 TRAIN_STEPS=300 STATES=24 SAMPLES=16 ROLLOUTS=10 bash run_g0.sh
 ```
 
 Do not interpret the smoke run scientifically.
