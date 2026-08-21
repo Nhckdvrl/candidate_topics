@@ -101,7 +101,7 @@ pip install -r requirements.txt
 1. **matched outcome marginals:** Jensen-Shannon divergence of effects between controllable and uncontrollable generators `< 0.005` bits;
 2. **contingency separation:** mean per-episode action-effect mutual information `> 0.5` bits in C and `< 0.08` bits in U.
 
-Unit tests additionally verify exact-yoke state replay, budget behavior, seed reproducibility, semantic family disjointness, parser behavior, interaction arithmetic, and an async end-to-end subject smoke test.
+Unit tests additionally verify exact-yoke state replay, budget behavior, seed reproducibility, semantic family disjointness, parser behavior, interaction arithmetic, an async end-to-end subject smoke test, and that concentrated/distributed arms reuse identical latent plans for a fixed seed.
 
 Before registration, the local audit returned approximately:
 
@@ -109,7 +109,7 @@ Before registration, the local audit returned approximately:
 effect JS divergence:            0.0000023 bits
 controllable action-effect MI:   1.559 bits
 uncontrollable action-effect MI: 0.052 bits
-pytest:                          14 passed
+pytest:                          15 passed
 ```
 
 Exact small numerical values can vary with audit seed/count; only the declared thresholds matter.
