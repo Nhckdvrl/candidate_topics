@@ -22,7 +22,8 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 | Priority | Topic | Natural question | Current gate |
 | --- | --- | --- | --- |
-| 1 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
+| 1 | [Generative Policy Diversity Has Task Geometry](./08_generative_policy_task_geometry/) | When a generative robot policy produces diverse actions from the same state, does that diversity reflect task uncertainty or goal-equivalent redundancy? | First establish a matched-entropy counterexample: similar scalar ACE, different task-sensitive variance, different functional risk. |
+| 2 | [Coverage Collapse vs. Latent Alternatives](./03_coverage_collapse_latent_alternatives/) | When a reasoning branch disappears from behavior, is branch-specific viability information erased or merely suppressed? | Before any training-dynamics study, the base/early model must reliably encode viability of unchosen branches at controlled graph forks. |
 
 ## Archived topics
 
