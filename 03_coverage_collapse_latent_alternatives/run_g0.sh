@@ -21,6 +21,7 @@ fi
 bash ./run_behavior_preflight.sh
 
 RUN_ID=$(cat artifacts/behavior/latest_run.txt)
+printf '%s\n' "$RUN_ID" > artifacts/behavior/latest_g0_run.txt
 STATUS=$(python - "artifacts/behavior/$RUN_ID/gate.json" <<'PY'
 import json,sys
 print(json.load(open(sys.argv[1]))["status"])
