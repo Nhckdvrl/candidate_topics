@@ -70,6 +70,39 @@ def training_active_late(rows: Iterable[dict], condition: str, diversity: str, f
     return float(np.mean(vals)) if vals else float("nan")
 
 
+def cell_training_success(rows: Iterable[dict], condition: str, diversity: str) -> float:
+    vals = [float(bool(r["success"])) for r in rows if r["phase"] == "train" and r["condition"] == condition and r["diversity"] == diversity]
+    return float(np.mean(vals)) if vals else float("nan")
+
+
+def late_effective_action_rate(rows: Iterable[dict], condition: str, diversity: str, fraction: float = 0.2) -> float:
+    by_pair: dict[int, list[dict]] = defaultdict(list)
+    for r in rows:
+        if r["phase"] == "train" and r["condition"] == condition and r["diversity"] == diversity and bool(r["valid_action"]):
+            by_pair[int(r["pair_id"])].append(r)
+    vals = []
+    for rs in by_pair.values():
+        rs = sorted(rs, key=lambda x: (int(x["episode"]), int(x["trial"])))
+        k = max(1, int(round(len(rs) * fraction)))
+        for x in rs[-k:]:
+            vals.append(float(x["latent_action"] == x["effective_action"]))
+    return float(np.mean(vals)) if vals else float("nan")
+
+
+def yoke_mismatch_count(rows: Iterable[dict]) -> int:
+    grouped: dict[tuple[str, int, int, int], dict[str, bool]] = defaultdict(dict)
+    for r in rows:
+        if r["phase"] != "train":
+            continue
+        key = (r["diversity"], int(r["pair_id"]), int(r["episode"]), int(r["trial"]))
+        grouped[key][r["condition"]] = bool(r["success"])
+    mismatches = 0
+    for x in grouped.values():
+        if "controllable" in x and "uncontrollable" in x and x["controllable"] != x["uncontrollable"]:
+            mismatches += 1
+    return mismatches
+
+
 def pooled_transfer(cells: dict[tuple[str, str], dict[int, float]]) -> float:
     effects = []
     for div in ("concentrated", "distributed"):
@@ -89,20 +122,34 @@ def summarize(rows: list[dict], n_boot: int = 5000) -> dict:
         "diversity_amplification": amp,
         "diversity_amplification_bootstrap95": [lo, hi],
         "late_training_active": {},
+        "late_effective_action_rate": {},
+        "training_success_rate": {},
+        "yoke_mismatch_count": yoke_mismatch_count(rows),
     }
     for cond in ("controllable", "uncontrollable"):
         for div in ("concentrated", "distributed"):
             vals = list(cells.get((cond, div), {}).values())
-            out["step1_active"][f"{cond}:{div}"] = float(np.mean(vals)) if vals else float("nan")
-            out["late_training_active"][f"{cond}:{div}"] = training_active_late(rows, cond, div)
+            key = f"{cond}:{div}"
+            out["step1_active"][key] = float(np.mean(vals)) if vals else float("nan")
+            out["late_training_active"][key] = training_active_late(rows, cond, div)
+            out["late_effective_action_rate"][key] = late_effective_action_rate(rows, cond, div)
+            out["training_success_rate"][key] = cell_training_success(rows, cond, div)
     for div in ("concentrated", "distributed"):
         arr = list(paired_helplessness(cells, div).values())
         out["paired_helplessness"][div] = float(np.mean(arr)) if arr else float("nan")
+    c1 = out["training_success_rate"]["controllable:concentrated"]
+    c10 = out["training_success_rate"]["controllable:distributed"]
+    out["master_success_gap_distributed_minus_concentrated"] = float(c10 - c1)
     return out
 
 
 def decision(summary: dict) -> dict:
     invalid = summary["invalid_rate_test"]
+    if summary.get("yoke_mismatch_count", 0) != 0:
+        return {"status": "TECHNICAL_STOP", "reason": "master/yoked training outcomes are not exact matches"}
+    master_gap = abs(summary.get("master_success_gap_distributed_minus_concentrated", float("nan")))
+    if np.isfinite(master_gap) and master_gap > 0.10:
+        return {"status": "EXPOSURE_IMBALANCE", "reason": ">10pp master success-rate difference across diversity conditions; interaction is not cleanly interpretable"}
     pooled = summary["pooled_transfer_C_minus_U"]
     amp = summary["diversity_amplification"]
     lo, hi = summary["diversity_amplification_bootstrap95"]

@@ -8,7 +8,7 @@ If an agent repeatedly learns that its actions do not affect outcomes, does it l
 
 The first experiment asks one very specific version:
 
-> Holding the amount and external outcome sequence fixed, does uncontrollability experienced across many semantically different task families transfer more strongly to a novel controllable task than the same uncontrollability concentrated in one family?
+> Holding experience count fixed, and matching external outcomes within each controllable/yoked pair, does uncontrollability experienced across many semantically different task families transfer more strongly to a novel controllable task than the same uncontrollability concentrated in one family?
 
 This question predates LLMs. Lieder, Goodman & Huys (CogSci 2013) formalized learned helplessness as hierarchical Bayesian learning over action-, situation-, and world-level controllability, and explicitly predicted that multiple varied stressors can produce broader generalization than the same amount of stress in one situation. A 2022 Trends in Cognitive Sciences review independently summarizes the broader learning result that greater training variability often yields broader generalization.
 

@@ -57,6 +57,6 @@ Do **not** claim:
 
 The candidate claim is narrower:
 
-> Holding exposure and external outcomes constant with a master–yoked design, does **semantic/contextual diversity of uncontrollable experience** determine the breadth of transfer to a novel controllable task in an ordinary LLM agent?
+> Holding exposure count fixed and matching controllable/yoked external outcomes within each diversity level, does **semantic/contextual diversity of uncontrollable experience** determine the breadth of transfer to a novel controllable task in an ordinary LLM agent?
 
 No directly matching modern LLM-agent paper was found in the searches performed for this registration.

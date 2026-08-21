@@ -1,4 +1,4 @@
-from src.analyze import diversity_amplification, pooled_transfer, extract_test_step1
+from src.analyze import diversity_amplification, pooled_transfer, extract_test_step1, yoke_mismatch_count
 
 
 def row(condition, diversity, pair_id, active):
@@ -17,3 +17,13 @@ def test_primary_metric_detects_diversity_amplification():
     cells = extract_test_step1(rows)
     assert abs(pooled_transfer(cells) - 0.5) < 1e-9
     assert abs(diversity_amplification(cells) - 0.5) < 1e-9
+
+
+def test_yoke_mismatch_diagnostic():
+    rows = [
+        {"phase":"train","condition":"controllable","diversity":"concentrated","pair_id":0,"episode":1,"trial":1,"success":True},
+        {"phase":"train","condition":"uncontrollable","diversity":"concentrated","pair_id":0,"episode":1,"trial":1,"success":True},
+    ]
+    assert yoke_mismatch_count(rows) == 0
+    rows[1]["success"] = False
+    assert yoke_mismatch_count(rows) == 1

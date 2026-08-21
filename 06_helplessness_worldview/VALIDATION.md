@@ -89,7 +89,9 @@ Report but do not use to rescue a failed primary endpoint:
 - first selection of the effective intervention;
 - test success / net score;
 - recovery trajectory after the first successful active intervention;
-- late-training active-intervention rate.
+- late-training active-intervention rate;
+- late-training selection rate of the episode-effective action;
+- master success-rate balance across diversity conditions.
 
 No self-report questionnaire or hidden-state probe belongs in G0.
 
@@ -97,12 +99,13 @@ No self-report questionnaire or hidden-state probe belongs in G0.
 
 Before science:
 
-1. `python -m pytest -q tests` passes;
+1. `pytest -q tests` passes;
 2. master/yoked outcome sequences are exact matches;
 3. all four conditions have equal exposure counts;
 4. invalid-action rate at test is ≤1%;
-5. logs preserve raw model output, normalized action, latent action, success, cost, and condition metadata;
-6. `orbital_station` never appears in training renderers.
+5. the controllable master success-rate gap between distributed and concentrated conditions is reported; if it exceeds 10pp, the diversity interaction is treated as exposure-confounded and not interpreted;
+6. logs preserve raw model output, normalized action, latent action, success, cost, and condition metadata;
+7. `orbital_station` never appears in training renderers.
 
 An invalid response uses a deterministic active-A fallback only so the environment can continue. It is marked `valid_action=false` and excluded from the primary endpoint. If invalidity exceeds 1%, stop rather than interpreting passivity.
 
