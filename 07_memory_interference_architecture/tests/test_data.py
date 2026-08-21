@@ -40,6 +40,7 @@ def test_updates_are_round_balanced_and_preserve_per_key_update_order():
     for start in range(0, len(updates), len(ep.categories)):
         block = updates[start : start + len(ep.categories)]
         assert {a.category for a in block} == set(ep.categories)
+    assert all(a.category != b.category for a, b in zip(updates, updates[1:]))
     for key in ep.categories:
         presented = [a.value for a in ep.assignments if a.category == key]
         assert tuple(presented) == ep.histories[key]
