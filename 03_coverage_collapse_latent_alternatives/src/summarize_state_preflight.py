@@ -26,6 +26,7 @@ def summarize(path: Path):
     strong_wrong = true_margin < -2.0
     return {
         "tag": str(d["tag"].item()),
+        "condition": str(d["condition"].item()),
         "n": len(true_margin),
         "output_choice_acc": float((true_margin > 0).mean()),
         "mean_p_true_viable_pair": float(p_true.mean()),
@@ -38,7 +39,7 @@ def summarize(path: Path):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Cheap teacher-forced first-fork preflight before sampling or probing.")
+    p = argparse.ArgumentParser(description="Cheap teacher-forced first-fork debugging preflight.")
     p.add_argument("--input-dir", default="artifacts/preflight_states")
     p.add_argument("--tags", default="e01,e02,e04,e16")
     p.add_argument("--output", default="artifacts/state_preflight.csv")
@@ -46,7 +47,7 @@ def main():
 
     rows = []
     for tag in [x.strip() for x in args.tags.split(",") if x.strip()]:
-        path = Path(args.input_dir) / f"{tag}.npz"
+        path = Path(args.input_dir) / f"{tag}_original.npz"
         if not path.exists():
             raise FileNotFoundError(path)
         rows.append(summarize(path))
@@ -56,9 +57,10 @@ def main():
     df.to_csv(out, index=False)
     print(df.to_string(index=False))
 
-    # This file deliberately does NOT decide scientific viability. Teacher-forced margins
-    # are only a cheap sanity check; pass@k shrinkage must be reproduced by sampling.
-    meta = {"status": "sampling_required", "reason": "teacher-forced margins cannot establish coverage shrinkage"}
+    meta = {
+        "status": "sampling_required",
+        "reason": "teacher-forced margins cannot establish pass@k coverage shrinkage",
+    }
     out.with_suffix(".json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
 
 
