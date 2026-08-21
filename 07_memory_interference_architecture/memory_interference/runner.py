@@ -25,9 +25,20 @@ def _append_jsonl(row: dict, path: Path):
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
-def run(config_path: str, model_filter: List[str] | None = None) -> Path:
+def run(
+    config_path: str,
+    model_filter: List[str] | None = None,
+    *,
+    output_root: str | None = None,
+    device: str | None = None,
+) -> Path:
     with open(config_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
+
+    if output_root is not None:
+        cfg["output_root"] = output_root
+    if device is not None:
+        cfg["models"] = [{**spec, "device": device} for spec in cfg["models"]]
 
     pool = load_pool(cfg["data_file"])
     levels = [int(x) for x in cfg["num_updates"]]
@@ -159,8 +170,10 @@ def main():
     parser.add_argument(
         "--model", action="append", default=None, help="model name from config; may be repeated"
     )
+    parser.add_argument("--output-root", default=None, help="engineering-only isolated output root")
+    parser.add_argument("--device", default=None, help="engineering-only device override")
     args = parser.parse_args()
-    run(args.config, args.model)
+    run(args.config, args.model, output_root=args.output_root, device=args.device)
 
 
 if __name__ == "__main__":

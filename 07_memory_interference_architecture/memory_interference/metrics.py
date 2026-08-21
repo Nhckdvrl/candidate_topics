@@ -35,7 +35,10 @@ def log_auc(level_to_accuracy: Mapping[int, float]) -> float:
         return float("nan")
     xs = np.asarray([math.log10(n + 1) for n, _ in pairs], dtype=float)
     ys = np.asarray([a for _, a in pairs], dtype=float)
-    return float(np.trapezoid(ys, xs))
+    # NumPy 2.0 renamed trapz to trapezoid; keep the exact same trapezoidal
+    # integration rule for older compatible environments.
+    trapezoid = getattr(np, "trapezoid", np.trapz)
+    return float(trapezoid(ys, xs))
 
 
 def summarize(rows: Sequence[Mapping]) -> List[Dict]:
