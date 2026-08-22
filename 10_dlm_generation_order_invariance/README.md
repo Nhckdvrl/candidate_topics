@@ -6,125 +6,100 @@
 
 > When a problem is changed only by an exact symmetry that preserves its underlying structure, does a diffusion language model preserve how it solves the problem?
 
-For Sudoku this becomes two concrete questions:
+For Sudoku this has two levels:
 
-1. does an exactly solved puzzle remain solved after an exact spatial isomorphism?
-2. conditional on both being solved, is the mapped blank-cell finalization order preserved?
+1. **outcome equivariance** — does an exactly solved puzzle remain solved after an exact spatial isomorphism?
+2. **order equivariance** — when both versions are solved, is mapped blank-cell finalization order preserved?
 
-This distinguishes **problem-structural scheduling** from **serialization / sampler scheduling** without hidden states, probes, learned alignment, or subjective labels.
+This separates problem-structural scheduling from serialization / sampler scheduling without hidden states, probes, learned alignment, or subjective labels.
 
 ## Why this question exists
 
 Findings of ACL 2026, *Parallelism and Generation Order in Masked Diffusion Language Models*, reports adaptive generation order across eight MDLMs and 58 benchmarks; Sudoku is highlighted as a case where easier blanks tend to be filled first. ACL 2026, *Empirical Analysis of Decoding Biases in Masked Diffusion Models*, independently shows that uncertainty-based decoding can exhibit rigid boundary and trivial-token biases.
 
-Those observations leave a direct identification gap:
+The missing contrast is therefore direct:
 
-> If the underlying Sudoku CSP is literally unchanged up to a mathematical isomorphism, does the decoder follow the mapped logical structure or the new serialization?
+> If the Sudoku CSP is unchanged up to a mathematical isomorphism, does decoding follow the mapped problem structure or the new serialization?
 
 ## Exact intervention
 
-Primary transforms use legal Sudoku automorphisms:
+Primary transforms are legal Sudoku automorphisms: row/band permutations, column/stack permutations, and transpose. Digit labels are not changed in G0, so every blank `c` maps to a known blank `T(c)` with the **same correct digit token** while moving through row-major serialization.
 
-- row permutations within bands and band permutations;
-- column permutations within stacks and stack permutations;
-- transpose.
+Base solved grids are sampled by randomized Sudoku backtracking rather than generated only from one canonical solution orbit. A deterministic clue-removal procedure then produces unique 45-blank puzzles.
 
-Digit labels are **not** changed in the primary experiment. Therefore every blank `c` maps to a known blank `T(c)` with the same correct digit token, while its row-major position changes.
+## Measurement
 
-## Measurement design
+The output is a fixed readable 9x9 grid template. Separators and givens are clamped; only original blanks are mask tokens. Exactly one blank is finalized per step, so:
 
-The output is a fixed readable 9x9 grid template. Separators and given digits are clamped; only original blank cells are `[MASK]`. Exactly one blank is finalized per step.
+`r_x(c) = irreversible reveal rank of cell c`
 
-For every blank:
+is exact.
 
-`r_x(c) = irreversible reveal rank of c`.
-
-The decoder chooses the best legal digit for each masked cell, but the scheduling score is the probability of that digit under the **full vocabulary**:
+The decoder selects the best legal digit for each blank but schedules positions using that digit's **full-vocabulary probability**:
 
 `p(best valid digit | current masked sequence)`.
 
-This is important. G0 v1 incorrectly renormalized confidence over digits `1..9`, which could manufacture high confidence. G0 v2 preserves the model's absolute full-vocabulary confidence and logs how often the native full-vocabulary argmax is itself a digit.
+This fixes a material G0-v1 bug, where confidence had been renormalized over digits `1..9` and could become artificially large.
 
-## G0 in one page
+G0 v2 also computes, at every confidence-decoding step, which position the completely native full-vocabulary LLaDA scheduler would have selected. The result logs:
 
-### 1. Measurement validity
+- `native_digit_argmax_fraction`;
+- `native_scheduler_pick_same_fraction`.
 
-`preflight.py` checks unique Sudoku solutions, exact automorphism preservation, tokenizer digit identities, mask ID, and that mask tokens occur only at intended cell slots.
+The latter is the key fidelity diagnostic: if grammar-constrained and native schedulers choose different positions too often, repair the prompt/template before interpreting the scientific result. The locked discovery fidelity floor is `0.80`.
 
-### 2. Same-serialization stability
+## G0 decision path
 
-The first 12 discovery puzzles are decoded twice with identical serialization. Mean order Kendall tau must be at least `0.95` before low isomorphism tau can be interpreted structurally.
+### Measurement validity
 
-This is the real prerequisite. The old pooled `candidate count -> finalization` correlation is no longer a kill gate; it is only a secondary easy-first characterization.
+`preflight.py` verifies unique Sudoku solutions, exact automorphism preservation, tokenizer digit identities, mask ID, and exact mask/cell-slot alignment.
 
-### 3. Outcome equivariance
+### Same-serialization stability
 
-Every identity/isomorph pair contributes a solve/fail comparison **before filtering**.
+The first 12 discovery puzzles are decoded twice with identical serialization. Mean order Kendall tau must be at least `0.95`. If the same representation has no stable measurable order, isomorphism non-invariance is not interpretable.
 
-Report:
+### Outcome equivariance
 
-- identity exact accuracy;
-- isomorph exact accuracy;
-- isomorph retention given identity success;
-- solve-flip rate and direction.
+Every identity/isomorph pair contributes a solve/fail comparison before any filtering. `solve -> fail` under an exact isomorphism is itself evidence of non-equivariance and is never discarded merely because it cannot enter an order-correlation analysis.
 
-A `solve -> fail` change caused only by an exact Sudoku isomorphism is already direct evidence of non-equivariance. It must not disappear because the pair cannot enter an order-correlation analysis.
+Outcome flip rate and isomorph retention both receive source-puzzle-cluster bootstrap confidence intervals.
 
-### 4. Order equivariance
+### Order equivariance
 
 For pairs where both versions exactly solve the unique Sudoku:
 
 `tau_iso = KendallTauB(r_x(c), r_T(x)(T(c)))`.
 
-Four transforms share one source puzzle, so inference is clustered by source puzzle: transform taus are averaged within puzzle, then the bootstrap resamples puzzles rather than pretending all transforms are independent.
+Four transforms share one source puzzle, so transform-level taus are averaged within source puzzle and bootstrap uncertainty is computed across source puzzles.
 
-### 5. Positional nulls
+### Positional nulls
 
-Observed tau is compared against two parameter-free null schedules under the exact same transforms:
+Observed tau is compared against two parameter-free schedulers under the exact same transforms:
 
 - pure row-major order;
 - pure boundary-first order.
 
-The analysis reports both null taus and:
+The analysis reports observed-minus-null effects and puzzle-cluster CIs. This prevents an intermediate tau from being interpreted by eyeballing.
 
-`tau_observed - tau_positional_null`.
+### Secondary characterization
 
-This is what makes an intermediate tau interpretable rather than a storytelling exercise.
+Random remasking and within-puzzle initial-candidate-count correlations are reported as diagnostics. Candidate count is **not** a kill gate; it is only a crude easy-first proxy.
 
-### 6. Secondary diagnostics
+## Frozen budget and provenance
 
-- random-remasking order vs confidence order;
-- within-puzzle candidate-count vs finalization correlation;
-- native-digit-argmax fraction, measuring how close the task-constrained decoder is to native full-vocabulary confidence decoding.
+`LOCKED_CONFIG.json` fixes LLaDA-8B-Instruct, 45 blanks, 64 discovery puzzles, 64 untouched confirmation puzzles, four digit-preserving isomorphs per puzzle, temperature 0, 12 same-serialization repeats, and 12 random controls.
 
-None of these is allowed to replace the primary outcome/order equivariance result.
+Both manifest and traces are stamped `g0-v2`. Old v1 manifests/results are rejected rather than silently resumed or mixed with v2. Runners support deterministic multi-GPU sharding and true pre-inference `--resume`; analysis accepts multiple shard JSONL files and rejects duplicate trace keys.
 
-## Frozen budget
+## What establishes the topic
 
-`LOCKED_CONFIG.json` fixes:
+The first run is designed to make either direction hard to dismiss:
 
-- `GSAI-ML/LLaDA-8B-Instruct`;
-- 45 blanks per puzzle;
-- 64 discovery puzzles;
-- 64 untouched confirmation puzzles;
-- 4 digit-preserving spatial isomorphs per puzzle;
-- temperature 0;
-- one blank finalized per step;
-- 12 same-serialization repeats and 12 random controls on discovery.
+- **high solve retention + mapped-order tau clearly above positional nulls** establishes genuine structural/equivariant scheduling;
+- **solve flips and/or mapped-order tau close to positional nulls** establishes substantial serialization/sampler dependence;
+- **high retention + intermediate tau still clearly above positional nulls** supports a real mixture of structural and positional forces.
 
-The first scientific run therefore remains cheap: roughly 320 primary trajectories plus 24 controls.
-
-## Interpretation
-
-A usable experiment first requires enough identity successes and stable same-serialization order.
-
-Then:
-
-- **high solve retention + tau well above positional nulls** supports a structural/equivariant generation policy;
-- **solve flips and/or tau near positional nulls** supports strong serialization/sampler dependence;
-- **high solve retention + intermediate tau still clearly above positional nulls** supports a real mixture of structural and positional scheduling.
-
-The goal is not to make the topic die. The goal is to make either direction hard to dismiss.
+The goal is not to kill the topic. It is to make a positive result strong enough to become a paper premise and a negative result too clean to explain away as measurement noise.
 
 ## Quick start
 
@@ -133,6 +108,7 @@ cd 10_dlm_generation_order_invariance
 pip install -r requirements.txt
 python src/preflight.py --config LOCKED_CONFIG.json
 pytest -q tests
+rm -f data/manifest.jsonl
 python src/make_manifest.py --config LOCKED_CONFIG.json --out data/manifest.jsonl
 
 # plumbing only
@@ -144,6 +120,4 @@ python src/run_g0.py --split discovery --overwrite --out results/g0_discovery_tr
 python src/analyze_g0.py --config LOCKED_CONFIG.json --traces results/g0_discovery_traces.jsonl --manifest data/manifest.jsonl --out results/g0_discovery_summary.json
 ```
 
-If the run is interrupted, use `--resume` rather than appending or restarting manually. Duplicate trace keys cause analysis to fail loudly.
-
-See [`VALIDATION.md`](./VALIDATION.md) for the locked scientific contract and [`SERVER_HANDOFF.md`](./SERVER_HANDOFF.md) for the server execution sequence.
+See [`VALIDATION.md`](./VALIDATION.md) for the scientific contract and [`SERVER_HANDOFF.md`](./SERVER_HANDOFF.md) for execution details.
