@@ -23,6 +23,10 @@ The available pip source distribution for `flash-attn` attempts to resolve a sep
 
 With the explicit `tools/flash_attn_compat` import shim, the official trainer imports successfully. The official `random_with_input_pad` collator on two frozen train rows produces 454-token batches: 283 prompt-mask zeros and 171 non-pad response-mask ones. The 172nd gold token is EOS, which shares the pad ID and is intentionally removed by the upstream non-pad filter.
 
+The first distributed step attempt then showed that Dream's released trainer explicitly requested `attn_implementation="flash_attention_2"` while loading the model. Since Dream's own model implementation supports SDPA and the official README documents SDPA, the isolated audit copy applies the one-line `tools/verl_compat/dream_trainer_sdpa.patch` to select `attn_implementation="sdpa"`. This changes only the attention backend for compatibility; it does not change the trainer loss, data, masking, optimizer, or scientific protocol.
+
+With that isolated patch, a four-GPU one-step run completed forward/backward, validation, and save: `train/loss=1.408`, `val/loss=0.349`. The saved `global_step_1` checkpoint was reloaded successfully with Dream's tokenizer and SDPA model loader after supplying the upstream remote-code files that the trainer stores at the run root. The smoke output is outside the repository under `/tmp/candidate_topics/dream_sft_smoke` and is not a scientific result.
+
 ## Import shim audit
 
 `tools/flash_attn_compat` is a deliberately explicit, pure-PyTorch import shim for `flash_attn.bert_padding`. It is only prepended to `PYTHONPATH` for the environment audit. With the official trainer configuration's sequence-parallel size fixed to 1, the Ulysses branch containing these helpers is not executed; the normal path uses the trainer's ordinary PyTorch loss. The shim is not a FlashAttention implementation and is not valid for sequence-parallel training.
