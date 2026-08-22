@@ -90,9 +90,13 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
             if len(common) >= 2:
                 repeat_taus.append(kendall_tau_b([bsteps[i] for i in common], [rsteps[i] for i in common]))
             repeat_exact_agreement.append(float(bool(repeat["exact_solution"]) == base_ok))
+            nf_repeat = _native_fraction(repeat)
+            if nf_repeat is not None:
+                native_fractions.append(nf_repeat)
 
-        # "Easy-first" is a characterization only. Compute within puzzle to avoid
-        # a pooled correlation being driven by between-puzzle differences.
+        # Secondary only: static candidate count is a crude Sudoku difficulty
+        # proxy. Compute within puzzle so between-puzzle variation cannot create
+        # the correlation.
         if base_ok and pid in manifest_by_id:
             m = manifest_by_id[pid]
             ex, ey = [], []
@@ -119,6 +123,10 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
             iso_ok = bool(iso["exact_solution"])
             iso_exact_all.append(float(iso_ok))
             solve_pair_total += 1
+            nf_iso = _native_fraction(iso)
+            if nf_iso is not None:
+                native_fractions.append(nf_iso)
+
             if base_ok != iso_ok:
                 solve_flips += 1
                 if base_ok:
@@ -158,9 +166,6 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
             excess_boundary_by_pid[pid].append(tau - tau_boundary)
             n_exact_pairs += 1
             exact_pair_puzzles.add(pid)
-            nf = _native_fraction(iso)
-            if nf is not None:
-                native_fractions.append(nf)
 
     def puzzle_means(d: dict[str, list[float]]) -> list[float]:
         return [sum(v) / len(v) for v in d.values() if v]
@@ -214,7 +219,7 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
         "native_digit_argmax_fraction": summarize(native_fractions),
         "decision_flags": {
             "enough_identity_successes": n_identity_exact >= min_identity,
-            "same_serialization_order_stable": repeat_mean is not None and repeat_mean >= repeat_floor,
+            "same_serialization_order_stable": None if repeat_mean is None else repeat_mean >= repeat_floor,
             "enough_both_exact_for_order_tau": n_exact_pairs >= min_order_pairs and len(exact_pair_puzzles) >= min_order_puzzles,
         },
         "interpretation_note": (
@@ -226,14 +231,17 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--traces", default="results/g0_traces.jsonl")
+    ap.add_argument("--traces", nargs="+", default=["results/g0_traces.jsonl"], help="one or more trace JSONL shards")
     ap.add_argument("--manifest", default="data/manifest.jsonl")
     ap.add_argument("--config", default="LOCKED_CONFIG.json")
     ap.add_argument("--split", choices=["discovery", "confirmation"], default="discovery")
     ap.add_argument("--out", default="results/g0_summary.json")
     args = ap.parse_args()
     cfg = json.loads(Path(args.config).read_text())
-    summary = analyze(read_jsonl(args.traces), read_jsonl(args.manifest), args.split, cfg)
+    records: list[dict] = []
+    for trace_path in args.traces:
+        records.extend(read_jsonl(trace_path))
+    summary = analyze(records, read_jsonl(args.manifest), args.split, cfg)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
     print(json.dumps(summary, indent=2, sort_keys=True))
