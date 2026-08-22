@@ -8,10 +8,12 @@
 - Cache size: approximately 15 GB; all four safetensors shards are complete and no `.incomplete` files remain.
 - Node GPUs: four RTX PRO 6000 Blackwell Max-Q devices with approximately 96 GB free each at audit time.
 - Official Dream inference smoke: model loads under `transformers==4.46.2`; a simple arithmetic prompt produces a response.
+- The shared cache contains Instruct-7B but no Base-7B snapshot. Seed-paper Base/Instruct provenance is unresolved and is locked as such in `LOCKED_CONFIG_V4.json`.
+- Dream tokenizer audit: every frozen train/test prompt is 283 tokens, every gold response is 172 tokens including EOS, and prompt plus gold is 455 tokens.
 
 ## Exact smoke observation
 
-The locked 9×9 seed-aligned prompt was passed through the official `AutoModel`/`AutoTokenizer` and `diffusion_generate` path. At checkpoint 0, the generated 256-token response was all EOS tokens. This is recorded as a zero-shot competence observation, not yet as a scientific result: the fine-tuned checkpoint is the intended object, and the prompt/data provenance is explicitly reconstructed rather than recovered from the seed authors.
+The locked 9×9 seed-aligned prompt was passed through the official `AutoModel`/`AutoTokenizer` and `diffusion_generate` path. At checkpoint 0, the generated 256-token response was all EOS tokens. This is recorded as a zero-shot competence observation, not yet as a scientific result: the fine-tuned checkpoint is the intended object, and the prompt/data provenance is explicitly reconstructed rather than recovered from the seed authors. The follow-up engineering audit uses the data-derived 172-token response length.
 
 ## Official SFT dependency chain
 

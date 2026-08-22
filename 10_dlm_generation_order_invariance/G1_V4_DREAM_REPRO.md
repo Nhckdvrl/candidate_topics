@@ -35,6 +35,10 @@ The prompt follows the paper's Appendix A.6.1 wording: provide a zero-filled 9×
 
 The target is `Dream-org/Dream-v0-Instruct-7B`. It is downloaded to the shared public Hugging Face cache at `/home/xiang/.cache/huggingface/hub`, never into this repository. The exact snapshot path and file hashes are recorded in the run log when download completes.
 
+The seed paper calls the model only “Dream-7B” and does not publish a Base/Instruct-specific training configuration. The current v4 choice is therefore explicitly `Instruct-7B` because that contemporaneous benchmarked model is available and documented; Base/Instruct provenance remains unresolved and is not allowed to change after seeing the learning curve.
+
+The frozen corpus tokenizes to 283 prompt tokens and exactly 172 response tokens including EOS for every train and test example; prompt plus gold is 455 tokens. The first engineering decode audit uses `max_new_tokens=172` and `steps=172`, derived from this coverage check rather than tuned on test accuracy.
+
 ## Scientific gate
 
 The ordinary exact-solve curve is a prerequisite diagnostic, not a hypothesis result. We will not tune prompt wording, change the test subset, alter the exact-match rule, or freeze symmetry after seeing the curve. If the reconstructed corpus cannot support a competent object, the outcome is a provenance/replication limitation and not evidence against Topic 10.

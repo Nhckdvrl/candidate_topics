@@ -2,6 +2,12 @@
   "protocol_version": "g1-v4-dream7b-9x9-seed-aligned",
   "status": "design-frozen-prerequisite-reproduction",
   "model_id": "Dream-org/Dream-v0-Instruct-7B",
+  "model_variant_provenance": {
+    "status": "unresolved-in-seed-paper",
+    "choice": "Instruct-7B",
+    "rationale": "The contemporaneous benchmarked Dream model is Dream-v0-Instruct-7B and it is available in the shared cache; the seed paper says Dream-7B but does not expose a Base/Instruct-specific training config.",
+    "base_cache_present": false
+  },
   "model_cache": "/home/xiang/.cache/huggingface/hub",
   "upstream_training_repo": "https://github.com/DreamLM/Dream",
   "seed_paper": "https://arxiv.org/abs/2601.15593",
@@ -18,6 +24,15 @@
     "format": "seed-paper-appendix-a6-1",
     "output": "python-2d-array",
     "strict_no_reasoning": true
+  },
+  "generation_engineering_audit": {
+    "tokenizer": "Dream-v0-Instruct-7B snapshot 05334cb9faaf763692dcf9d8737c642be2b2a6ae",
+    "prompt_tokens": 283,
+    "gold_response_tokens_including_eos": 172,
+    "prompt_plus_gold_tokens": 455,
+    "smoke_max_new_tokens": 172,
+    "smoke_steps": 172,
+    "note": "These values are an engineering coverage audit, not test-accuracy-selected hyperparameters."
   },
   "training": {
     "framework": "Dream official src.trainer.fsdp_sft_trainer",
