@@ -131,8 +131,8 @@ class SudokuTransform:
     """Exact Sudoku automorphism.
 
     ``row_perm``/``col_perm`` map old coordinates to new coordinates. The
-    primary experiment keeps ``digit_perm`` as identity so the only token-level
-    change is spatial serialization, not digit identity.
+    primary experiment keeps ``digit_perm`` as identity so token identity is
+    unchanged while logical cells move through spatial serialization.
     """
 
     row_perm: tuple[int, ...]
@@ -191,7 +191,46 @@ def random_full_transform(rng: random.Random) -> SudokuTransform:
 
 
 def random_solution(rng: random.Random) -> Grid:
-    return random_full_transform(rng).apply(canonical_solution())
+    """Sample a complete valid grid by randomized backtracking.
+
+    Earlier G0 code generated every solution by applying standard Sudoku
+    symmetries to one canonical grid. That is valid but leaves all completed
+    boards inside one symmetry orbit. Randomized construction gives the paired
+    isomorphism test a broader set of base CSPs while remaining deterministic
+    under the manifest seed.
+    """
+    state = [0] * 81
+
+    def rec() -> bool:
+        best_i = -1
+        best_values: list[int] | None = None
+        for i, value in enumerate(state):
+            if value != 0:
+                continue
+            vals = list(candidates(state, i))
+            if not vals:
+                return False
+            if best_values is None or len(vals) < len(best_values):
+                best_i, best_values = i, vals
+                if len(vals) == 1:
+                    break
+        if best_i < 0:
+            return True
+        assert best_values is not None
+        rng.shuffle(best_values)
+        for value in best_values:
+            state[best_i] = value
+            if rec():
+                return True
+            state[best_i] = 0
+        return False
+
+    if not rec():
+        raise RuntimeError("failed to sample a complete Sudoku solution")
+    solution = tuple(state)
+    if not is_valid_solution(solution):
+        raise RuntimeError("randomized Sudoku generator produced an invalid grid")
+    return solution
 
 
 def make_unique_puzzle(rng: random.Random, blanks: int = 45) -> tuple[Grid, Grid]:
