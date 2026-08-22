@@ -208,3 +208,65 @@ def test_grouped_alpha_selection_requires_groups():
     y = np.random.default_rng(1).random(20)
     with pytest.raises(ValueError, match="requires state_id groups"):
         SharedLinearProbe(alpha="cv").fit(x, y)
+
+def _wide_paired_features(kind, states, d=256, seed=7):
+    """Realistic G1 geometry: wide features, two checkpoints, few states."""
+    rng = np.random.default_rng(seed)
+    sid, cp, x, target, winners = [], [], [], [], []
+    for i in states:
+        k = i % 5
+        if k == 0:
+            p = {"A": 0.95, "B": 0.05}
+        elif k == 1:
+            p = {"A": 0.05, "B": 0.95}
+        else:
+            b = float(rng.random())
+            p = {"A": b, "B": b}
+        w = "A" if p["A"] - p["B"] >= 0.5 else ("B" if p["B"] - p["A"] >= 0.5 else "ambiguous")
+        state = rng.normal(size=d)
+        difficulty = (p["A"] + p["B"]) / 2
+        for c in ["A", "B"]:
+            v = state.copy()
+            # dim 0 is the only informative direction; dim 1 is pure checkpoint identity
+            v[0] = (p[c] - 0.5) * 4 if kind == "policy_specific" else (difficulty - 0.5) * 4
+            v[1] = 3.0 if c == "A" else -3.0
+            sid.append(str(i))
+            cp.append(c)
+            winners.append(w)
+            target.append(p[c])
+            x.append(v + 0.05 * rng.normal(size=d))
+    return (np.asarray(sid), np.asarray(cp), np.asarray(winners),
+            np.asarray(target), np.asarray(x))
+
+
+def _held_out_auc(kind, d=256):
+    tr = _wide_paired_features(kind, range(150), d=d, seed=7)
+    te = _wide_paired_features(kind, range(150, 300), d=d, seed=8)
+    probe = SharedLinearProbe(alpha="cv").fit(tr[4], tr[3], groups=tr[0])
+    return paired_relative_metrics(te[0], te[1], te[2], probe.score(te[4]), "A", "B")["relative_auc"]
+
+
+def test_wide_probe_separates_policy_specific_from_state_only():
+    """The discrimination the whole topic rests on, at a realistic feature width.
+
+    Both conditions carry a strong checkpoint-identity direction and the same generic
+    difficulty content. Only the first also encodes *whose* success.
+    """
+    assert _held_out_auc("policy_specific") > 0.90
+    assert 0.35 < _held_out_auc("state_only") < 0.65
+
+
+def test_in_sample_scoring_would_manufacture_a_false_positive():
+    """Why run_g1 must score on held-out physical states.
+
+    Scored in-sample, the overparameterized ridge reconstructs the per-checkpoint targets
+    through idiosyncratic noise directions, so `q_A - q_B` tracks the winner even when the
+    only informative feature dimension is *identical* for both checkpoints. That is a
+    false PASS for a purely numerical reason, and the discovery/confirmation split is what
+    prevents it.
+    """
+    sid, cp, win, target, x = _wide_paired_features("state_only", range(150))
+    probe = SharedLinearProbe(alpha="cv").fit(x, target, groups=sid)
+    in_sample = paired_relative_metrics(sid, cp, win, probe.score(x), "A", "B")["relative_auc"]
+    assert in_sample > 0.65, "precondition: in-sample scoring inflates a state-only signal"
+    assert _held_out_auc("state_only") < in_sample

@@ -1,0 +1,14 @@
+{
+  "settled_state_hash_reproducible": true,
+  "same_noise_action_max_abs": 0.0,
+  "same_noise_feature_max_abs": 0.0,
+  "different_noise_action_rms": 0.004603809410942387,
+  "feature_dim": 1024,
+  "feature_meta": {
+    "layer": 11,
+    "pool": "mean_action_tokens_then_mean_denoise_steps",
+    "n_denoise_steps": 10,
+    "noise_seed": 1635089464
+  },
+  "pass": true
+}
