@@ -6,7 +6,7 @@ import torch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from topic12.ablation import parse_layer_spec, residual_scale_layer
+from topic12.ablation import _scaled_output, parse_layer_spec, residual_scale_layer
 
 
 class ToyBlock(torch.nn.Module):
@@ -29,14 +29,23 @@ class ToyModel(torch.nn.Module):
         self.model = ToyInner()
 
 
-def test_residual_scale_tensor_output():
+def test_residual_scale_endpoints_and_half():
     m = ToyModel()
     x = torch.tensor([[1.0]])
-    assert torch.equal(m.model.layers[0](x), torch.tensor([[3.0]]))
+    original = m.model.layers[0](x)
     with residual_scale_layer(m, 0, scale=0.0):
         assert torch.equal(m.model.layers[0](x), x)
     with residual_scale_layer(m, 0, scale=0.5):
         assert torch.equal(m.model.layers[0](x), torch.tensor([[2.0]]))
+    with residual_scale_layer(m, 0, scale=1.0):
+        assert torch.equal(m.model.layers[0](x), original)
+
+
+def test_scale_zero_does_not_propagate_discarded_nan_update():
+    x = torch.tensor([[1.0]])
+    out = torch.tensor([[float("nan")]])
+    y = _scaled_output(x, out, 0.0)
+    assert torch.equal(y, x)
 
 
 def test_residual_scale_preserves_aux_output():

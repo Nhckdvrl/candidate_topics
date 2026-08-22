@@ -6,6 +6,11 @@ import re
 from typing import Any, Iterable
 
 
+MATH500_REVISION = "6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be"
+GSM8K_REVISION = "7cf1290ed87c28a31f867e0f47a7cb62a61d502e"
+DEFAULT_PROMPT_STYLE = "qwen_math_seed"
+
+
 @dataclass(frozen=True)
 class Example:
     task: str
@@ -23,12 +28,6 @@ def _stable_key(seed: int, uid: str) -> str:
 
 
 def stable_subset(examples: list[Example], n: int | None, seed: int) -> list[Example]:
-    """Order-independent deterministic sampling.
-
-    Selecting by a hash of stable example IDs avoids accidental dependence on a
-    dataset library's row order. Every GPU worker therefore receives the exact
-    same ledger without coordination.
-    """
     ordered = sorted(examples, key=lambda x: _stable_key(seed, x.uid))
     if n is None or n <= 0 or n >= len(ordered):
         return ordered
@@ -45,18 +44,15 @@ def _uid(task: str, problem: str, explicit: str | None = None) -> str:
 def load_math500(n: int | None, seed: int) -> list[Example]:
     from datasets import load_dataset
 
-    ds = load_dataset("HuggingFaceH4/MATH-500", split="test")
+    ds = load_dataset(
+        "HuggingFaceH4/MATH-500", split="test", revision=MATH500_REVISION
+    )
     rows: list[Example] = []
     for row in ds:
         problem = str(row["problem"])
-        # Current MATH-500 exposes `answer`; fall back to solution if needed.
         gold = str(row.get("answer") or row.get("solution") or "")
         explicit = row.get("unique_id") or row.get("id")
-        meta = {
-            k: row.get(k)
-            for k in ("subject", "level", "solution")
-            if k in row
-        }
+        meta = {k: row.get(k) for k in ("subject", "level", "solution") if k in row}
         rows.append(
             Example(
                 task="math500",
@@ -72,7 +68,9 @@ def load_math500(n: int | None, seed: int) -> list[Example]:
 def load_gsm8k(n: int | None, seed: int) -> list[Example]:
     from datasets import load_dataset
 
-    ds = load_dataset("openai/gsm8k", "main", split="test")
+    ds = load_dataset(
+        "openai/gsm8k", "main", split="test", revision=GSM8K_REVISION
+    )
     rows: list[Example] = []
     for row in ds:
         problem = str(row["question"])
@@ -90,10 +88,7 @@ def load_gsm8k(n: int | None, seed: int) -> list[Example]:
     return stable_subset(rows, n, seed)
 
 
-LOADERS = {
-    "math500": load_math500,
-    "gsm8k": load_gsm8k,
-}
+LOADERS = {"math500": load_math500, "gsm8k": load_gsm8k}
 
 
 def load_tasks(task_names: Iterable[str], n_per_task: int | None, seed: int) -> dict[str, list[Example]]:
@@ -106,33 +101,39 @@ def load_tasks(task_names: Iterable[str], n_per_task: int | None, seed: int) -> 
     return result
 
 
-PROMPT_TEMPLATE = (
+PLAIN_PROMPT_TEMPLATE = (
     "Solve the following mathematics problem. Reason step by step. "
     "Put the final answer in \\boxed{{}}.\n\n"
     "Problem:\n{problem}\n\nSolution:\n"
 )
 
+QWEN_SEED_PROMPT_TEMPLATE = (
+    "<|im_start|>system\n"
+    "Please reason step by step, and put your final answer within \\boxed{{}}.<|im_end|>\n"
+    "<|im_start|>user\n"
+    "{problem}<|im_end|>\n"
+    "<|im_start|>assistant\n"
+)
 
-def make_prompt(example: Example) -> str:
-    return PROMPT_TEMPLATE.format(problem=example.problem)
+
+def make_prompt(example: Example, style: str = DEFAULT_PROMPT_STYLE) -> str:
+    if style == "qwen_math_seed":
+        return QWEN_SEED_PROMPT_TEMPLATE.format(problem=example.problem)
+    if style == "plain_math":
+        return PLAIN_PROMPT_TEMPLATE.format(problem=example.problem)
+    raise ValueError(f"Unknown prompt style {style!r}")
 
 
 def _fallback_last_answer(text: str) -> str:
     boxed = re.findall(r"\\boxed\s*\{([^{}]+)\}", text)
     if boxed:
         return boxed[-1].strip()
-    # Numeric fallback for GSM8K-like responses.
     nums = re.findall(r"[-+]?(?:\d[\d,]*\.?\d*|\.\d+)(?:/[0-9]+)?", text)
     return nums[-1].replace(",", "") if nums else text.strip()
 
 
 def grade_math(response: str, gold: str) -> tuple[bool, bool, str | None]:
-    """Return (correct, parse_ok, error).
-
-    Math-Verify is the locked primary grader. The fallback only prevents a
-    parser exception from crashing an expensive sweep; fallback usage is
-    recorded and audited by `check_integrity.py`.
-    """
+    """Return (correct, parse_ok, error); Math-Verify is the locked primary grader."""
     try:
         from math_verify import parse, verify
 
@@ -146,7 +147,7 @@ def grade_math(response: str, gold: str) -> tuple[bool, bool, str | None]:
             False,
             "math_verify_parse_empty",
         )
-    except Exception as exc:  # preserve the expensive generation, never hide it
+    except Exception as exc:
         return (
             _fallback_last_answer(response) == _fallback_last_answer(gold),
             False,
