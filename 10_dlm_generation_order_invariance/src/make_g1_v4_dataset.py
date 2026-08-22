@@ -7,7 +7,7 @@ import json
 import random
 from pathlib import Path
 
-from sudoku import format_puzzle, make_unique_puzzle
+from sudoku import make_unique_puzzle
 
 
 PROMPT = """Fill in the zeros in the matrix according to the following rules:
@@ -24,6 +24,13 @@ def matrix_text(grid: tuple[int, ...]) -> str:
     ) + "]"
 
 
+def zero_grid_text(grid: tuple[int, ...]) -> str:
+    return "\n".join(
+        " ".join(str(grid[r * 9 + c]) for c in range(9))
+        for r in range(9)
+    )
+
+
 def record(puzzle: tuple[int, ...], solution: tuple[int, ...], index: int, split: str) -> dict:
     return {
         "id": f"g1-v4-sudoku-{index:03d}",
@@ -31,7 +38,7 @@ def record(puzzle: tuple[int, ...], solution: tuple[int, ...], index: int, split
         "puzzle": list(puzzle),
         "solution": list(solution),
         "blanks": puzzle.count(0),
-        "prompt": PROMPT.format(puzzle=format_puzzle(puzzle)),
+        "prompt": PROMPT.format(puzzle=zero_grid_text(puzzle)),
         "response": matrix_text(solution),
     }
 
