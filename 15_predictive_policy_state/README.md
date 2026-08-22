@@ -159,19 +159,20 @@ That is a project-level kill of this clean Light-WAM route, not a universal scie
 
 To answer the actual training-time mechanism question, the next experiment must manipulate **future supervision itself**, not merely inspect one released checkpoint.
 
-The cleanest Light-WAM version is a matched pair of trainings in which the WAM adapters are the only trainable representation module shared between future loss and action loss.
+The cleanest Light-WAM version is a matched pair of trainings in which the WAM adapters are the **only trainable representation module shared by future loss and action loss**.
 
 Use in **both** runs:
 
 ```text
 freeze pretrained video backbone = true
 backbone LoRA                   = false
-same architecture
+proprio encoder                 = identical and frozen
+same architecture otherwise
 same data order
 same initialization
 same optimizer / LR / steps
 same action loss
-same action expert
+same action expert initialization
 ```
 
 Then vary only:
@@ -181,18 +182,24 @@ future-on:   lambda_video = 1
 future-off:  lambda_video = 0
 ```
 
-Why disable backbone LoRA?
+Why disable backbone LoRA and freeze the proprio encoder?
 
-With LoRA disabled and the pretrained backbone frozen:
+In upstream Light-WAM state-fusion training, both branches share more than the explicit adapters:
 
-- WAM adapters are shared by future and action paths;
-- future head is future-only;
-- state-fusion action expert is action-only;
-- proprio encoder is action-only.
+- backbone LoRA is trainable and is used by both future and action passes;
+- `build_inputs` appends the learned proprio token to the context that is passed to **both** future-video prediction and action prediction;
+- therefore the trainable `proprio_encoder` is also a route by which future loss can alter the deployed policy.
 
-Therefore any effect of `lambda_video` on action-relevant representation parameters must pass through the WAM adapters.
+If LoRA is disabled and the proprio encoder is held fixed identically in both matched runs, then:
 
-### Two implementation requirements are mandatory
+- WAM adapters are trainable and shared by future + action;
+- future head is trainable but future-only;
+- state-fusion action expert is trainable but action-only;
+- frozen backbone / frozen proprio encoder cannot carry training-condition differences.
+
+Under that isolated configuration, any causal effect of `lambda_video` on the trainable representation feeding action must pass through the WAM adapters.
+
+### Three implementation requirements are mandatory
 
 #### 1. Identical initialization
 
@@ -215,6 +222,12 @@ For the matched mechanism run, either disable clipping or set the clipping thres
 
 Otherwise `future-on vs future-off` is not a clean representation-routing intervention.
 
+#### 3. Keep the proprio path non-differential between conditions
+
+The proprio encoder must not receive future-supervision-dependent updates in the matched mechanism run.
+
+The simplest implementation is to initialize it once, use the exact same weights in both conditions, and keep it frozen. An equivalent implementation may allow action-only updates while explicitly stopping future-loss gradients into the proprio encoder, but that is more engineering and is not required for the first decisive test.
+
 ### What pattern would justify the mechanism claim?
 
 The matched experiment should establish all of the following:
@@ -234,9 +247,13 @@ adapter-bypass cost under future-off
 
 combined with the direct future-on vs future-off policy gain.
 
-This tests whether future supervision causally creates an action-used predictive adapter state.
+This identifies the route-level claim:
 
-It still does **not** justify the stronger statement that a complete counterfactual world model lives inside the policy. That would require a later action-conditioned consequence intervention.
+> **training-time future supervision causally shapes a predictive adapter state that the policy relies on for action.**
+
+It still does **not** prove the stronger semantic statement that the particular linearly decodable future coordinates are themselves the exact causal code used by the action expert. Proving that stronger statement would require a content-selective intervention on future information. If doing so requires an elaborate learned projector / subspace machinery, this project should not force that stronger claim.
+
+Likewise, this does **not** justify saying that a complete counterfactual world model lives inside the policy. That would require a later action-conditioned consequence test.
 
 ---
 
