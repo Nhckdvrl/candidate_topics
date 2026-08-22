@@ -570,14 +570,107 @@ element removed. If nothing is left, there was no phenomenon; if something is le
 
 ---
 
+## Topic 09 — Does a VLA know its own limits?
+
+**Final status:** killed at G0 / the identifying contrast does not exist in nature.
+
+[Archive summary](./09_vla_own_limits/ARCHIVE_SUMMARY.md) · [Pre-data audit](./09_vla_own_limits/AUDIT.md)
+
+### Original idea
+
+Recent work shows frozen VLA representations predict eventual success. The unresolved
+question is what that signal *is*:
+
+> Is it specific to **this policy's own** chance of succeeding, or mostly a
+> policy-agnostic estimate that **this state looks hard**?
+
+The identification was clean on paper. Hold the physical simulator state fixed, change
+nothing about task or environment, and vary only the checkpoint within one pi0.5 LIBERO
+fine-tuning trajectory. If A beats B on some states while B beats A on others, generic
+state difficulty is constant inside each pair, so a shared readout whose sign follows the
+winner must be carrying policy-specific competence.
+
+### Why it stopped
+
+The design needs naturally occurring **bidirectional** competence crossover. The full
+frozen panel — 150 physical states, 3 checkpoints, 8 common policy-noise seeds, 3600
+rollouts, zero technical failures — found almost none.
+
+```text
+pair        A-wins   B-wins   ambiguous     required: 15 each way
+2k vs 3k       0       74         76
+2k vs 9k       0       77         73
+3k vs 9k       3        3        144
+```
+
+Two distinct reasons, and the first is a substantive result in its own right:
+
+**Competence along a fine-tuning trajectory improved monotonically at the level of
+individual states.** 2k was not merely worse on average. It failed to robustly beat either
+later checkpoint on a *single* one of 150 states, and was even marginally ahead on only
+1-2 (by one rollout in eight), with just 4 states at joint ceiling to explain it away. The
+intuition that "an earlier checkpoint must be better at *something*" was simply false here.
+
+**The two late checkpoints were too close and too saturated.** 60 of 150 states had both
+3k and 9k at 100%. Genuine crossover existed — the within-state relabeling null certified
+the 3+3 states as real at `p = 0.001` — but three states cannot support a representation
+test.
+
+### Layer
+
+Layer C — measurement / common support. Not the hypothesis, not the analysis, not the
+stack. The prerequisite *contrast* was absent from the natural data.
+
+### Lessons
+
+**A paired design cancels exactly what it is built to cancel — including your effect, if
+your effect is a constant.** The whole strength of the same-state contrast is that a
+uniform quality difference contributes a constant offset which drops out of the ranking.
+That is also why a monotonically improving checkpoint family is the worst possible
+population for it. Before committing to a paired identification, ask not "do these two
+systems differ?" but "do they differ **in both directions**, on the same items?" Aggregate
+score gaps say nothing about this; only the per-item joint distribution does.
+
+**Check the crossover population before building any of the machinery.** The behavioral
+panel that killed this topic cost ~3 GPU-hours and needed no hidden states, no probe, no
+feature contract, and no representation theory. It could have been the first thing run
+instead of the third. A cheap existence check on the *contrast* should precede any
+investment in the *measurement*.
+
+**"Robust" thresholds are not automatically noise-proof.** The frozen rule was
+`p_A - p_B >= 0.5` over 8 stochastic rollouts, which reads as a large-effect requirement.
+It is not. Two *equally competent* policies produce a spurious robust win at ~3.8% of
+states, so a 150-state panel expects ~6 false wins in each direction, and the gate was 15.
+On a 500-state synthetic panel with no competence difference anywhere, sampling noise
+produced 27 and 17 wins — clearing the bar in both directions. Any gate defined as a count
+of per-item winners needs an explicit null in which the grouping label carries no
+information; a within-item relabeling test costs a few lines and is exact.
+
+**Simulator state identity has to be verified, not assumed.** After enough episodes in one
+LIBERO environment, `reset()` + `set_init_state()` stops reproducing the settled MuJoCo
+state, while a freshly built environment reproduces it bit-exactly. It never raises — it
+quietly hands back two different physical states under one identifier, and in a
+cross-policy comparison the two arms have different episode histories by construction. Any
+"same state, different system" design should hash the realized state and rebuild the
+environment per trial, rather than trusting an index.
+
+**Instrument the stack to a standard that lets a negative result be trusted.** Bit-identical
+actions and features under a repeated noise seed, a settled-state hash stable across
+freshly constructed processes, and a check that the checkpoints are not accidentally the
+same weights, together mean this KILL is a statement about the world rather than about the
+harness. A cheap null result is only worth having if it cannot be blamed on the plumbing.
+
+---
+
 # 4. Cross-topic lessons
 
-The seven archived projects now cover distinct ways a research candidate can stop:
+The eight archived projects now cover distinct ways a research candidate can stop:
 
 | Topic | Failure / stop layer | What failed or remained unresolved |
 |---|---|---|
 | 01 | Substantive hypothesis | the expected behavior/representation temporal decoupling did not occur |
 | 02 | Confirmation | the exploratory hidden-state signal did not survive a locked independent test |
+| 09 | Measurement / common support | the natural bidirectional competence crossover the paired design requires does not exist in the checkpoint family |
 | 04 | Measurement/common support | the intended high/low commitment comparison could not be constructed cleanly at sufficient scale |
 | 05 | Conceptual identification | the proposed observable could not distinguish retained competence from task simplification/conditional continuation |
 | 06 | Prerequisite phenomenon / acquisition | the chosen LLM agent did not robustly acquire the controllability-dependent state required for the higher-order question |
