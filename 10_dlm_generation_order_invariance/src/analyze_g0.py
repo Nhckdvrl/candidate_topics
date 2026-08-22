@@ -35,6 +35,10 @@ def _metadata_float(rec: dict, name: str) -> float | None:
     return None if value is None else float(value)
 
 
+def _ci(values: list[float], seed: int) -> list[float]:
+    return list(bootstrap_ci(values, seed=seed)) if values else [float("nan"), float("nan")]
+
+
 def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | None = None) -> dict:
     cfg = cfg or {}
     records = _dedupe_or_fail([r for r in records if r["split"] == split])
@@ -55,6 +59,8 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
     solve_pair_total = 0
     base_yes_iso_no = 0
     base_no_iso_yes = 0
+    flip_rates_by_pid: dict[str, list[float]] = defaultdict(list)
+    retention_by_pid: dict[str, list[float]] = defaultdict(list)
 
     pair_taus_by_pid: dict[str, list[float]] = defaultdict(list)
     surface_null_by_pid: dict[str, list[float]] = defaultdict(list)
@@ -126,8 +132,10 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
             iso_ok = bool(iso["exact_solution"])
             iso_exact_all.append(float(iso_ok))
             solve_pair_total += 1
+            flipped = float(base_ok != iso_ok)
+            flip_rates_by_pid[pid].append(flipped)
 
-            if base_ok != iso_ok:
+            if flipped:
                 solve_flips += 1
                 if base_ok:
                     base_yes_iso_no += 1
@@ -135,6 +143,7 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
                     base_no_iso_yes += 1
             if base_ok:
                 iso_retention_when_identity_exact.append(float(iso_ok))
+                retention_by_pid[pid].append(float(iso_ok))
             if not (base_ok and iso_ok):
                 continue
 
@@ -175,7 +184,8 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
     boundary_puzzle = puzzle_means(boundary_null_by_pid)
     excess_surface_puzzle = puzzle_means(excess_surface_by_pid)
     excess_boundary_puzzle = puzzle_means(excess_boundary_by_pid)
-    tau_ci = bootstrap_ci(tau_puzzle, seed=17) if tau_puzzle else (float("nan"), float("nan"))
+    flip_rate_puzzle = puzzle_means(flip_rates_by_pid)
+    retention_puzzle = puzzle_means(retention_by_pid)
 
     position_rho = spearman(positional_delta_x, positional_delta_y) if len(positional_delta_x) >= 2 else float("nan")
     min_identity = int(cfg.get("min_identity_exact_puzzles_for_interpretation", 16))
@@ -198,9 +208,11 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
             sum(iso_retention_when_identity_exact) / len(iso_retention_when_identity_exact)
             if iso_retention_when_identity_exact else None
         ),
+        "isomorph_retention_puzzle_cluster_bootstrap_95ci": _ci(retention_puzzle, 13),
         "solve_pair_total": solve_pair_total,
         "solve_flip_count": solve_flips,
         "solve_flip_rate": solve_flips / solve_pair_total if solve_pair_total else None,
+        "solve_flip_rate_puzzle_cluster_bootstrap_95ci": _ci(flip_rate_puzzle, 14),
         "solve_flip_directions": {
             "identity_correct_isomorph_wrong": base_yes_iso_no,
             "identity_wrong_isomorph_correct": base_no_iso_yes,
@@ -208,11 +220,13 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
         "n_both_exact_isomorph_pairs": n_exact_pairs,
         "n_puzzles_with_both_exact_pair": len(exact_pair_puzzles),
         "tau_iso_per_puzzle": summarize(tau_puzzle),
-        "tau_iso_puzzle_cluster_bootstrap_95ci": list(tau_ci),
+        "tau_iso_puzzle_cluster_bootstrap_95ci": _ci(tau_puzzle, 17),
         "surface_order_positional_null_per_puzzle": summarize(surface_puzzle),
         "boundary_first_positional_null_per_puzzle": summarize(boundary_puzzle),
         "tau_excess_over_surface_null_per_puzzle": summarize(excess_surface_puzzle),
+        "tau_excess_over_surface_null_puzzle_cluster_bootstrap_95ci": _ci(excess_surface_puzzle, 18),
         "tau_excess_over_boundary_null_per_puzzle": summarize(excess_boundary_puzzle),
+        "tau_excess_over_boundary_null_puzzle_cluster_bootstrap_95ci": _ci(excess_boundary_puzzle, 19),
         "easy_first_candidate_count_spearman_per_puzzle": summarize(easy_rhos),
         "position_shift_vs_rank_shift_spearman_descriptive": position_rho,
         "same_serialization_repeat_tau": summarize(repeat_taus),
