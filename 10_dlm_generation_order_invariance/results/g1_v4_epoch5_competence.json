@@ -1,0 +1,18 @@
+{
+  "protocol_version": "g1-v4-dream7b-9x9-seed-aligned",
+  "model": "Dream-org/Dream-v0-Instruct-7B",
+  "checkpoint": "/tmp/candidate_topics/dream_g1_e5_cpu/global_step_60",
+  "n": 100,
+  "exact": 3,
+  "exact_rate": 0.03,
+  "decode": {
+    "max_new_tokens": 172,
+    "steps": 172,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "alg": "entropy",
+    "alg_temp": 0.0
+  },
+  "interpretation": "ordinary competence gate only; no 9x9 symmetry result was generated",
+  "observation": "The fixed epoch-5 result is 3/100, below epoch 2's 6/100; no tuning or test-driven changes were made."
+}
