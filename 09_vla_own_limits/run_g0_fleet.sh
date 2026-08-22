@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Launch the G0 behavior panel across the idle GPUs of one node.
+# Launch the G0 behavior panel across one node's idle GPUs.
 #
 # Rollouts are embarrassingly parallel over (checkpoint, task shard), so this starts
-# several independent policy servers and one collector client per server. There is no
-# cross-node or distributed anything -- each stream is a self-contained process pair.
+# independent policy servers and collector clients. Nothing is distributed and nothing
+# crosses a node boundary.
 #
-# Usage:
-#   PHASE=discovery bash run_g0_fleet.sh 2k 3k 9k
+# Several clients share one server on purpose: inference is serial inside a server, so
+# while one client is stepping MuJoCo on the CPU another can be occupying the GPU.
+#
+#   PHASE=discovery    bash run_g0_fleet.sh 2k 3k 9k
 #   PHASE=confirmation bash run_g0_fleet.sh 2k 9k
 set -euo pipefail
 
@@ -16,11 +18,12 @@ CKPT_ROOT="${CKPT_ROOT:-/home/xiang/projects/t09_ckpts}"
 CLIENT_PY="${CLIENT_PY:-/home/xiang/venvs/t09_client/bin/python}"
 SERVER_PY="${SERVER_PY:-$OPENPI/.venv/bin/python}"
 RESULTS="${RESULTS:-$HERE/results}"
-LOGS="$RESULTS/logs"
 PHASE="${PHASE:-discovery}"
 N_GPUS="${N_GPUS:-4}"
-SHARDS_PER_CKPT="${SHARDS_PER_CKPT:-4}"   # task shards, also = servers per checkpoint
+SERVERS_PER_CKPT="${SERVERS_PER_CKPT:-2}"
+CLIENTS_PER_SERVER="${CLIENTS_PER_SERVER:-2}"
 BASE_PORT="${BASE_PORT:-8100}"
+TASKS_TOTAL="${TASKS_TOTAL:-10}"
 
 case "$PHASE" in
   discovery)    INITS="0-14";  SEEDS="110000-110007" ;;
@@ -29,63 +32,66 @@ case "$PHASE" in
 esac
 
 CKPTS=("$@")
-[ ${#CKPTS[@]} -gt 0 ] || { echo "give at least one checkpoint name" >&2; exit 1; }
+[ ${#CKPTS[@]} -gt 0 ] || { echo "usage: PHASE=... bash run_g0_fleet.sh <ckpt>..." >&2; exit 1; }
 
-# Ten LIBERO-10 tasks split into SHARDS_PER_CKPT contiguous groups.
+LOGS="$RESULTS/logs"
+mkdir -p "$RESULTS" "$LOGS"
+
+SHARDS=$((SERVERS_PER_CKPT * CLIENTS_PER_SERVER))
+# Round-robin the LIBERO tasks over shards so no shard gets only long tasks.
 shard_tasks() {  # $1 = shard index, $2 = n shards
-  local i=$1 n=$2 out=""
-  for t in $(seq 0 9); do [ $((t % n)) -eq "$i" ] && out="${out}${out:+,}${t}"; done
+  local out=""
+  for ((t = 0; t < TASKS_TOTAL; t++)); do
+    (( t % $2 == $1 )) && out="${out}${out:+,}${t}"
+  done
   echo "$out"
 }
 
-mkdir -p "$RESULTS" "$LOGS"
-PIDS=()
-idx=0
-for ckpt in "${CKPTS[@]}"; do
-  for s in $(seq 0 $((SHARDS_PER_CKPT - 1))); do
-    port=$((BASE_PORT + idx))
-    gpu=$((idx % N_GPUS))
-    tasks="$(shard_tasks "$s" "$SHARDS_PER_CKPT")"
-    tag="${PHASE}_${ckpt}_s${s}"
+cleanup() { echo "shutting down fleet"; kill 0 2>/dev/null || true; }
+trap cleanup EXIT INT TERM
 
+# ---- servers -------------------------------------------------------------------------
+srv=0
+declare -a SERVER_PORT
+for ckpt in "${CKPTS[@]}"; do
+  for ((r = 0; r < SERVERS_PER_CKPT; r++)); do
+    port=$((BASE_PORT + srv))
+    gpu=$((srv % N_GPUS))
+    SERVER_PORT[$srv]=$port
     CUDA_VISIBLE_DEVICES="$gpu" "$SERVER_PY" -m src.openpi_instrumented_server \
-      --config pi05_libero --checkpoint-dir "$CKPT_ROOT/pt_${ckpt}" \
+      --config pi05_libero --checkpoint-dir "$CKPT_ROOT/pi05_pt_${ckpt}" \
       --port "$port" --device cuda:0 \
-      >"$LOGS/server_${tag}.log" 2>&1 &
-    PIDS+=($!)
-    echo "server $tag -> gpu $gpu port $port (tasks $tasks)"
-    idx=$((idx + 1))
+      >"$LOGS/server_${PHASE}_${ckpt}_r${r}.log" 2>&1 &
+    echo "server ${ckpt} r${r} -> gpu ${gpu} port ${port}"
+    srv=$((srv + 1))
   done
 done
 
-echo "waiting for servers to load checkpoints..."
-for p in $(seq 0 $((idx - 1))); do
-  port=$((BASE_PORT + p))
-  for _ in $(seq 1 180); do
-    "$CLIENT_PY" - "$port" <<'PY' && break || sleep 10
-import socket, sys
-s = socket.socket(); s.settimeout(2)
-sys.exit(0 if s.connect_ex(("127.0.0.1", int(sys.argv[1]))) == 0 else 1)
-PY
-  done
+echo "waiting for ${srv} servers to load their checkpoints..."
+for ((i = 0; i < srv; i++)); do
+  "$CLIENT_PY" -m src.wait_for_server --port "${SERVER_PORT[$i]}"
 done
 
-idx=0
+# ---- collectors ----------------------------------------------------------------------
+srv=0
 for ckpt in "${CKPTS[@]}"; do
-  for s in $(seq 0 $((SHARDS_PER_CKPT - 1))); do
-    port=$((BASE_PORT + idx))
-    tasks="$(shard_tasks "$s" "$SHARDS_PER_CKPT")"
-    tag="${PHASE}_${ckpt}_s${s}"
-    ( cd "$HERE" && MUJOCO_GL=egl "$CLIENT_PY" -m src.collect_behavior \
-        --port "$port" --checkpoint "$ckpt" \
-        --suite libero_10 --task-ids "$tasks" \
-        --init-indices "$INITS" --policy-seeds "$SEEDS" --resume \
-        --out "$RESULTS/g0_${tag}.csv" ) >"$LOGS/client_${tag}.log" 2>&1 &
-    PIDS+=($!)
-    echo "client $tag -> port $port"
-    idx=$((idx + 1))
+  for ((r = 0; r < SERVERS_PER_CKPT; r++)); do
+    port=${SERVER_PORT[$srv]}
+    for ((c = 0; c < CLIENTS_PER_SERVER; c++)); do
+      shard=$((r * CLIENTS_PER_SERVER + c))
+      tasks="$(shard_tasks "$shard" "$SHARDS")"
+      [ -n "$tasks" ] || continue
+      tag="${PHASE}_${ckpt}_s${shard}"
+      ( cd "$HERE" && MUJOCO_GL=egl "$CLIENT_PY" -m src.collect_behavior \
+          --port "$port" --checkpoint "$ckpt" \
+          --suite libero_10 --task-ids "$tasks" \
+          --init-indices "$INITS" --policy-seeds "$SEEDS" --resume \
+          --out "$RESULTS/g0_${tag}.csv" ) >"$LOGS/client_${tag}.log" 2>&1 &
+      echo "client ${tag} -> port ${port} (tasks ${tasks})"
+    done
+    srv=$((srv + 1))
   done
 done
 
-echo "fleet up: ${#PIDS[@]} processes. logs in $LOGS"
+echo "fleet up. logs in $LOGS"
 wait
