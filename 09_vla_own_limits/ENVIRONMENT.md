@@ -87,6 +87,14 @@ Without this, `convert_jax_model_to_pytorch.py` fails with
 the good case — but it fails *after* loading a 12 GB orbax checkpoint, so it costs several
 minutes per attempt.
 
+### torch.compile is disabled on purpose
+
+`Pi0Config.pytorch_compile_mode` defaults to `"max-autotune"`, which wraps `sample_actions`
+in `torch.compile`. `src/openpi_instrumented_server.py` overrides it to `None`. The reason
+is correctness of the measurement, not speed — see the note in that file and in
+`VALIDATION.md`. Pass `--compile-mode max-autotune` to restore upstream behaviour, but the
+feature capture is not trustworthy under it.
+
 ## Rendering
 
 Use EGL. OSMesa is not usable on these nodes (`libOSMesa` missing; PyOpenGL raises

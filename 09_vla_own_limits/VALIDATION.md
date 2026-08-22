@@ -35,6 +35,16 @@ The important extra check is physical-state identity. `task_id + init_idx` is no
 
 Policy stochasticity is also explicit. Every inference receives a deterministic Gaussian noise seed. Reusing a base `policy_seed` creates the same sequence of inference-noise seeds for every checkpoint on the same physical state (common random numbers).
 
+Inference runs in **eager mode**. OpenPI wraps `sample_actions` in
+`torch.compile(mode="max-autotune")` by default; Topic 09 disables it, for measurement
+reasons rather than performance ones. The layer-11 capture is a module forward hook
+registered immediately before inference — after the function has already been compiled and
+cached — and a compiled graph need not dispatch through it, failing as a silent
+zero-capture. More importantly, G0 runs without the hook and G1 runs with it; under
+compilation those are two different graphs, so the policy whose competence we measured
+would not be bit-for-bit the policy whose representation we read. Eager mode is applied
+identically to every checkpoint, so it cannot bias the comparison.
+
 Preflight requires:
 
 1. reset + settle reproduces the same simulator-state hash;

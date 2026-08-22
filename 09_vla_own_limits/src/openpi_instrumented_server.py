@@ -7,6 +7,7 @@ optional observational forward hook.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import logging
 
 import numpy as np
@@ -116,6 +117,12 @@ def main() -> None:
     p.add_argument("--device", default="cuda")
     p.add_argument("--layer", type=int, default=11)
     p.add_argument("--denoise-steps", type=int, default=10)
+    p.add_argument(
+        "--compile-mode",
+        default="off",
+        help="'off' (default) runs sample_actions in eager mode; any other value is passed "
+             "to torch.compile. See the note in main() before changing this.",
+    )
     args = p.parse_args()
 
     from openpi.policies import policy_config
@@ -123,6 +130,30 @@ def main() -> None:
     from openpi.training import config as openpi_config
 
     cfg = openpi_config.get_config(args.config)
+
+    # OpenPI wraps sample_actions in torch.compile(mode="max-autotune") by default.
+    # Topic 09 turns that off, for measurement reasons rather than performance ones:
+    #
+    #   1. The layer-11 capture is a module forward hook registered immediately before
+    #      inference -- that is, after the function has already been compiled and cached.
+    #      A compiled graph need not dispatch through the hook at all, and the failure
+    #      mode is a silent zero-capture rather than a wrong number.
+    #   2. G0 runs without the hook and G1 runs with it. Under compilation those are two
+    #      different graphs, so the policy whose competence we measured would not be
+    #      bit-for-bit the policy whose representation we read.
+    #   3. max-autotune selects kernels by benchmarking at compile time, which is a source
+    #      of cross-process numerical variation we would rather not reason about.
+    #
+    # Eager mode is the reference semantics, and it is applied identically to every
+    # checkpoint, so it cannot bias the comparison between them.
+    if args.compile_mode == "off":
+        cfg = dataclasses.replace(cfg, model=dataclasses.replace(cfg.model, pytorch_compile_mode=None))
+    else:
+        cfg = dataclasses.replace(
+            cfg, model=dataclasses.replace(cfg.model, pytorch_compile_mode=args.compile_mode)
+        )
+    logging.info("pytorch_compile_mode=%s", cfg.model.pytorch_compile_mode)
+
     base = policy_config.create_trained_policy(cfg, args.checkpoint_dir, pytorch_device=args.device)
     wrapped = ControlledInstrumentedPolicy(
         base,
