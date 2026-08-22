@@ -59,6 +59,7 @@ def run_variant(model, tokenizer, rec: dict, puzzle, solution, transform, varian
             "temperature": cfg["temperature"],
             "protocol_version": cfg["protocol_version"],
             "native_digit_argmax_fraction": result.native_digit_argmax_fraction,
+            "native_scheduler_pick_same_fraction": result.native_scheduler_pick_same_fraction,
         },
     )
 
@@ -110,7 +111,6 @@ def main() -> None:
     n_repeat = 0 if args.skip_controls or args.split != "discovery" else int(cfg.get("same_serialization_repeat_puzzles", 0))
     n_random = 0 if args.skip_controls or args.split != "discovery" else int(cfg.get("random_control_puzzles", 0))
 
-    # Do not pay the model-loading cost if this shard is already complete.
     pending = False
     for split_idx, rec in indexed_rows:
         keys = [variant_key(rec, "identity", "low_confidence")]
