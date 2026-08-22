@@ -123,6 +123,7 @@ def decode_fixed_slots(
         raise ValueError("puzzle has no blanks")
 
     x = torch.tensor([sequence], dtype=torch.long, device=model.device)
+    blank_pos_tensor = torch.tensor(blank_positions, dtype=torch.long, device=model.device)
     generator = torch.Generator(device=model.device)
     generator.manual_seed(seed)
     allowed = torch.tensor([digit_ids[d] for d in range(1, 10)], dtype=torch.long, device=model.device)
@@ -134,16 +135,12 @@ def decode_fixed_slots(
 
     with torch.no_grad():
         for step in range(1, len(blank_positions) + 1):
-            active = torch.tensor(
-                [int(x[0, pos].item()) == mask_id for pos in blank_positions],
-                dtype=torch.bool,
-                device=model.device,
-            )
+            active = x[0, blank_pos_tensor].eq(mask_id)
             if not bool(active.any().item()):
                 break
 
             logits = model(x).logits
-            slot_logits = logits[:, blank_positions, :]
+            slot_logits = logits[:, blank_pos_tensor, :]
             digit_logits = slot_logits[:, :, allowed]
 
             if temperature > 0:
