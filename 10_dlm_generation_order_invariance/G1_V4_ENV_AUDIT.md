@@ -29,6 +29,12 @@ With that isolated patch, a four-GPU one-step run completed forward/backward, va
 
 The first two-epoch formal start exposed a validation-only `0/0` edge case in upstream `q_sample`: a random validation batch can contain no masked response token. The isolated trainer copy now applies `tools/verl_compat/dream_zero_mask_guard.patch`, returning a finite zero diagnostic for that batch while leaving all nonempty training/validation losses unchanged. This guard does not affect exact-grid evaluation or the scientific protocol.
 
+The formal `global_step_24` checkpoint has the same packaging quirk: the trainer
+writes the remote-code Python files at the run root rather than inside each
+checkpoint directory. Before inference/reload, the four upstream remote-code files
+are copied into the checkpoint directory. This changes no weights or evaluation
+behavior and is recorded as checkpoint packaging handling.
+
 ## Import shim audit
 
 `tools/flash_attn_compat` is a deliberately explicit, pure-PyTorch import shim for `flash_attn.bert_padding`. It is only prepended to `PYTHONPATH` for the environment audit. With the official trainer configuration's sequence-parallel size fixed to 1, the Ulysses branch containing these helpers is not executed; the normal path uses the trainer's ordinary PyTorch loss. The shim is not a FlashAttention implementation and is not valid for sequence-parallel training.
