@@ -35,6 +35,13 @@ checkpoint directory. Before inference/reload, the four upstream remote-code fil
 are copied into the checkpoint directory. This changes no weights or evaluation
 behavior and is recorded as checkpoint packaging handling.
 
+Resume inspection found a boundary bug in the released trainer: its saved epoch is
+zero-based, but an exact-boundary resume would repeat the just-completed epoch.
+`tools/verl_compat/dream_resume_epoch_boundary.patch` advances the in-memory epoch
+only when `global_step % steps_per_epoch == 0`; mid-epoch resume behavior is kept.
+This is required before the planned 2-to-5 segment and will be verified by a short
+resume smoke.
+
 ## Import shim audit
 
 `tools/flash_attn_compat` is a deliberately explicit, pure-PyTorch import shim for `flash_attn.bert_padding`. It is only prepended to `PYTHONPATH` for the environment audit. With the official trainer configuration's sequence-parallel size fixed to 1, the Ulysses branch containing these helpers is not executed; the normal path uses the trainer's ordinary PyTorch loss. The shim is not a FlashAttention implementation and is not valid for sequence-parallel training.

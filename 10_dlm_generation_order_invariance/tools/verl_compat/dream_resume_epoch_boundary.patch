@@ -1,0 +1,14 @@
+--- a/src/trainer/fsdp_sft_trainer.py
++++ b/src/trainer/fsdp_sft_trainer.py
+@@
+-        self.current_epoch = epoch
++        # The trainer stores a zero-based epoch index.  At an exact epoch
++        # boundary, resume from the next epoch rather than repeating the one
++        # just completed.  Mid-epoch checkpoints retain the stored epoch and
++        # use global_step % steps_per_epoch below to skip consumed batches.
++        if global_step > 0 and global_step % self.steps_per_epoch == 0:
++            self.current_epoch = epoch + 1
++        else:
++            self.current_epoch = epoch
+        
+         return global_step
