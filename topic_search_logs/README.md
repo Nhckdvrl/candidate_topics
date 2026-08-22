@@ -35,6 +35,7 @@
 4. [Round 4：data producer、temporal support、memory 与 autonomous self-consuming data](./2026-08-22_vla_wam_mechanism_search_round4.md)
 5. [Round 5：顶会问题尺度校准与继续 collision audit](./2026-08-22_vla_wam_mechanism_search_round5.md)
 6. [Round 6：广泛大问题搜索与 action-generalization mechanism](./2026-08-22_vla_wam_mechanism_search_round6.md)
+7. [Round 7：foundation scaling、WAM controllability 与 heterogeneous-data collision audit](./2026-08-22_vla_wam_mechanism_search_round7.md)
 
 ## 单独摘出的未注册候选
 
@@ -44,7 +45,9 @@
 
 来源：Round 3 的 action-chunking temporal anomaly → Round 4 的 producer-mixture reinterpretation → Round 5 的 scope / collision audit。
 
-当前仍是 provisional candidate。NeurIPS 2025 已经明确给出 mixture-of-Markov-policies 可形成 non-Markovian mixture 的理论近邻，因此不能靠 producer-mixture 本身作为 novelty。真正需要回答的是现代 history-aware robot policy 的 memory 到底在利用 task/world information 还是 training-data behavior structure，以及这种 dependence 是否有 causal behavioral consequence。
+**当前状态：保留，但 collision risk 已升高。** Round 7 找到 `IntentVLA: Short-Horizon Intent Modeling for Aliased Robot Manipulation`，已经直接把“相似当前观测对应不同 short-horizon intent，history 用来维持 episode 内行为模式”做成现代 VLA 问题。因此 A 不能再把 `history -> latent intent / behavior mode inference` 本身作为 novelty。
+
+A 若继续，必须回答更强的问题：现代 history-aware robot policy 的 memory 到底在利用 task/world state，还是 training-data behavior source / strategy structure；并且必须证明这种 dependence 有 causal rollout consequence。若再找到直接做这层 decomposition 的工作，应立即移出 shortlist。
 
 ### B. [How Do Robot Foundation Policies Generalize Actions?](./candidates/how_do_robot_foundation_policies_generalize_actions.md)
 
@@ -59,7 +62,15 @@ vs composition
 vs extrapolation / synthesis
 ```
 
-当前仍是 provisional candidate，继续做 exact collision。若最终只能缩成某个 benchmark 的 trajectory-similarity analysis，则直接砍。
+**Round 7 后 B 明显加强，当前优先级高于 A。** Dyna-2 已经把 human-video pretraining 推到 1M 小时并报告 cross-embodiment scaling law；π0.7 报告 compositional generalization；Qwen-RobotManip 报告大规模 aligned pretraining 后的 OOD / recovery / cross-embodiment 能力。但这些工作仍没有系统回答：success 随 scale 上升时，motor generation 到底发生了什么 qualitative change。
+
+Round 7 后 B 更准确的机制表述是：
+
+> **What qualitative transition, if any, does robot foundation pretraining induce in action generation?**
+
+但标题仍保留更自然的 `How Do Robot Foundation Policies Generalize Actions?`。
+
+第一枪后续应尽量加入 pretraining scale / diversity 轴，而不只是 model-family 对比。如果最后仍只能缩成某个 benchmark 的 trajectory-similarity analysis，则直接砍。
 
 ## 仍留在搜索日志、但未摘出的方向
 
@@ -69,4 +80,12 @@ vs extrapolation / synthesis
 
 ### Does Fine-Tuning Collapse the Behavioral Repertoire of Robot Foundation Policies?
 
-有真实旁证，但与 2026 robot-policy memorization / generalization / task-vector / SAE 研究线过近。当前不单独摘出，除非后续出现一个明显不同于 generic memorization / VLM catastrophic forgetting 的大机制。
+有真实旁证，尤其 Qwen-RobotManip 的 `VLA-to-VA degradation`，但与 2026 robot-policy memorization / generalization / task-vector / SAE 研究线过近。当前不单独摘出，除非后续出现一个明显不同于 generic memorization / VLM catastrophic forgetting 的大机制。
+
+### What Makes Heterogeneous Robot Experience Compatible?
+
+Round 7 重新认真审过。Qwen-RobotManip、Rethinking VLA Scaling、π0.7、VLAFlow、JoyAI-RA 都证明这是一个真实大问题：naive pooling 可以 negative transfer，而 alignment / richer context / future-latent constraints 能让 heterogeneous experience 共存。但 broad question 本身已经被 2026 scaling/alignment literature 正面占据，再做很容易被迫缩成 normalization / coordinate frame / mixture ratio，因此不摘成候选。
+
+### Do World Action Models Actually Use Their Predicted Futures?
+
+题目非常自然，但已被 Fast-WAM、Faster-WAM、RIFT 连续占据：training-time world modeling、inference-time future conditioning、iterative rollout necessity 都已有直接 controlled intervention / ablation。保留为搜索教训，不再占候选位。
