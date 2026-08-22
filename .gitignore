@@ -8,3 +8,4 @@
 *.npz
 *.pt
 *.safetensors
+**/results/**/collect.log

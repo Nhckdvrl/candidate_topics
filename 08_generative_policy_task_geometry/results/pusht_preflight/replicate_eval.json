@@ -1,0 +1,313 @@
+{
+  "pretrained": "/home/xiang/work08/ckpt/diffusion_pusht",
+  "episodes": 50,
+  "seed_start": 1000,
+  "success_rate": 0.68,
+  "success_rate_se": 0.06596969000988256,
+  "mean_max_coverage": 0.9172805004654069,
+  "released_success_rate": 0.654,
+  "released_mean_max_reward": 0.9551,
+  "within_2se_of_released": true,
+  "per_episode": [
+    {
+      "seed": 1000,
+      "success": true,
+      "max_coverage": 0.9628642604989172,
+      "steps": 182
+    },
+    {
+      "seed": 1001,
+      "success": false,
+      "max_coverage": 0.2051580766503491,
+      "steps": 300
+    },
+    {
+      "seed": 1002,
+      "success": true,
+      "max_coverage": 0.9584093447571724,
+      "steps": 66
+    },
+    {
+      "seed": 1003,
+      "success": false,
+      "max_coverage": 0.9225414353181514,
+      "steps": 300
+    },
+    {
+      "seed": 1004,
+      "success": true,
+      "max_coverage": 0.9508901623815939,
+      "steps": 135
+    },
+    {
+      "seed": 1005,
+      "success": false,
+      "max_coverage": 0.9381680081237684,
+      "steps": 300
+    },
+    {
+      "seed": 1006,
+      "success": true,
+      "max_coverage": 0.9507763695133126,
+      "steps": 177
+    },
+    {
+      "seed": 1007,
+      "success": true,
+      "max_coverage": 0.9543152698568695,
+      "steps": 84
+    },
+    {
+      "seed": 1008,
+      "success": false,
+      "max_coverage": 0.9326788599902679,
+      "steps": 300
+    },
+    {
+      "seed": 1009,
+      "success": true,
+      "max_coverage": 0.9720079409946467,
+      "steps": 225
+    },
+    {
+      "seed": 1010,
+      "success": true,
+      "max_coverage": 0.9650842312770733,
+      "steps": 222
+    },
+    {
+      "seed": 1011,
+      "success": false,
+      "max_coverage": 0.9161999559316818,
+      "steps": 300
+    },
+    {
+      "seed": 1012,
+      "success": true,
+      "max_coverage": 0.9572336654776916,
+      "steps": 152
+    },
+    {
+      "seed": 1013,
+      "success": false,
+      "max_coverage": 0.947468614368176,
+      "steps": 300
+    },
+    {
+      "seed": 1014,
+      "success": true,
+      "max_coverage": 0.9558041572545888,
+      "steps": 152
+    },
+    {
+      "seed": 1015,
+      "success": true,
+      "max_coverage": 0.9544055726457299,
+      "steps": 89
+    },
+    {
+      "seed": 1016,
+      "success": true,
+      "max_coverage": 0.9576032422636288,
+      "steps": 96
+    },
+    {
+      "seed": 1017,
+      "success": true,
+      "max_coverage": 0.9551955224472568,
+      "steps": 239
+    },
+    {
+      "seed": 1018,
+      "success": true,
+      "max_coverage": 0.9587855786294952,
+      "steps": 103
+    },
+    {
+      "seed": 1019,
+      "success": true,
+      "max_coverage": 0.9501934020400532,
+      "steps": 250
+    },
+    {
+      "seed": 1020,
+      "success": false,
+      "max_coverage": 0.9443772110074642,
+      "steps": 300
+    },
+    {
+      "seed": 1021,
+      "success": true,
+      "max_coverage": 0.956472741153007,
+      "steps": 226
+    },
+    {
+      "seed": 1022,
+      "success": true,
+      "max_coverage": 0.9621465815116614,
+      "steps": 105
+    },
+    {
+      "seed": 1023,
+      "success": true,
+      "max_coverage": 0.9754639149879096,
+      "steps": 170
+    },
+    {
+      "seed": 1024,
+      "success": true,
+      "max_coverage": 0.9551641849576201,
+      "steps": 211
+    },
+    {
+      "seed": 1025,
+      "success": false,
+      "max_coverage": 0.9460559309219321,
+      "steps": 300
+    },
+    {
+      "seed": 1026,
+      "success": false,
+      "max_coverage": 0.6764378892341798,
+      "steps": 300
+    },
+    {
+      "seed": 1027,
+      "success": true,
+      "max_coverage": 0.9697629445041066,
+      "steps": 136
+    },
+    {
+      "seed": 1028,
+      "success": true,
+      "max_coverage": 0.9509830052856814,
+      "steps": 142
+    },
+    {
+      "seed": 1029,
+      "success": true,
+      "max_coverage": 0.9663267695348109,
+      "steps": 232
+    },
+    {
+      "seed": 1030,
+      "success": true,
+      "max_coverage": 0.9747741416822615,
+      "steps": 215
+    },
+    {
+      "seed": 1031,
+      "success": true,
+      "max_coverage": 0.9522255051302152,
+      "steps": 216
+    },
+    {
+      "seed": 1032,
+      "success": true,
+      "max_coverage": 0.9705668073227284,
+      "steps": 234
+    },
+    {
+      "seed": 1033,
+      "success": true,
+      "max_coverage": 0.9549060900417878,
+      "steps": 146
+    },
+    {
+      "seed": 1034,
+      "success": false,
+      "max_coverage": 0.22048406532826384,
+      "steps": 300
+    },
+    {
+      "seed": 1035,
+      "success": false,
+      "max_coverage": 0.9342414352251391,
+      "steps": 300
+    },
+    {
+      "seed": 1036,
+      "success": true,
+      "max_coverage": 0.9510557806410833,
+      "steps": 191
+    },
+    {
+      "seed": 1037,
+      "success": true,
+      "max_coverage": 0.9534101113228474,
+      "steps": 121
+    },
+    {
+      "seed": 1038,
+      "success": false,
+      "max_coverage": 0.9286338176139247,
+      "steps": 300
+    },
+    {
+      "seed": 1039,
+      "success": true,
+      "max_coverage": 0.9545375053944208,
+      "steps": 160
+    },
+    {
+      "seed": 1040,
+      "success": true,
+      "max_coverage": 0.9513305498849308,
+      "steps": 185
+    },
+    {
+      "seed": 1041,
+      "success": true,
+      "max_coverage": 0.9576276249934814,
+      "steps": 112
+    },
+    {
+      "seed": 1042,
+      "success": true,
+      "max_coverage": 0.9527757455130061,
+      "steps": 155
+    },
+    {
+      "seed": 1043,
+      "success": false,
+      "max_coverage": 0.9438905798656088,
+      "steps": 300
+    },
+    {
+      "seed": 1044,
+      "success": false,
+      "max_coverage": 0.9495897631815846,
+      "steps": 300
+    },
+    {
+      "seed": 1045,
+      "success": true,
+      "max_coverage": 0.9574287081824285,
+      "steps": 227
+    },
+    {
+      "seed": 1046,
+      "success": true,
+      "max_coverage": 0.9625631650094247,
+      "steps": 172
+    },
+    {
+      "seed": 1047,
+      "success": false,
+      "max_coverage": 0.9406816494563311,
+      "steps": 300
+    },
+    {
+      "seed": 1048,
+      "success": true,
+      "max_coverage": 0.9649946340487205,
+      "steps": 263
+    },
+    {
+      "seed": 1049,
+      "success": false,
+      "max_coverage": 0.9193324999133567,
+      "steps": 300
+    }
+  ]
+}
