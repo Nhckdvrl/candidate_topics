@@ -9,3 +9,4 @@
 *.pt
 *.safetensors
 **/results/**/collect.log
+**/results/**/*.log

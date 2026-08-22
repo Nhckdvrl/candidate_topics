@@ -46,21 +46,28 @@ def within_group_spearman(df: pd.DataFrame, xcol: str, ycol: str, group: str = "
     return float(np.average(rs, weights=ws))
 
 
-def matched_pairs(
+def matched_pairs_descriptive(
     df: pd.DataFrame,
     score_col: str,
     outcome_col: str,
     tol_z: float = 0.10,
     require_different_rollout: bool = True,
 ) -> pd.DataFrame:
-    """Greedy 1:1 matching of states with nearly identical scalar diversity score.
+    """Greedy 1:1 matching, selecting the pair members by their **outcome** quartile.
 
-    Pairs are formed between the top and bottom quartile of `outcome_col` so that the
-    reported ratio is the *achievable* spread at matched entropy, then the analysis
-    reports how tight the entropy match actually was. Each state is used at most once.
+    !!! NEVER GATE ON THIS. !!!
+
+    Pairs are formed between the top and bottom quartile of `outcome_col`, so a large
+    `outcome_hi / outcome_lo` ratio is guaranteed by construction -- it is bounded below
+    by Q75/Q25 no matter what the score does. Bootstrapping that ratio measures how
+    sampling moves the quartile gap, not whether the scalar score carries information.
+
+    It is retained only as an *illustrative* answer to "conditional on nearly identical
+    ACE, how far apart can two states' outcomes be, in pixels?". The non-circular test is
+    `matched_pair_reduction` below, which never looks at the outcome when forming pairs.
 
     `require_different_rollout` avoids pairing two probes from the same rollout, which
-    would otherwise let a single lucky episode manufacture many "independent" pairs.
+    would otherwise let a single episode manufacture many "independent" pairs.
     """
     s = df[score_col].to_numpy(float)
     o = df[outcome_col].to_numpy(float)
@@ -102,6 +109,83 @@ def matched_pairs(
     return pd.DataFrame(rows)
 
 
+def _greedy_score_matched_pairs(z, roll, order, tol_z, require_different_rollout):
+    """Pairs matched on the score alone. The outcome is never consulted."""
+    n = len(z)
+    cands = []
+    for a in range(n):
+        for b in range(a + 1, n):
+            if require_different_rollout and roll[a] == roll[b]:
+                continue
+            dz = abs(z[a] - z[b])
+            if dz <= tol_z:
+                cands.append((dz, a, b))
+    cands.sort(key=lambda t: (t[0], order[t[1]], order[t[2]]))
+    used, pairs = set(), []
+    for dz, a, b in cands:
+        if a in used or b in used:
+            continue
+        used.add(a)
+        used.add(b)
+        pairs.append((a, b, dz))
+    return pairs
+
+
+def matched_pair_reduction(
+    df: pd.DataFrame,
+    score_col: str,
+    outcome_col: str,
+    tol_z: float = 0.10,
+    n_random: int = 400,
+    seed: int = 0,
+    require_different_rollout: bool = True,
+) -> dict:
+    """Does knowing two states share a scalar score tell you their outcomes agree?
+
+    Pairs are formed using the score **only** -- the outcome plays no part in selection,
+    which is what makes this usable as evidence rather than decoration.
+
+        reduction = median |outcome_a - outcome_b| over score-matched pairs
+                    ---------------------------------------------------------
+                    median |outcome_a - outcome_b| over randomly formed pairs
+
+    reduction ~ 1  =>  matching on the scalar buys nothing: two states with the same
+                       action entropy are as different in true task outcome as two
+                       states picked at random. That is the conflation claim.
+    reduction << 1 =>  the scalar largely determines the outcome, and this topic is dead.
+    """
+    s = df[score_col].to_numpy(float)
+    o = df[outcome_col].to_numpy(float)
+    roll = df["rollout"].to_numpy()
+    z = (s - s.mean()) / max(s.std(ddof=1), 1e-12)
+    order = np.arange(len(z))
+
+    pairs = _greedy_score_matched_pairs(z, roll, order, tol_z, require_different_rollout)
+    if len(pairs) < 5:
+        return {"n_pairs": len(pairs), "reduction": float("nan")}
+
+    matched_diff = np.array([abs(o[a] - o[b]) for a, b, _ in pairs])
+
+    rng = np.random.default_rng(seed)
+    rand_diff = []
+    for _ in range(n_random):
+        a, b = rng.integers(0, len(z), 2)
+        if a == b or (require_different_rollout and roll[a] == roll[b]):
+            continue
+        rand_diff.append(abs(o[a] - o[b]))
+    rand_diff = np.array(rand_diff)
+
+    med_m = float(np.median(matched_diff))
+    med_r = float(np.median(rand_diff))
+    return {
+        "n_pairs": len(pairs),
+        "mean_abs_score_z_gap": float(np.mean([d for _, _, d in pairs])),
+        "median_abs_outcome_diff_matched_px": med_m,
+        "median_abs_outcome_diff_random_px": med_r,
+        "reduction": float(med_m / max(med_r, 1e-12)),
+    }
+
+
 def binned_spread(df: pd.DataFrame, score_col: str, outcome_col: str, n_bins: int = 8) -> pd.DataFrame:
     """Within narrow quantile bins of the scalar score, how wide is the outcome spread?
 
@@ -125,7 +209,11 @@ def binned_spread(df: pd.DataFrame, score_col: str, outcome_col: str, n_bins: in
                 "outcome_p10": float(p10),
                 "outcome_p50": float(p50),
                 "outcome_p90": float(p90),
-                "p90_over_p10": float(p90 / max(p10, 1e-9)),
+                # A third of probe states have *exactly* zero outcome dispersion (the
+                # pusher never reaches the block), so p90/p10 ratios blow up to ~1e9 and
+                # say nothing. Spread is reported in pixels.
+                "outcome_p90_minus_p10_px": float(p90 - p10),
+                "outcome_iqr_px": float(np.subtract(*np.percentile(o, [75, 25]))),
             }
         )
     return pd.DataFrame(out)

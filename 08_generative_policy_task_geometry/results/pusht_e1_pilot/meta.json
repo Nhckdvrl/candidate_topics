@@ -1,0 +1,14 @@
+{
+  "pretrained": "/home/xiang/work08/ckpt/diffusion_pusht",
+  "rollouts": 8,
+  "seed_base": 100000,
+  "samples_per_state": 256,
+  "max_steps": 300,
+  "calib_rollouts": 4,
+  "n_probe_states": 187,
+  "ace_cell_size": [
+    11.520893669128418,
+    9.821662445068359
+  ],
+  "elapsed_s": 337.0171711444855
+}

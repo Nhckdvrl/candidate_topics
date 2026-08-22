@@ -1,101 +1,129 @@
-# 08 — Generative Policy Diversity Has Task Geometry
+# 08 — Does action diversity track functional uncertainty?
 
-## Question
+## Status
 
-Generative robot policies can produce many different action trajectories from the same observation. When that distribution is broad, does it mean the policy is uncertain about what to do, or can the diversity mostly lie in directions that do not change the task outcome?
+| | |
+|---|---|
+| planar-arm G0 (original prototype) | **killed** — see `AUDIT.md` |
+| PushT existence test E1 (8-step outcome) | discovery complete |
+| PushT branch test E1b (episode-level outcome) | running |
+| decision-level test (does a deployed monitor misfire?) | the actual bar; pending E1b |
 
-The concrete hypothesis is:
+## The question, after demotion
 
-> **Two policy states can have similar scalar action entropy but different functional risk because their variability points in different task-relative directions.**
+The folder was originally titled *"Generative Policy Diversity Has Task Geometry"* and the
+planned claim was about a task-sensitive / task-null decomposition of the sampled action
+distribution. That framing is **demoted and is no longer the claim being tested.**
 
-This is motivated by the uncontrolled-manifold / motor-redundancy literature, but the object measured here is the sampled conditional action distribution of a generative policy.
+The reason is a selection-effect worry rather than a technical one. The old design needed
+a chain: manufacture hidden posture modes → require identical observations → define a
+task/null decomposition → require local linearity → match on entropy → define a risk
+threshold → pass several gates. Even a full success reduces to "we deliberately injected
+variability into task-null directions and then found that a scalar entropy counted it".
+That is close to true by construction, and `AUDIT.md` finding A1 shows one of the gates
+was literally an algebraic identity.
 
-## Why this folder starts with an analytic robot
+What survives is the part that needs none of that machinery:
 
-The first experiment intentionally avoids images, perception, and a large simulator. We need to know whether the proposed phenomenon exists before paying for a full Franka/ManiSkill replication.
+> **Can a generative robot policy be highly diverse while remaining functionally certain?**
 
-The G0 robot is a 4-DoF planar arm with a 2-D end-effector position task. Its Jacobian gives an exact local decomposition of joint velocity into:
+Concretely: sample many action chunks from one real policy at one real state, execute each
+from that identical simulator state, and compare how spread out the *actions* are with how
+spread out the *task outcomes* are. No hidden modes, no Jacobian, no linearity assumption.
+One scatter plot answers it.
 
-- task-sensitive row-space directions;
-- task-null directions that leave end-effector position unchanged to first order.
+## The harder bar
 
-The policy is a conditional DDPM over 8-step action chunks.
+Suppose the phenomenon is real. Is it surprising? Largely no. Robot dynamics are nonlinear
+and state-dependent, so it is expected that a pusher moving in free space is diverse and
+harmless while a small difference near contact matters a lot. **"Action entropy and
+outcome uncertainty are imperfectly correlated" is not a result**, and on its own it
+should end this topic.
 
-## Crucial data design
+The version that would matter is operational:
 
-A naive dataset would give every episode a different initial state and target. That is not enough: the current joint configuration may reveal which posture mode generated the trajectory, so the conditional distribution `p(a | s)` need not actually be multimodal.
+> A deployed uncertainty monitor that thresholds scalar action entropy fires on states
+> where every sampled action leads to the same place, and stays quiet on states where the
+> sampled actions genuinely diverge.
 
-Instead, each base task `(q0, target)` is repeated with several different hidden posture preferences. At the identical initial observation, all demonstrations pursue the same task outcome but have different projected null-space components. The preference itself is **not** observed by the policy.
+That is a semantic mismatch in a mechanism people actually run (FIPER, adaptive action
+chunking), not a geometric curiosity. `src/pusht/decision_analysis.py` measures it against
+episode-level branch outcomes: AUC for ranking states by true functional uncertainty, and
+precision at FIPER's own released operating quantiles (0.90/0.95/0.99) against the base
+rate. A monitor at chance is the finding; a monitor that works is the kill.
 
-A second policy is trained on the same repeated tasks with `null_gain=0`. This negative control tests whether apparent null-space diversity is merely isotropic DDPM sampling noise.
+## Setup
 
-## Measurements
+No training. `lerobot/diffusion_pusht` — the LeRobot port of Diffusion Policy (Chi et al.,
+RSS 2023) on the original PushT demonstrations. Our closed-loop replication on the released
+eval seeds gives **68.0% ± 6.6%** against the released **65.4%**, so the inference path is
+faithful (`results/pusht_preflight/replicate_eval.json`).
 
-For action covariance `Sigma` and task Jacobian `J`, the code computes orthogonal action-space projectors from an SVD:
+Environment is `gym_pusht/PushT-v0` (pymunk). Action is the pusher's absolute target
+position in `[0,512]²`; the task variable is the T-block pose.
 
-```text
-P_task = projector onto row(J)
-P_null = projector onto null(J)
-```
+## Measurement
 
-and records both total and dimension-normalized variance:
+At every point where the policy re-plans (every 8 env steps):
 
-```text
-V_task = tr(P_task Sigma P_task) / rank(P_task)
-V_null = tr(P_null Sigma P_null) / rank(P_null)
-```
+1. sample B=256 chunks from the identical observation — conditioning is bit-identical
+   across the batch, only the diffusion noise differs;
+2. save the **complete** pymunk dynamic state;
+3. execute each chunk from that identical restored state;
+4. record the true outcome (T-block keypoints, coverage).
 
-The dimension normalization is mandatory: otherwise a larger null space mechanically has more total variance.
+E1b additionally continues K=32 of those branches **closed-loop under the same policy**
+for a further horizon, so the outcome is episode-level rather than 8 steps of contact.
 
-Scalar action uncertainty is measured with the FIPER-style Action-Chunk Entropy (ACE) estimator: fixed calibration ranges, dimension-wise cell widths, joint D-dimensional occupied cells, entropy per prediction step, summed over the chunk.
+Scores: FIPER ACE transcribed from released code (`utiasDSL/fiper`) — cell width
+`0.03 × calibration range`, per-state dynamic grid, horizon mean, scored on the full
+16-step predicted chunk — plus two estimator-free dispersion measures so nothing rests on
+one binning constant.
 
-Functional risk is measured by cloning the same state, executing each sampled chunk open-loop for a short horizon, and asking whether it makes at least 15% relative progress toward the task target.
+## Two simulator bugs that would have faked a result
 
-The key contrast is then **matched ACE, different task geometry**. High-task-fraction states are matched to low-task-fraction states with nearly equal standardized ACE, and their empirical execution risk is compared.
+Both found by preflight, before any measurement.
 
-## G0 decision
+* **59 px block teleport on restore.** `PushTEnv._set_state` assigns position then angle;
+  the T's centre of gravity is offset from its body origin, so assigning `angle` moves
+  `position`. In the first smoke run *every* outcome dispersion was exactly zero. Note
+  that replay-determinism checks cannot catch this — they compare two replays with each
+  other, so a restore that is wrong identically every time passes. That is why `P0`
+  compares the restored state against the *saved* state.
+* **3.67 px drift from Chipmunk's warm-start contact cache**, which survives a naive
+  restore. Same order as the real signal. `restore_sim_state` now rebuilds the space.
 
-G0 is an existence screen, not the paper experiment. It asks four things:
+## Analysis rules
 
-1. can the learned generative policy actually solve the task (`rollout_success >= 0.80`)?
-2. does its sampled diversity contain substantial task-null structure after per-dimension normalization?
-3. can we find enough high-vs-low task-fraction state pairs at nearly matched ACE?
-4. inside those matched pairs, is higher task-sensitive variability associated with materially higher execution risk?
-
-If these fail, there is no reason to build a larger robot experiment around the story.
-
-If they pass, the next experiment must move beyond the easy objection “just map joints to Cartesian space”: use a Cartesian 6-D end-effector policy on a task that constrains only a lower-dimensional functional variable (for example position but not orientation), and test the same decomposition relative to the **task**, not merely the robot kinematics.
+* **Never gate on a statistic that selects on the outcome.** `matched_pairs_descriptive`
+  picks pair members from the top and bottom outcome quartiles, so its ratio is large by
+  construction. The gated statistic is `matched_pair_reduction`, which forms pairs using
+  the score alone.
+* States within a rollout are dependent. Every CI resamples **rollouts**.
+* Every kill criterion in `PUSHT_EXISTENCE_TEST.md` is implemented in the gate, including
+  the within-rollout, contact-stratified, estimator-robustness and finite-B noise clauses.
 
 ## Run
 
 ```bash
-pip install -r requirements.txt
-GPU=0 SEED=0 bash run_g0.sh
+pip install -r requirements-pusht.txt
+bash run_e1_pilot.sh          # preflight, collection, descriptive analysis
+bash run_e1b_fleet.sh disc    # episode-level branching across free GPUs
 ```
-
-For parallel seeds on separate GPUs/nodes:
-
-```bash
-GPU=0 SEED=0 bash run_g0.sh
-GPU=1 SEED=1 bash run_g0.sh
-GPU=2 SEED=2 bash run_g0.sh
-```
-
-See `SERVER_HANDOFF.md` for the exact server workflow and `VALIDATION.md` for the frozen measurements.
 
 ## Layout
 
 ```text
-src/geometry.py       exact UCM/task-null decomposition + FIPER ACE
-src/planar_arm.py     redundant robot, resolved-rate expert, repeated-task dataset
-src/diffusion.py      low-dimensional conditional DDPM
-src/train_g0.py       training + checkpoints
-src/evaluate_g0.py    sampled action geometry, ACE, rollout success, empirical risk
-src/analyze_g0.py     matched-entropy analysis, bootstrap, G0 decision
-run_g0.sh             main condition + no-null negative control
-tests/                numerical and analysis unit tests
+src/pusht/sim_state.py         exact pymunk save/restore
+src/pusht/env_utils.py         render-free physics, counterfactual execution
+src/pusht/ace.py               FIPER ACE, transcribed from released code
+src/pusht/policy_utils.py      pretrained policy + hand-restored normalisation
+src/pusht/collect_e1.py        8-step counterfactual collection
+src/pusht/collect_e1b.py       episode-level branch collection
+src/pusht/analysis.py          non-circular matched-pair statistics
+src/pusht/analyze_e1.py        E1 report + frozen gate
+src/pusht/decision_analysis.py does a deployed entropy monitor misfire?
+src/pusht/reliability.py       split-half + estimator-sensitivity checks
+src/pusht/geometry_e2.py       empirical local sensitivity (demoted; only if E1b survives)
+src/planar_arm.py, src/*_g0.py the killed prototype, kept for the record
 ```
-
-## What a positive G0 does *not* prove
-
-A positive planar-arm result does not establish that current VLA uncertainty methods fail in realistic manipulation. It establishes only that a learned generative robot policy can encode large goal-equivalent diversity which scalar action entropy collapses together with task-sensitive variability. The realistic Cartesian/task-manifold replication is required before making the broader robotics claim.

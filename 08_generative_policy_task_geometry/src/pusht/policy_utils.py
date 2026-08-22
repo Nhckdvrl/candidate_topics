@@ -146,20 +146,53 @@ def reset_queue(bundle: PolicyBundle) -> None:
     bundle.queue.clear()
 
 
+def make_frame(bundle: PolicyBundle, obs: dict) -> dict:
+    """Normalise one env observation into the model's input frame."""
+    dev = bundle.device
+    img = torch.from_numpy(np.asarray(obs["pixels"], dtype=np.float32) / 255.0)
+    img = img.permute(2, 0, 1).to(dev)  # HWC -> CHW
+    state = torch.from_numpy(np.asarray(obs["agent_pos"], dtype=np.float32)).to(dev)
+    return {
+        "observation.images": bundle.norm.norm_image(img).unsqueeze(0),  # [n_cam=1, C,H,W]
+        "observation.state": bundle.norm.norm_state(state),
+    }
+
+
+@torch.no_grad()
+def sample_chunks_for_queues(bundle: PolicyBundle, queues, seed: int | None = None) -> np.ndarray:
+    """One action chunk for each of K independent observation histories, in one batch.
+
+    Used by the long-horizon branch experiment, where K counterfactual copies of the same
+    state are advanced closed-loop in lockstep. Batching keeps the cost of K branches
+    close to the cost of one.
+
+    Returns [K, n_action_steps, 2] in raw env action units.
+    """
+    batch = {}
+    for key in ("observation.images", "observation.state"):
+        per_env = [torch.stack([f[key] for f in q], dim=0) for q in queues]  # each [T, ...]
+        batch[key] = torch.stack(per_env, dim=0).contiguous()                # [K, T, ...]
+
+    if seed is not None:
+        torch.manual_seed(seed)
+        if bundle.device.type == "cuda":
+            torch.cuda.manual_seed_all(seed)
+
+    cfg = bundle.policy.config
+    global_cond = bundle.policy.diffusion._prepare_global_conditioning(batch)
+    full = bundle.policy.diffusion.conditional_sample(len(queues), global_cond=global_cond)
+    start = cfg.n_obs_steps - 1
+    executed = full[:, start : start + cfg.n_action_steps]
+    return bundle.norm.denorm_action(executed).float().cpu().numpy()
+
+
 def push_observation(bundle: PolicyBundle, obs: dict) -> None:
     """Normalise one env observation and append it to the observation history.
 
     LeRobot pads the first steps by repeating the first observation; we do the same by
     filling the queue on its first push.
     """
-    dev = bundle.device
-    img = torch.from_numpy(np.asarray(obs["pixels"], dtype=np.float32) / 255.0)
-    img = img.permute(2, 0, 1).to(dev)  # HWC -> CHW
-    state = torch.from_numpy(np.asarray(obs["agent_pos"], dtype=np.float32)).to(dev)
-    frame = {
-        "observation.images": bundle.norm.norm_image(img).unsqueeze(0),  # [n_cam=1, C, H, W]
-        "observation.state": bundle.norm.norm_state(state),
-    }
+    frame = make_frame(bundle, obs)
     if not bundle.queue:
         for _ in range(bundle.queue.maxlen):
             bundle.queue.append(frame)
