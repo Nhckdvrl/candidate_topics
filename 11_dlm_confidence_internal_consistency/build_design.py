@@ -207,7 +207,16 @@ def build_orientation(pair_id: int, orientation: int, branch: int, alt: int,
 
 def build_pair(pair_id: int, rng: random.Random, anchor_min: int, anchor_max: int) -> list[Sample]:
     for _ in range(10000):
-        x, y = rng.sample(range(anchor_min, anchor_max + 1), 2)
+        # LLaDA tokenizes decimal numerals digit-by-digit. Keep mirrored
+        # anchors in the same short numeric neighborhood so each semantic
+        # alias changes exactly one digit token rather than crossing a tens
+        # boundary and silently changing two tokens.
+        x = rng.randint(anchor_min, anchor_max)
+        candidates = [v for v in range(max(anchor_min, x - 3), min(anchor_max, x + 3) + 1)
+                      if v != x and v // 10 == x // 10]
+        if not candidates:
+            continue
+        y = rng.choice(candidates)
         template_id = rng.randrange(len(ALIAS_BASES))
         ops = sample_operations(rng, min(x, y))
         if aliases_are_clean(x, y, ops, template_id):

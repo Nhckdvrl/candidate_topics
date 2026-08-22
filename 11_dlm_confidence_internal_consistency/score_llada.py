@@ -204,9 +204,13 @@ def response_record(tokenizer, prompt: str, response: str, result_text: str):
 def build_protocol_probe(tokenizer, n_pairs: int, seed: int):
     rng = random.Random(seed); prompt = "Read the arithmetic equation below."; rows = []; attempts = 0
     while len(rows) < n_pairs and attempts < n_pairs*1000:
-        attempts += 1; a, b = rng.randint(11, 89), rng.randint(11, 89); correct = a+b
-        wrong = correct + rng.choice([-9,-8,-7,-6,-5,-4,-3,3,4,5,6,7,8,9])
-        if wrong <= 0: continue
+        attempts += 1
+        # LLaDA's tokenizer is digit-level for multi-digit numerals. Keep the
+        # prerequisite target to one digit so the locked one-token probe gate
+        # tests arithmetic discrimination rather than tokenizer fragmentation.
+        a, b = rng.randint(1, 4), rng.randint(1, 4); correct = a+b
+        wrong = correct + rng.choice([-2, -1, 1, 2])
+        if wrong <= 0 or wrong > 9: continue
         prefix = f"{a} + {b} = "
         c = response_record(tokenizer, prompt, prefix+str(correct), str(correct))
         w = response_record(tokenizer, prompt, prefix+str(wrong), str(wrong))
@@ -223,7 +227,7 @@ def build_alias_probe(tokenizer, n_pairs: int, seed: int):
     """Verify that arithmetic aliases are understood on an unchanged target token."""
     rng = random.Random(seed); rows = []; attempts = 0; prompt = "Read the arithmetic equality below."
     while len(rows) < n_pairs and attempts < n_pairs*2000:
-        attempts += 1; target = rng.randint(20, 89); base = rng.choice([6,7,8,9,11,12,13,14])
+        attempts += 1; target = rng.randint(4, 9); base = rng.choice([1, 2, 3])
         good_r = target-base
         if good_r <= 0: continue
         bad_r = good_r + rng.choice([-7,-6,-5,-4,-3,3,4,5,6,7])
