@@ -1,6 +1,6 @@
 # 10 — Is DLM Generation Order Invariant to Problem Isomorphisms?
 
-**Status:** G0 v2 prerequisite failure; G0 v3 4x4 published-setting discovery + confirmation completed
+**Status:** G0 PASS in published 4x4 setting; G1/v4 Dream-7B 9x9 seed-aligned replication in progress
 
 G0-v2 is retained as an engineering/prerequisite audit, not a scientific rejection: LLaDA-8B-Instruct had 0/8 exact identity solves on our unvalidated 9x9 zero-shot setting. G0-v3 moves to the literature-established UPO 4x4 setting and keeps all v2 traces separate.
 
