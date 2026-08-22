@@ -14,10 +14,11 @@ def make_config(attn):
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument('--attn-implementation',default='flash_attention_2'); p.add_argument('--micro-batch',type=int,default=4); p.add_argument('--grad-accum',type=int,default=16); p.add_argument('--seq-len',type=int,default=2048); p.add_argument('--base-lr',type=float,default=1e-6); args=p.parse_args()
+    if not torch.cuda.is_available(): raise SystemExit('FAIL: CUDA is required for Topic 13 G-0 training')
     model=Qwen3ForCausalLM(make_config(args.attn_implementation)); n=sum(x.numel() for x in model.parameters())
     if n!=EXPECTED: raise SystemExit(f'FAIL parameter count: expected {EXPECTED}, got {n}')
     tps=args.micro_batch*args.grad_accum*args.seq_len
     info={'status':'PASS','model_params':n,'expected_model_params':EXPECTED,'cuda_available':torch.cuda.is_available(),'cuda_device_count':torch.cuda.device_count(),'torch':torch.__version__,'tokens_per_optimizer_step':tps,'frozen_peak_lr':args.base_lr*math.sqrt(tps),'attention_implementation':args.attn_implementation}
-    if torch.cuda.is_available(): info['gpus']=[torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())]
+    info['gpus']=[torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())]
     print(json.dumps(info,indent=2,sort_keys=True))
 if __name__=='__main__': main()
