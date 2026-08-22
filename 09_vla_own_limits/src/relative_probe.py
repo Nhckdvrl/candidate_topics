@@ -1,66 +1,55 @@
-"""Shared linear probe and paired same-state relative-success analysis."""
-
+"""Shared linear value probe and paired same-state confirmation analysis."""
 from __future__ import annotations
 
 import numpy as np
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import Ridge
 from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 from sklearn.preprocessing import StandardScaler
 
 
 class SharedLinearProbe:
-    def __init__(self) -> None:
+    """One fixed linear map shared by both checkpoints.
+
+    Targets are Monte-Carlo success rates, not one stochastic success/failure draw. Ridge
+    strength is fixed a priori and is never tuned on confirmation data.
+    """
+
+    def __init__(self, alpha: float = 1.0) -> None:
         self.scaler = StandardScaler()
-        self.model = LogisticRegression(max_iter=2000, class_weight="balanced")
+        self.model = Ridge(alpha=float(alpha))
 
     def fit(self, x: np.ndarray, y: np.ndarray) -> "SharedLinearProbe":
         x = np.asarray(x, float)
-        y = np.asarray(y, int)
+        y = np.asarray(y, float)
         if x.ndim != 2 or len(x) != len(y):
             raise ValueError("features must be [N,D] and aligned with labels")
-        if len(np.unique(y)) < 2:
-            raise ValueError("training labels contain only one class")
+        if not np.isfinite(x).all() or not np.isfinite(y).all():
+            raise ValueError("non-finite feature or target")
+        if np.min(y) < 0 or np.max(y) > 1:
+            raise ValueError("success-rate target must lie in [0,1]")
+        if np.std(y) == 0:
+            raise ValueError("training targets are constant")
         self.model.fit(self.scaler.fit_transform(x), y)
         return self
 
     def score(self, x: np.ndarray) -> np.ndarray:
-        """Return the shared decoder logit; no per-checkpoint recalibration."""
-        z = self.scaler.transform(np.asarray(x, float))
-        return self.model.decision_function(z)
-
-
-def fit_shared_probe(
-    features: np.ndarray,
-    success: np.ndarray,
-    state_ids: np.ndarray,
-    train_state_ids: np.ndarray,
-) -> SharedLinearProbe:
-    features = np.asarray(features, float)
-    success = np.asarray(success, int)
-    state_ids = np.asarray(state_ids)
-    train_state_ids = set(np.asarray(train_state_ids).tolist())
-    if len(features) != len(success) or len(success) != len(state_ids):
-        raise ValueError("features, success and state_ids must align")
-    mask = np.array([sid in train_state_ids for sid in state_ids], dtype=bool)
-    if not mask.any():
-        raise ValueError("no rows belong to train_state_ids")
-    return SharedLinearProbe().fit(features[mask], success[mask])
+        return np.asarray(self.model.predict(self.scaler.transform(np.asarray(x, float))), float)
 
 
 def paired_relative_metrics(
     state_ids: np.ndarray,
     checkpoints: np.ndarray,
-    success: np.ndarray,
+    winners: np.ndarray,
     scores: np.ndarray,
     checkpoint_a: str,
     checkpoint_b: str,
 ) -> dict:
-    """Evaluate whether q_A-q_B predicts which checkpoint wins on crossover states."""
-    state_ids = np.asarray(state_ids)
+    """Does q_A-q_B predict the robust Monte-Carlo winner on identical states?"""
+    state_ids = np.asarray(state_ids).astype(str)
     checkpoints = np.asarray(checkpoints).astype(str)
-    success = np.asarray(success, int)
+    winners = np.asarray(winners).astype(str)
     scores = np.asarray(scores, float)
-    if not (len(state_ids) == len(checkpoints) == len(success) == len(scores)):
+    if not (len(state_ids) == len(checkpoints) == len(winners) == len(scores)):
         raise ValueError("all arrays must align")
 
     rows = []
@@ -71,18 +60,19 @@ def paired_relative_metrics(
         if len(ia) != 1 or len(ib) != 1:
             continue
         ia, ib = int(ia[0]), int(ib[0])
-        if success[ia] == success[ib]:
+        w = winners[ia]
+        if winners[ib] != w:
+            raise ValueError(f"winner label mismatch within state {sid}")
+        if w not in {"A", "B"}:
             continue
-        winner_a = int(success[ia] == 1 and success[ib] == 0)
-        rows.append((winner_a, float(scores[ia] - scores[ib])))
+        rows.append((sid, int(w == "A"), float(scores[ia] - scores[ib])))
 
     if not rows:
-        raise ValueError("no crossover states")
-    y = np.asarray([r[0] for r in rows], int)
-    rel = np.asarray([r[1] for r in rows], float)
+        raise ValueError("no robust crossover states")
+    y = np.asarray([r[1] for r in rows], int)
+    rel = np.asarray([r[2] for r in rows], float)
     if len(np.unique(y)) < 2:
-        raise ValueError("crossover states are one-directional; relative test is not identifiable")
-
+        raise ValueError("robust crossover states are one-directional")
     return {
         "n_crossover": int(len(y)),
         "a_wins": int(y.sum()),
@@ -97,38 +87,38 @@ def paired_relative_metrics(
 def bootstrap_relative_auc(
     state_ids: np.ndarray,
     checkpoints: np.ndarray,
-    success: np.ndarray,
+    winners: np.ndarray,
     scores: np.ndarray,
     checkpoint_a: str,
     checkpoint_b: str,
     n_boot: int = 2000,
     seed: int = 0,
 ) -> dict:
-    """Bootstrap whole physical states, keeping the paired checkpoint rows together."""
-    state_ids = np.asarray(state_ids)
+    """Bootstrap physical states, preserving both checkpoint rows as one paired unit."""
+    state_ids = np.asarray(state_ids).astype(str)
     unique = np.unique(state_ids)
     rng = np.random.default_rng(seed)
     vals = []
-    for _ in range(n_boot):
+    for _ in range(int(n_boot)):
         picked = rng.choice(unique, size=len(unique), replace=True)
-        new_sid, cp, yy, ss = [], [], [], []
+        sid2, cp2, w2, sc2 = [], [], [], []
         for k, sid in enumerate(picked):
             idx = np.where(state_ids == sid)[0]
-            # Give duplicated bootstrap draws unique ids so they remain distinct pairs.
-            new_sid.extend([k] * len(idx))
-            cp.extend(np.asarray(checkpoints)[idx])
-            yy.extend(np.asarray(success)[idx])
-            ss.extend(np.asarray(scores)[idx])
+            sid2.extend([str(k)] * len(idx))
+            cp2.extend(np.asarray(checkpoints)[idx])
+            w2.extend(np.asarray(winners)[idx])
+            sc2.extend(np.asarray(scores)[idx])
         try:
-            m = paired_relative_metrics(
-                np.asarray(new_sid), np.asarray(cp), np.asarray(yy), np.asarray(ss),
-                checkpoint_a, checkpoint_b,
+            vals.append(
+                paired_relative_metrics(
+                    np.asarray(sid2), np.asarray(cp2), np.asarray(w2), np.asarray(sc2),
+                    checkpoint_a, checkpoint_b,
+                )["relative_auc"]
             )
-            vals.append(m["relative_auc"])
         except ValueError:
             continue
     point = paired_relative_metrics(
-        state_ids, checkpoints, success, scores, checkpoint_a, checkpoint_b
+        state_ids, checkpoints, winners, scores, checkpoint_a, checkpoint_b
     )["relative_auc"]
     if not vals:
         return {"point": point, "ci95": [None, None], "n_ok": 0}
