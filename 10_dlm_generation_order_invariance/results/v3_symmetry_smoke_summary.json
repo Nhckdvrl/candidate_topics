@@ -1,0 +1,171 @@
+{
+  "protocol_version": "g0-v3-4x4-published",
+  "split": "discovery",
+  "n_puzzles": 4,
+  "n_identity_exact": 4,
+  "identity_exact_accuracy": 1.0,
+  "n_isomorph_traces": 16,
+  "n_isomorph_exact": 9,
+  "isomorph_exact_accuracy": 0.5625,
+  "solve_flip_count": 7,
+  "solve_flip_rate": 0.4375,
+  "n_both_exact_pairs": 9,
+  "n_both_exact_puzzles": 4,
+  "same_serialization_repeat_tau": {
+    "n": 4,
+    "mean": 1.0,
+    "min": 1.0
+  },
+  "native_scheduler_pick_same_fraction": {
+    "mean": 1.0,
+    "min": 1.0
+  },
+  "tau_iso_mean_both_exact": -0.06349206349206349,
+  "tau_iso_per_puzzle": [
+    {
+      "puzzle_id": "sudoku4-0000",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.9285714285714286,
+      "tau_boundary_first_null": 0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0000",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.0,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0000",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.14285714285714285,
+      "tau_row_major_null": -0.7142857142857143,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0000",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.14285714285714285,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0001",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0001",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0001",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.5,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0001",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.7857142857142857,
+      "tau_row_major_null": 0.21428571428571427,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0002",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.21428571428571427,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0002",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0002",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.35714285714285715,
+      "tau_row_major_null": 0.9285714285714286,
+      "tau_boundary_first_null": 0.7142857142857143
+    },
+    {
+      "puzzle_id": "sudoku4-0002",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.7142857142857143,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0003",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.2857142857142857,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0003",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.7142857142857143,
+      "tau_row_major_null": -0.5,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0003",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.7142857142857143,
+      "tau_row_major_null": -0.5,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0003",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.2857142857142857,
+      "tau_row_major_null": -0.35714285714285715,
+      "tau_boundary_first_null": -0.5
+    }
+  ],
+  "interpretation_note": "4x4 published-setting G0; solve flips are outcome non-equivariance, and tau is conditional on both exact."
+}

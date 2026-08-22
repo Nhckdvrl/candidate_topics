@@ -12,11 +12,13 @@ The present project does not merely re-measure that correlation. It asks whether
 
 That tension motivates the exact question here: if logical structure is unchanged but serialization moves, which force wins?
 
-## Evidence that the controlled Sudoku protocol is viable
+## Competence audit correction
 
-The audit also checked whether using LLaDA-8B with a masked Sudoku solution and one-position-at-a-time decoding would itself be an artificial setup. It is not. Recent 2026 work evaluates LLaDA-8B-Instruct on Sudoku with non-trivial success, and an ICLR 2026 logic-puzzle study explicitly describes giving LLaDA-8B-Instruct a prompt plus a **masked solution** and denoising by **unmasking one position at a time**.
+The original G0-v2 audit overclaimed the evidence for its experimental object. Zhong et al.'s 9x9 zero-shot Sudoku result uses LLaDA2.0-flash-100B, not LLaDA-8B-Instruct. The independent ICLR 2026 UPO result that uses LLaDA-8B is a **4x4** masked-Sudoku setting, and its reported 70.5% max-confidence number is blank-cell accuracy, not exact-puzzle accuracy; the released validator scores only originally blank cells.
 
-That does not guarantee our exact zero-shot template will have sufficient accuracy; the smoke run must still establish identity competence. But it removes the stronger objection that the fixed-slot / single-reveal protocol is alien to existing DLM Sudoku evaluation.
+Our 9x9 LLaDA-8B fixed-grid smoke therefore records a prerequisite failure, not a hypothesis rejection: identity exact accuracy was 0/8 and blank-cell accuracy was 38.33% over the eight identity traces. The pipeline itself was healthy (same-serialization tau 1.0; native scheduler agreement 0.958). This distinction is now explicit.
+
+G0-v3 returns to the published competent object: the UPO 4x4 test CSV, published system prompt and tuple-rendered answer template, LLaDA-8B-Instruct, and full-vocabulary max-confidence one-position decoding. The 500-row reproduction obtained 72.675% blank-cell accuracy and 59.0% exact-puzzle accuracy before any symmetry test.
 
 ## Decoder implementation anchor
 
@@ -41,4 +43,4 @@ What it does not identify is:
 
 > under a known exact Sudoku isomorphism, are solve outcome and mapped-cell finalization order preserved beyond what simple positional schedulers would predict?
 
-G0 v2 answers that with paired outcome flips, mapped-cell Kendall tau, same-serialization stability, native-scheduler fidelity diagnostics, transform-matched positional nulls, and source-puzzle-cluster uncertainty. No hidden-state mechanism is needed for the question to stand.
+G0-v3 answers that with paired outcome flips, mapped-cell Kendall tau, same-serialization stability, transform-matched positional nulls, and source-puzzle-cluster uncertainty, first on the published 4x4 object. No hidden-state mechanism is needed for the question to stand. The 9x9 LLaDA2.0-flash/Dream confirmation remains a later stage, not a rescue of the failed v2 object.

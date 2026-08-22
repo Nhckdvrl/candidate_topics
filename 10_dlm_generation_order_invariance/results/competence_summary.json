@@ -1,0 +1,123 @@
+{
+  "boundary_first_positional_null_per_puzzle": {
+    "max": null,
+    "mean": null,
+    "median": null,
+    "min": null,
+    "n": 0
+  },
+  "decision_flags": {
+    "enough_both_exact_for_order_tau": false,
+    "enough_identity_successes": false,
+    "native_scheduler_fidelity_adequate": true,
+    "same_serialization_order_stable": null
+  },
+  "easy_first_candidate_count_spearman_per_puzzle": {
+    "max": null,
+    "mean": null,
+    "median": null,
+    "min": null,
+    "n": 0
+  },
+  "identity_exact_accuracy": 0.0,
+  "interpretation_note": "Outcome flips under exact isomorphism are themselves evidence of non-equivariance. Conditional tau is interpreted only after measurement stability and scheduler-fidelity checks.",
+  "isomorph_exact_accuracy_all": 0.03125,
+  "isomorph_exact_retention_given_identity_exact": null,
+  "isomorph_retention_puzzle_cluster_bootstrap_95ci": [
+    NaN,
+    NaN
+  ],
+  "n_both_exact_isomorph_pairs": 0,
+  "n_identity_exact": 0,
+  "n_puzzles_seen": 8,
+  "n_puzzles_with_both_exact_pair": 0,
+  "native_digit_argmax_fraction": {
+    "max": 1.0,
+    "mean": 0.9894444444444443,
+    "median": 1.0,
+    "min": 0.9777777777777777,
+    "n": 40
+  },
+  "native_scheduler_pick_same_fraction": {
+    "max": 1.0,
+    "mean": 0.9583333333333334,
+    "median": 1.0,
+    "min": 0.8222222222222222,
+    "n": 40
+  },
+  "position_shift_vs_rank_shift_spearman_descriptive": NaN,
+  "protocol_version": "g0-v2",
+  "random_remasking_tau_vs_identity": {
+    "max": null,
+    "mean": null,
+    "median": null,
+    "min": null,
+    "n": 0
+  },
+  "same_serialization_exact_outcome_agreement": {
+    "max": null,
+    "mean": null,
+    "median": null,
+    "min": null,
+    "n": 0
+  },
+  "same_serialization_repeat_tau": {
+    "max": null,
+    "mean": null,
+    "median": null,
+    "min": null,
+    "n": 0
+  },
+  "solve_flip_count": 1,
+  "solve_flip_directions": {
+    "identity_correct_isomorph_wrong": 0,
+    "identity_wrong_isomorph_correct": 1
+  },
+  "solve_flip_rate": 0.03125,
+  "solve_flip_rate_puzzle_cluster_bootstrap_95ci": [
+    0.0,
+    0.09375
+  ],
+  "solve_pair_total": 32,
+  "split": "discovery",
+  "surface_order_positional_null_per_puzzle": {
+    "max": null,
+    "mean": null,
+    "median": null,
+    "min": null,
+    "n": 0
+  },
+  "tau_excess_over_boundary_null_per_puzzle": {
+    "max": null,
+    "mean": null,
+    "median": null,
+    "min": null,
+    "n": 0
+  },
+  "tau_excess_over_boundary_null_puzzle_cluster_bootstrap_95ci": [
+    NaN,
+    NaN
+  ],
+  "tau_excess_over_surface_null_per_puzzle": {
+    "max": null,
+    "mean": null,
+    "median": null,
+    "min": null,
+    "n": 0
+  },
+  "tau_excess_over_surface_null_puzzle_cluster_bootstrap_95ci": [
+    NaN,
+    NaN
+  ],
+  "tau_iso_per_puzzle": {
+    "max": null,
+    "mean": null,
+    "median": null,
+    "min": null,
+    "n": 0
+  },
+  "tau_iso_puzzle_cluster_bootstrap_95ci": [
+    NaN,
+    NaN
+  ]
+}

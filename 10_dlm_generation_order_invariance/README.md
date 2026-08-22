@@ -1,6 +1,8 @@
 # 10 — Is DLM Generation Order Invariant to Problem Isomorphisms?
 
-**Status:** G0 v2 IMPLEMENTED / READY FOR FROZEN DISCOVERY
+**Status:** G0 v2 prerequisite failure; G0 v3 4x4 published-setting discovery + confirmation completed
+
+G0-v2 is retained as an engineering/prerequisite audit, not a scientific rejection: LLaDA-8B-Instruct had 0/8 exact identity solves on our unvalidated 9x9 zero-shot setting. G0-v3 moves to the literature-established UPO 4x4 setting and keeps all v2 traces separate.
 
 ## Question
 
@@ -102,6 +104,12 @@ The first run is designed to make either direction hard to dismiss:
 The goal is not to kill the topic. It is to make a positive result strong enough to become a paper premise and a negative result too clean to explain away as measurement noise.
 
 ## Quick start
+
+### G0-v3 published 4x4 route
+
+The v3 route first reproduces the public UPO 4x4 test CSV and prompt/template. The 500-row baseline reached 72.675% blank-cell accuracy and 59.0% exact-puzzle accuracy. It then freezes a 64/64 discovery/confirmation manifest with four digit-preserving spatial transforms per puzzle.
+
+See [`V3_PUBLISHED_REPRO.md`](./V3_PUBLISHED_REPRO.md), [`LOCKED_CONFIG_V3.json`](./LOCKED_CONFIG_V3.json), and the v3 result summaries under `results/`.
 
 ```bash
 cd 10_dlm_generation_order_invariance

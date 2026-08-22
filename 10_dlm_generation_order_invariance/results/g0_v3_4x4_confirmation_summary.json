@@ -1,0 +1,2352 @@
+{
+  "protocol_version": "g0-v3-4x4-published",
+  "split": "confirmation",
+  "n_puzzles": 64,
+  "n_identity_exact": 34,
+  "identity_exact_accuracy": 0.53125,
+  "n_isomorph_traces": 256,
+  "n_isomorph_exact": 148,
+  "isomorph_exact_accuracy": 0.578125,
+  "solve_flip_count": 116,
+  "solve_flip_rate": 0.453125,
+  "solve_flip_rate_puzzle_cluster_bootstrap_95ci": [
+    0.37890625,
+    0.52734375
+  ],
+  "n_both_exact_pairs": 84,
+  "n_both_exact_puzzles": 31,
+  "same_serialization_repeat_tau": {
+    "n": 0,
+    "mean": null,
+    "min": null
+  },
+  "native_scheduler_pick_same_fraction": {
+    "mean": 1.0,
+    "min": 1.0
+  },
+  "tau_iso_mean_both_exact": 0.12244897959183673,
+  "tau_iso_puzzle_cluster_mean": 0.11789554531490015,
+  "tau_iso_puzzle_cluster_bootstrap_95ci": [
+    0.021889400921658985,
+    0.2152457757296467
+  ],
+  "tau_row_major_null_puzzle_cluster_mean": -0.08947772657450076,
+  "tau_boundary_first_null_puzzle_cluster_mean": -0.0009600614439324111,
+  "tau_excess_over_row_major_puzzle_cluster_mean": 0.2073732718894009,
+  "tau_excess_over_row_major_puzzle_cluster_bootstrap_95ci": [
+    0.059715821812596,
+    0.35560675883256526
+  ],
+  "tau_excess_over_boundary_first_puzzle_cluster_mean": 0.11885560675883257,
+  "tau_excess_over_boundary_first_puzzle_cluster_bootstrap_95ci": [
+    -0.014784946236559134,
+    0.26497695852534564
+  ],
+  "tau_iso_per_puzzle": [
+    {
+      "puzzle_id": "sudoku4-0064",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.7142857142857143,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0064",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.7857142857142857,
+      "tau_boundary_first_null": 0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0064",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.35714285714285715,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": -0.7142857142857143
+    },
+    {
+      "puzzle_id": "sudoku4-0064",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.2857142857142857,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0068",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0068",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0068",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0068",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.35714285714285715,
+      "tau_boundary_first_null": 0.5
+    },
+    {
+      "puzzle_id": "sudoku4-0072",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0072",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0072",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.5,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0072",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0076",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.5,
+      "tau_row_major_null": 0.6428571428571429,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0076",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.42857142857142855,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0076",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.42857142857142855,
+      "tau_row_major_null": 0.6428571428571429,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0076",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.2857142857142857,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0080",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0080",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.9285714285714286,
+      "tau_boundary_first_null": 0.6428571428571429
+    },
+    {
+      "puzzle_id": "sudoku4-0080",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.9285714285714286,
+      "tau_boundary_first_null": 0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0080",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0084",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": -0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0084",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": 0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0084",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.8571428571428571,
+      "tau_boundary_first_null": 0.6428571428571429
+    },
+    {
+      "puzzle_id": "sudoku4-0084",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": 0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0088",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.2857142857142857,
+      "tau_row_major_null": -0.14285714285714285,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0088",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.2857142857142857,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.9285714285714286
+    },
+    {
+      "puzzle_id": "sudoku4-0088",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.21428571428571427,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0088",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.21428571428571427,
+      "tau_row_major_null": -0.14285714285714285,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0092",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0092",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.2857142857142857,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0092",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0092",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.14285714285714285,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0096",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0096",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.14285714285714285,
+      "tau_row_major_null": -0.35714285714285715,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0096",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.35714285714285715,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0096",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.7142857142857143,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0100",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0100",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0100",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.14285714285714285,
+      "tau_boundary_first_null": -0.5714285714285714
+    },
+    {
+      "puzzle_id": "sudoku4-0100",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0104",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.7857142857142857,
+      "tau_row_major_null": -1.0,
+      "tau_boundary_first_null": 0.8571428571428571
+    },
+    {
+      "puzzle_id": "sudoku4-0104",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0104",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.2857142857142857,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0104",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.9285714285714286,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.6428571428571429
+    },
+    {
+      "puzzle_id": "sudoku4-0108",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.9285714285714286,
+      "tau_row_major_null": 0.6428571428571429,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0108",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.5,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0108",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.2857142857142857,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0108",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0112",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.14285714285714285,
+      "tau_row_major_null": -0.7142857142857143,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0112",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.5,
+      "tau_row_major_null": 0.6428571428571429,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0112",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.2857142857142857,
+      "tau_row_major_null": -0.8571428571428571,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0112",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.07142857142857142,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0116",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0116",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5714285714285714,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0116",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.6428571428571429,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0116",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0120",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.14285714285714285,
+      "tau_boundary_first_null": -0.5
+    },
+    {
+      "puzzle_id": "sudoku4-0120",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.5714285714285714,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0120",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0120",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.9285714285714286,
+      "tau_boundary_first_null": 0.7142857142857143
+    },
+    {
+      "puzzle_id": "sudoku4-0124",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.35714285714285715,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0124",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.7142857142857143
+    },
+    {
+      "puzzle_id": "sudoku4-0124",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.35714285714285715,
+      "tau_boundary_first_null": 0.6428571428571429
+    },
+    {
+      "puzzle_id": "sudoku4-0124",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.35714285714285715,
+      "tau_row_major_null": -0.14285714285714285,
+      "tau_boundary_first_null": -0.8571428571428571
+    },
+    {
+      "puzzle_id": "sudoku4-0065",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0065",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.8571428571428571,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0065",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.14285714285714285,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0065",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.21428571428571427,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0069",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0069",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.7142857142857143,
+      "tau_row_major_null": -0.5714285714285714,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0069",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0069",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.35714285714285715,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": -0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0073",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.35714285714285715,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.5
+    },
+    {
+      "puzzle_id": "sudoku4-0073",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.21428571428571427,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0073",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.0,
+      "tau_row_major_null": -0.9285714285714286,
+      "tau_boundary_first_null": 0.7142857142857143
+    },
+    {
+      "puzzle_id": "sudoku4-0073",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.2857142857142857,
+      "tau_row_major_null": 0.8571428571428571,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0077",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0077",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0077",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.14285714285714285,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0077",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.14285714285714285,
+      "tau_row_major_null": -0.7857142857142857,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0081",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.7142857142857143,
+      "tau_row_major_null": 0.5714285714285714,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0081",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.21428571428571427,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0081",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.07142857142857142,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0081",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.14285714285714285,
+      "tau_row_major_null": -0.35714285714285715,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0085",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.8571428571428571,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0085",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.42857142857142855,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0085",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.2857142857142857,
+      "tau_row_major_null": -0.14285714285714285,
+      "tau_boundary_first_null": 0.6428571428571429
+    },
+    {
+      "puzzle_id": "sudoku4-0085",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.2857142857142857,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0089",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0089",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.6428571428571429,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0089",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0089",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0093",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.07142857142857142,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0093",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.42857142857142855,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0093",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.07142857142857142,
+      "tau_row_major_null": -0.5714285714285714,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0093",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.5,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0097",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.5,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0097",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.7857142857142857,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0097",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0097",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0101",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.7142857142857143,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0101",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.07142857142857142,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0101",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0101",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0105",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0105",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0105",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.21428571428571427,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0105",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0109",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.7857142857142857,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0109",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0109",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0109",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0113",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0113",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.9285714285714286,
+      "tau_boundary_first_null": 0.8571428571428571
+    },
+    {
+      "puzzle_id": "sudoku4-0113",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.8571428571428571,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0113",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0117",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.21428571428571427,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0117",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.07142857142857142,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0117",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.2857142857142857,
+      "tau_row_major_null": -0.7142857142857143,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0117",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.7857142857142857,
+      "tau_row_major_null": -1.0,
+      "tau_boundary_first_null": 0.9285714285714286
+    },
+    {
+      "puzzle_id": "sudoku4-0121",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": -0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0121",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0121",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.5,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0121",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0125",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0125",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0125",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.8571428571428571
+    },
+    {
+      "puzzle_id": "sudoku4-0125",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0066",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0066",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.42857142857142855,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0066",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.5,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0066",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.42857142857142855,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0070",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.8571428571428571
+    },
+    {
+      "puzzle_id": "sudoku4-0070",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.5714285714285714,
+      "tau_row_major_null": -1.0,
+      "tau_boundary_first_null": 0.6428571428571429
+    },
+    {
+      "puzzle_id": "sudoku4-0070",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.7142857142857143,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0070",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.14285714285714285,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0074",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0074",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.5714285714285714,
+      "tau_row_major_null": 0.5714285714285714,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0074",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.07142857142857142,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0074",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.7142857142857143,
+      "tau_row_major_null": -0.14285714285714285,
+      "tau_boundary_first_null": -0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0078",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0078",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0078",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.7142857142857143,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0078",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.7857142857142857,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0082",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0082",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0082",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0082",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0086",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.7142857142857143,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0086",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": -0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0086",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0086",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.7142857142857143,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0090",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.14285714285714285,
+      "tau_row_major_null": -0.7857142857142857,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0090",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0090",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.0,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0090",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -1.0,
+      "tau_boundary_first_null": 0.8571428571428571
+    },
+    {
+      "puzzle_id": "sudoku4-0094",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0094",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0094",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.9285714285714286,
+      "tau_boundary_first_null": 0.7142857142857143
+    },
+    {
+      "puzzle_id": "sudoku4-0094",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0098",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0098",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0098",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.35714285714285715,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0098",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0102",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0102",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.8571428571428571,
+      "tau_boundary_first_null": 0.6428571428571429
+    },
+    {
+      "puzzle_id": "sudoku4-0102",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0102",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0106",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.14285714285714285,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0106",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.5,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0106",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0106",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.6428571428571429,
+      "tau_row_major_null": 0.5714285714285714,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0110",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0110",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0110",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0110",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -1.0,
+      "tau_boundary_first_null": 1.0
+    },
+    {
+      "puzzle_id": "sudoku4-0114",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.14285714285714285,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0114",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.2857142857142857,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0114",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.07142857142857142,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0114",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.21428571428571427,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": 0.5
+    },
+    {
+      "puzzle_id": "sudoku4-0118",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.21428571428571427,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0118",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.9285714285714286
+    },
+    {
+      "puzzle_id": "sudoku4-0118",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0118",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.9285714285714286
+    },
+    {
+      "puzzle_id": "sudoku4-0122",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.7857142857142857,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0122",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0122",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0122",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0126",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.14285714285714285,
+      "tau_row_major_null": -0.5714285714285714,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0126",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.7857142857142857,
+      "tau_row_major_null": 0.21428571428571427,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0126",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.07142857142857142,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0126",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.42857142857142855,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": 0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0067",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.21428571428571427,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0067",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0067",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.21428571428571427,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0067",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.7142857142857143,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0071",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0071",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.7142857142857143,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0071",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0071",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.35714285714285715,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0075",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.35714285714285715,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -1.0
+    },
+    {
+      "puzzle_id": "sudoku4-0075",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.07142857142857142,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0075",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0075",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.0,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0079",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0079",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.21428571428571427,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0079",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.42857142857142855,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.0
+    },
+    {
+      "puzzle_id": "sudoku4-0079",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0083",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0083",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0083",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.8571428571428571,
+      "tau_boundary_first_null": 0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0083",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5714285714285714,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0087",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.6428571428571429,
+      "tau_row_major_null": -0.8571428571428571,
+      "tau_boundary_first_null": 0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0087",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.2857142857142857,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0087",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.21428571428571427,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0087",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.6428571428571429,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0091",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0091",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0091",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.35714285714285715,
+      "tau_boundary_first_null": -0.5714285714285714
+    },
+    {
+      "puzzle_id": "sudoku4-0091",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.5714285714285714,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0095",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": 0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0095",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.7857142857142857,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": -0.5714285714285714
+    },
+    {
+      "puzzle_id": "sudoku4-0095",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.5,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0095",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.6428571428571429,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0099",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -1.0,
+      "tau_boundary_first_null": 0.7857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0099",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0099",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0099",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.6428571428571429,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0103",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0103",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": -0.5714285714285714
+    },
+    {
+      "puzzle_id": "sudoku4-0103",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.42857142857142855,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0103",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0107",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0107",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.5
+    },
+    {
+      "puzzle_id": "sudoku4-0107",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.6428571428571429,
+      "tau_boundary_first_null": 0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0107",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": 0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0111",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0111",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": -0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0111",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5714285714285714,
+      "tau_boundary_first_null": 0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0111",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.42857142857142855,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0115",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0115",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.5,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": 0.6428571428571429
+    },
+    {
+      "puzzle_id": "sudoku4-0115",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0115",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.21428571428571427,
+      "tau_boundary_first_null": 0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0119",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.07142857142857142,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0119",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.0,
+      "tau_row_major_null": -0.07142857142857142,
+      "tau_boundary_first_null": -0.35714285714285715
+    },
+    {
+      "puzzle_id": "sudoku4-0119",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.35714285714285715,
+      "tau_boundary_first_null": 0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0119",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": 0.8571428571428571,
+      "tau_row_major_null": -0.5714285714285714,
+      "tau_boundary_first_null": -0.07142857142857142
+    },
+    {
+      "puzzle_id": "sudoku4-0123",
+      "variant_id": "iso-0",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": -0.14285714285714285
+    },
+    {
+      "puzzle_id": "sudoku4-0123",
+      "variant_id": "iso-1",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": 0.21428571428571427
+    },
+    {
+      "puzzle_id": "sudoku4-0123",
+      "variant_id": "iso-2",
+      "identity_exact": false,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 1.0,
+      "tau_boundary_first_null": 0.6428571428571429
+    },
+    {
+      "puzzle_id": "sudoku4-0123",
+      "variant_id": "iso-3",
+      "identity_exact": false,
+      "isomorph_exact": true,
+      "tau_iso": null,
+      "tau_row_major_null": 0.2857142857142857,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0127",
+      "variant_id": "iso-0",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.5714285714285714,
+      "tau_row_major_null": 0.5,
+      "tau_boundary_first_null": 0.42857142857142855
+    },
+    {
+      "puzzle_id": "sudoku4-0127",
+      "variant_id": "iso-1",
+      "identity_exact": true,
+      "isomorph_exact": true,
+      "tau_iso": -0.5714285714285714,
+      "tau_row_major_null": 0.0,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0127",
+      "variant_id": "iso-2",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": -0.2857142857142857,
+      "tau_boundary_first_null": -0.2857142857142857
+    },
+    {
+      "puzzle_id": "sudoku4-0127",
+      "variant_id": "iso-3",
+      "identity_exact": true,
+      "isomorph_exact": false,
+      "tau_iso": null,
+      "tau_row_major_null": 0.14285714285714285,
+      "tau_boundary_first_null": -0.21428571428571427
+    }
+  ],
+  "interpretation_note": "4x4 published-setting G0; solve flips are outcome non-equivariance, and tau is conditional on both exact."
+}
