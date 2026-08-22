@@ -136,6 +136,38 @@ same init_idx, two resets   -> bit-identical agentview image
 All 10 LIBERO-10 tasks expose 50 fixed initial states, so the frozen
 discovery/confirmation/reserve split (`0-14` / `15-29` / `30-49`) is valid.
 
+## Verified inference identity (P0, 2026-08-22)
+
+With the stack above, `run_preflight.sh 2k 3k 9k` passes on all three checkpoints:
+
+```text
+checkpoint  state hash   same-seed action  same-seed feature  diff-seed rms  denoise steps
+2k          reproducible  0.0               0.0                0.0047         10
+3k          reproducible  0.0               0.0                0.0046         10
+9k          reproducible  0.0               0.0                0.0207         10
+```
+
+The action and feature agreement is exactly `0.0`, not merely small. Combined with ten
+captured denoising activations per inference at dim 1024, that confirms the forward hook
+fires under eager mode and nothing on the path is nondeterministic.
+
+The three checkpoints are different models at the activation level, not merely different
+files. On one shared observation and noise seed:
+
+```text
+pair    action rms   layer-11 feature rms
+2k-3k   0.0224       0.766
+2k-9k   0.0960       3.324
+3k-9k   0.0780       2.728
+```
+
+Worth carrying forward: **9k responds about four times more strongly to action noise than
+2k or 3k** (diff-seed action RMS 0.0207 vs ~0.0047). The checkpoints are not equally
+stochastic, so the sampling variance of `p_hat` differs by checkpoint. The crossover rule
+is symmetric in A/B and the noise null is computed from the observed rollouts, so this does
+not bias the G0 gate — but it is the kind of asymmetry worth knowing before reading any
+result.
+
 ## Checkpoints
 
 The released pi0.5 LIBERO checkpoints are JAX/orbax and are ~12.4 GB each:
