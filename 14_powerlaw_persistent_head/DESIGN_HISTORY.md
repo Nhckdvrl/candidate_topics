@@ -1,19 +1,28 @@
-# Design history
+# Topic 14 design history
 
-## v1 — balanced 120 cyclic maps
+This file records protocol changes made before interpreting Topic-14 scientific results.
 
-Initial implementation used all 120 cyclic rank shifts. Slow traversed shifts smoothly; Fast randomized their order. It exactly balanced every skill×rank occupancy and used the same keyed block multiset.
+## v1 — balanced cyclic rotation
 
-## v2 — exact A/B batch multiset, long persistence
+The first registered implementation used all 120 cyclic rank shifts so each skill occupied every power-law rank equally often. Slow ordered those shifts smoothly; Fast shuffled them.
 
-Retired v1 **before Topic-14 scientific results were observed**.
+Audit found two identification weaknesses: the effective head persistence could be shorter than the seed paper's learning transition, and a cosine LR made data order inseparable from optimizer time.
 
-Reasons:
+## v2 — exact two-map matched-multiset intervention
 
-1. The primary variable is persistence duration, not perfect long-run rank equality. Equalizing all 120 ranks forced the persistence interval to be short relative to the seed paper's stage-wise learning timescale.
-2. A monotone cosine LR made temporal order inseparable from which mapping was seen at high vs low LR.
-3. Independent arm warmups wasted compute and made branch identity an assumption rather than an audited fact.
+Before scientific data were interpreted, the protocol was replaced by two frozen maps A/B and deterministic batch keys. Slow and Fast receive the exact same finite minibatch multiset; Slow keeps a map for 40k/80k steps while Fast alternates every step. A shared uniform branch checkpoint and constant post-branch LR make the core comparison unusually clean.
 
-v2 therefore uses one shared uniform warmup checkpoint, two fixed disjoint-head maps, deterministic batch-key matching, Slow/Fast reordering only, and a constant post-warmup LR.
+## v3 — second-pass fairness / implementation audit (2026-08-22)
 
-No Topic-14 outcome data motivated this amendment.
+A second code-and-design audit kept the v2 scientific intervention but fixed ways it could falsely kill or misread the topic:
+
+1. `paper_anchor` is now genuinely near-paper: random initialization, no shared data warmup, own data from step 0, 1000-step LR warmup, cosine-to-0.1x, 200k steps, fp16 on CUDA.
+2. A weak Static-vs-Uniform anchor in the deliberately clean shared-warmup/constant-LR regime no longer kills the persistence question. It yields `CORE_ANCHOR_WEAK_NO_PERSISTENCE_CONCLUSION`; the paper anchor then distinguishes reproduction failure from clean-regime incompatibility.
+3. The A/B relation remains a fixed half-cycle shift, but the base rank→skill mapping is predeclared to vary across replication seeds. This tests that a result is not tied to one arbitrary skill assignment while preserving exact pairing within each seed.
+4. Analyzer integrity checks now cover architecture, precision, optimizer/data seeds, alpha, mapping, evaluation panel, metric grid, protocol version and run signatures.
+5. `--resume` now restores real model/AdamW/fp16-scaler checkpoints rather than merely skipping completed runs.
+6. GPU launching respects external `CUDA_VISIBLE_DEVICES` masks and runs waves instead of oversubscribing cards when fewer GPUs than arms are available.
+
+These changes were motivated by pre-result audit logic: give a true phenomenon a fair chance and separate scientific nulls from engineering/regime failures. They do not add post-hoc scientific controls or change the primary Slow-vs-Fast question.
+
+If any older Topic-14 outputs exist from v1/v2, keep them separate. v3 outputs carry protocol signatures and should use a fresh output root if stale files trigger a mismatch.
