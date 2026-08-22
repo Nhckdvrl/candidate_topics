@@ -1,163 +1,206 @@
-# Validation contract
+# Validation contract — v2
 
 ## Scientific object
 
-We are not evaluating a new confidence method. We are testing an interpretation of an already observed phenomenon.
-
-Known:
+The known phenomenon is:
 
 ```text
-hidden representation -> eventual success
+frozen VLA representation -> eventual success
 ```
 
-Unknown:
+The unresolved question is:
 
 ```text
-is the decoded signal mainly D(state),
-or does it contain C(policy, state)?
+is that signal mainly generic state difficulty D(s),
+or does it contain policy-specific competence C(pi, s)?
 ```
 
-The first experiment is designed so that `state` is literally shared inside each comparison.
+The first experiment must identify that distinction without creating hard states, searching layers, or introducing a new confidence method.
 
-## G0 — can the question be identified naturally?
+## P0 — technical identity gate
 
-### Data
+Before any scientific number is interpreted, the released OpenPI / LIBERO stack must pass `src/preflight.py`.
 
-Use released same-family pi0.5 LIBERO checkpoints:
+The protocol follows the official OpenPI LIBERO evaluator: `set_init_state`, ten dummy settling actions, 224x224 preprocessed agent/wrist images, five executed actions per replan, and the official LIBERO success termination.
+
+The important extra check is physical-state identity. `task_id + init_idx` is not accepted on faith. After settling, hash the flattened MuJoCo simulator state. The hash must be identical across checkpoint processes and repeats. A mismatch is a technical failure, not a scientific sample.
+
+Policy stochasticity is also explicit. Every inference receives a deterministic Gaussian noise seed. Reusing a base `policy_seed` creates the same sequence of inference-noise seeds for every checkpoint on the same physical state (common random numbers).
+
+Preflight requires:
+
+1. reset + settle reproduces the same simulator-state hash;
+2. same observation + same noise seed gives bit-identical actions;
+3. same observation + same noise seed gives bit-identical captured feature;
+4. changing the noise seed changes the sampled action;
+5. layer-11 capture yields exactly ten denoising-step activations.
+
+If these fail: `TECHNICAL_BLOCKED`.
+
+## G0 — does natural bidirectional competence crossover exist?
+
+### States
+
+Use LIBERO-10 with the official fixed initial states.
+
+Frozen split in `LOCKED_CONFIG.json`:
+
+```text
+discovery:    init_idx 0..14 for every task  -> 150 physical states
+confirmation: init_idx 15..29 for every task -> 150 physical states
+reserve:      init_idx 30..49
+```
+
+`env_seed=7`, `wait_steps=10`, `replan_steps=5` are fixed.
+
+### Policies
+
+Released same-family pi0.5 LIBERO checkpoints:
 
 ```text
 2k, 3k, 9k
 ```
 
-Run all checkpoints on the **same** task / environment seed panel using the official evaluation path. Discovery and confirmation state seeds must be disjoint.
+All three are evaluated on exactly the same discovery states.
 
-Record:
+### Why one rollout is invalid
 
-```text
-task, seed, checkpoint, success
-```
+pi0.5 is a stochastic flow policy. A single success/failure draw does not define competence at a state and can manufacture apparent checkpoint crossover.
 
-No hidden states are needed yet.
-
-### Why two-way crossover is mandatory
-
-Suppose 9k beats 2k on every disagreement state. Then a downstream readout can appear “self-aware” by outputting a constant prior that 9k is better. That does not identify state-dependent competence.
-
-The usable contrast requires both:
+Therefore every `(physical_state, checkpoint)` receives eight rollouts with the same frozen set of base policy seeds across checkpoints. At every replan the actual Gaussian-noise seed is deterministically derived from:
 
 ```text
-2k wins on some identical states
-9k wins on other identical states
+policy_seed, suite, task_id, init_idx, replan_idx
 ```
 
-The discovery script ranks checkpoint pairs by:
+This keeps each rollout on-policy while pairing stochastic draws across checkpoints.
+
+### State-level winner
+
+For each checkpoint estimate:
 
 ```text
-min(A_wins, B_wins)
+p_hat(pi, s) = successes / 8
 ```
 
-not total disagreement.
+For pair A/B:
 
-### Frozen G0 stop rule
+```text
+A wins robustly if p_A - p_B >= 0.50
+B wins robustly if p_B - p_A >= 0.50
+otherwise the state is ambiguous
+```
 
-For the first behavioral panel, require at least **15 natural crossover states in each direction** for one same-family checkpoint pair. This threshold is about identifiability / sample support, not significance.
+This is deliberately a large effect threshold, not a significance test.
 
-If no pair reaches it:
+### G0 stop rule
+
+Select the checkpoint pair only by natural **bidirectional robust support**:
+
+```text
+min(# robust A-wins, # robust B-wins)
+```
+
+Require at least 15 robust states in each direction on discovery.
+
+If no pair reaches this:
 
 ```text
 STOP_NO_NATURAL_CROSSOVER
 ```
 
-Do not create perturbations or train special checkpoints to rescue the topic.
+Do not create perturbations, train special checkpoints, lower the rate-gap after seeing data, or replace success with a hand-designed difficulty score.
 
-If a pair reaches it, freeze that pair before G1 confirmation.
+If one pair passes, freeze that pair before hidden-state work.
 
-## G1 — paired relative success signal
+## G1 — paired policy-specific success signal
 
-### Representation
+### Feature location
 
-Use one predeclared hidden location rather than searching layers. Primary candidate: pi0.5 action-expert hidden state around **layer 11**, because prior COAST analysis already localizes success/failure structure there.
+Primary feature is fixed before collection:
 
-Before collection, audit the exact released checkpoint code so “layer 11” refers to the same tensor used by the prior work. If that mapping cannot be reproduced, mark the run technical-blocked rather than silently choosing another layer.
+```text
+pi0.5 action-expert decoder layer 11 output
+```
+
+OpenPI's PyTorch inference calls the action expert once per denoising step. `src/openpi_instrumented_server.py` attaches an observational forward hook to layer 11; it never edits activations or model outputs.
+
+For one policy-noise draw:
+
+1. mean layer-11 residual output over action tokens;
+2. mean those vectors over the ten denoising steps.
+
+The representation itself is stochastic because the action expert conditions on the current noisy action. Therefore each `(state, checkpoint)` feature is the mean of four **common feature-noise seeds** shared by the two checkpoints. The feature seed sets must match exactly or analysis aborts.
 
 ### Shared decoder
 
-Fit one linear success decoder across both frozen checkpoints on discovery states:
+Fit one decoder across both frozen checkpoints on discovery states:
 
 ```text
-q = w^T h + b
+q = w^T standardized(h) + b
 ```
 
-The same `w,b` is applied to both checkpoints.
+Implementation: one fixed ridge-linear readout (`alpha=1.0`). Target is the eight-rollout Monte-Carlo success rate `p_hat(pi,s)`.
 
-Never fit one separately calibrated probe for A and another for B in the primary test: separate probes can inject policy identity through their supervision and make cross-policy scores incomparable.
+There is only one scaler and one `(w,b)` for both checkpoints. Separate probes are forbidden in the primary test because they make cross-checkpoint scores incomparable.
 
-### Confirmation contrast
+### Why the paired contrast identifies the intended object
 
-On independent crossover states:
+For the same physical state:
 
 ```text
 relative_score(s) = q_A(s) - q_B(s)
-winner(s) = 1 if A succeeds and B fails, else 0
 ```
 
-Primary metric:
+A pure state-only signal contributes equally and cancels. A constant checkpoint-quality prior produces a constant offset and cannot rank **bidirectional** crossover states. To succeed, the decoded representation must change with the checkpoint-state interaction in a way that tracks which policy is competent there.
+
+This supports the operational claim **policy-specific success signal**. It is stronger than generic scene difficulty, but it should not be described as a literal explicit self-model without further evidence.
+
+### Independent confirmation
+
+Use confirmation physical states only (`init_idx 15..29`), with new behavior policy seeds and new feature-noise seeds from `LOCKED_CONFIG.json`.
+
+Confirmation must first reproduce at least 15 robust A-wins and 15 robust B-wins. If not:
 
 ```text
-AUROC(relative_score, winner)
+KILL_CROSSOVER_NOT_REPLICATED
 ```
 
-Secondary calibration-free metric:
+Primary metric on robust crossover states:
 
 ```text
-balanced accuracy of sign(relative_score)
+AUROC(q_A - q_B, A-is-winner)
 ```
 
-Both outcome directions must be represented.
+Bootstrap whole physical states, keeping both checkpoint rows paired.
 
-### Interpretation
-
-A generic state-only feature shared by A and B contributes equally inside the pair and cancels in the score difference. A constant “checkpoint B is better overall” bias cannot solve bidirectional crossover.
-
-A material positive result therefore means the representation changes in a state-dependent way that tracks **which policy will succeed from that same state**.
-
-A null result has a narrower interpretation. Checkpoints can undergo representational drift, so failure of one shared linear decoder does **not** prove that no policy-specific information exists anywhere or under any nonlinear/aligned readout. For this project, however, that is still a stop: rescuing the claim would require representation alignment, layer sweeps, nonlinear probes, or additional definitions, which violates the one-clean-contrast criterion that motivated the topic.
-
-### G1 bar
-
-Do not continue to mechanism work for a tiny above-chance effect. The intended bar is:
+Continue only if:
 
 ```text
 relative AUROC >= 0.70
 and bootstrap 95% lower bound > 0.60
 ```
 
-on independent confirmation crossover states.
-
-If the result is near chance or weak:
-
-```text
-KILL_NO_CLEAN_POLICY_SPECIFIC_SIGNAL
-```
-
-This is a resource-allocation / identification stop, not a universal claim that VLAs contain no self-knowledge. Do not sweep layers, probe classes, representation alignments, or confidence definitions to rescue it.
-
-If it is strong:
+Then:
 
 ```text
 PASS_POLICY_SPECIFIC_SUCCESS_SIGNAL
 ```
 
-Only then is layerwise mechanism localization justified.
+Otherwise:
 
-## Stochastic-policy note
+```text
+KILL_SELF_KNOWLEDGE_INTERPRETATION
+```
 
-pi0.5 uses a generative action process. The local agent must first reproduce the released evaluation stack and determine exactly how inference RNG is seeded. The same published inference protocol must be used for every checkpoint.
+Balanced accuracy of `sign(q_A-q_B)` is secondary only.
 
-Do **not** quietly average many reruns until the crossover pattern looks cleaner. If repeated rollouts are needed to define a stable success probability, that change must be made before G1 and applied uniformly to all checkpoints.
+## Interpretation of a negative G1
 
-## Explicit anti-complexity rule
+A negative shared-readout result does **not** prove that no nonlinear or representation-aligned notion of self-knowledge exists. Different checkpoints can drift in representation space.
 
-The topic gets one paired identification strategy.
+For this project that caveat does not trigger a rescue campaign. If the clean shared linear contrast fails, stop. Do not add Procrustes alignment, nonlinear probes, layer sweeps, SAE searches, failure taxonomies, or hand-selected subsets.
 
-If interpreting the result starts to require a growing list of nuisance controls (camera strata, task geometry, action entropy, hand-picked failure taxonomies, several probe heads, layer search), stop and reconsider the question rather than adding gates.
+## Anti-complexity rule
+
+The topic gets one natural behavioral contrast and one paired representation test. If the story requires more machinery to become true, the research question is demoted rather than the gate expanded.
