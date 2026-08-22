@@ -1,8 +1,15 @@
 from types import SimpleNamespace
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-from g0_lightwam import _analyse
+from g0_lightwam import (
+    _analyse,
+    _fixed_state_summary,
+    _future_target_in_training_space,
+    _wam_adapter_scale,
+)
 
 
 def _args():
@@ -72,3 +79,47 @@ def test_action_effect_without_future_gain_is_not_called_predictive_mediation():
     }
     _, verdict = _analyse(train, test, _args())
     assert verdict == "ADAPTER_ACTION_EFFECT_WITHOUT_FUTURE_GAIN"
+
+
+def test_fixed_state_summary_is_parameter_free_layerwise_token_mean():
+    a = torch.tensor([[[1.0, 3.0], [3.0, 5.0]]])
+    b = torch.tensor([[[2.0, 4.0], [6.0, 8.0]]])
+    out = _fixed_state_summary([{"adapted": a}, {"adapted": b}])
+    assert torch.allclose(out, torch.tensor([[2.0, 4.0, 4.0, 6.0]]))
+
+
+class _Adapter(nn.Module):
+    def __init__(self, scale):
+        super().__init__()
+        self.scale = float(scale)
+
+
+class _VideoExpert:
+    def __init__(self):
+        self.wam_adapters = nn.ModuleDict({"8": _Adapter(1.0), "16": _Adapter(0.5)})
+
+
+def test_adapter_scale_context_restores_original_scales():
+    v = _VideoExpert()
+    with _wam_adapter_scale(v, 0.0):
+        assert v.wam_adapters["8"].scale == 0.0
+        assert v.wam_adapters["16"].scale == 0.0
+    assert v.wam_adapters["8"].scale == 1.0
+    assert v.wam_adapters["16"].scale == 0.5
+
+
+class _TrainingSpaceMock:
+    video_latent_spatial_downsample_factor = 2
+
+    def _build_video_training_supervision_latents(self, x):
+        return x
+
+    def _maybe_downsample_video_latents_for_backbone(self, x):
+        return F.avg_pool3d(x, kernel_size=(1, 2, 2), stride=(1, 2, 2)), None
+
+
+def test_future_target_uses_training_spatial_latent_resolution():
+    x = torch.arange(1 * 1 * 3 * 4 * 4, dtype=torch.float32).reshape(1, 1, 3, 4, 4)
+    target = _future_target_in_training_space(_TrainingSpaceMock(), x)
+    # After 2x spatial downsampling: C=1, future T=2, H=W=2.
+    assert target.shape == (1, 1 * 2 * 2 * 2)
