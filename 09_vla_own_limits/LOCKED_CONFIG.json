@@ -1,0 +1,35 @@
+{
+  "protocol_version": "topic09-v2",
+  "suite": "libero_10",
+  "openpi_config": "pi05_libero",
+  "openpi_reference_commit": "15a9616a00943ada6c20a0f158e3adb39df2ccac",
+  "checkpoints": ["2k", "3k", "9k"],
+  "env_seed": 7,
+  "wait_steps": 10,
+  "replan_steps": 5,
+  "discovery_init_indices": "0-14",
+  "confirmation_init_indices": "15-29",
+  "reserve_init_indices": "30-49",
+  "behavior_policy_seeds_discovery": "110000-110007",
+  "behavior_policy_seeds_confirmation": "210000-210007",
+  "n_behavior_repeats": 8,
+  "robust_winner_rate_gap": 0.5,
+  "min_bidirectional_crossover_states": 15,
+  "feature_noise_seeds_discovery": "310000-310003",
+  "feature_noise_seeds_confirmation": "410000-410003",
+  "n_feature_noise_repeats": 4,
+  "feature": {
+    "source": "pi0.5_action_expert",
+    "layer": 11,
+    "pool": "mean_action_tokens_then_mean_10_denoise_steps"
+  },
+  "probe": {
+    "type": "shared_standardized_ridge",
+    "alpha": 1.0
+  },
+  "confirmation_gate": {
+    "relative_auc_min": 0.7,
+    "bootstrap_ci95_lower_min": 0.6,
+    "bootstrap_states": 2000
+  }
+}
