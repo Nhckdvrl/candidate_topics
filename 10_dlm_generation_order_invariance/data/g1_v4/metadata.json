@@ -1,0 +1,17 @@
+{
+  "protocol_version": "g1-v4-dream7b-9x9-seed-aligned",
+  "generator_seed": 20260822,
+  "blank_count_cycle": [
+    35,
+    40,
+    45,
+    50,
+    55
+  ],
+  "total": 150,
+  "train": 50,
+  "test": 100,
+  "train_sha256": "eef72abf933f982d2e3ce74bcb785ace08780849099fea5cd928c7d8bbb40667",
+  "test_sha256": "962bb2daec04e57645fc011669160ed753bdbe33a16fda6ff2a9fd3a63900687",
+  "provenance": "reconstructed-from-public-description"
+}
