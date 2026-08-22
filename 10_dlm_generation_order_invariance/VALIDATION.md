@@ -1,82 +1,128 @@
-# Validation contract — Topic 10
+# Validation contract — Topic 10 (G0 v2)
 
 ## Scientific question
 
-Does a masked diffusion LM preserve its Sudoku solution order under exact spatial isomorphisms of the same constraint problem?
+Does a masked diffusion LM preserve its Sudoku solving behavior when the same constraint problem is rewritten by an exact spatial Sudoku isomorphism?
 
-The primary claim is **equivariance of the decoding policy under exact problem isomorphisms**, not a perfect causal `do(position)` claim.
+There are two observables, in this order:
 
-## Why this G0 is identifiable
+1. **outcome equivariance** — does an exactly solved puzzle remain exactly solved after an isomorphism?
+2. **order equivariance** — conditional on both versions being solved, is the mapped blank-cell finalization order preserved?
 
-For every blank cell `c` in puzzle `x`, a spatial Sudoku automorphism `T` gives a known mapped cell `T(c)` in the logically identical puzzle `T(x)`. Row/band, column/stack and transpose transformations preserve the complete CSP. Primary transforms keep digit labels unchanged, so digit-token identity is held fixed while cells move through row-major serialization.
+This is deliberately stronger and cleaner than treating failed transformed runs as unusable data. A `solve -> fail` or `fail -> solve` flip under a mathematically exact isomorphism is itself evidence that serialization matters.
 
-The output is not parsed from free-form text. It is an 81-slot answer grid appended to the prompt. Given cells are clamped to their known digit token; blank cells are literal mask tokens. Only blanks participate in decoding. Exactly one blank is finalized per diffusion step, so every blank has an unambiguous finalization rank.
+## What is held fixed
+
+For every blank cell `c` in puzzle `x`, a row/band, column/stack, or transpose automorphism `T` gives a known mapped cell `T(c)` in `T(x)`. The complete CSP and unique solution are preserved. Primary transforms keep digit labels unchanged, so a mapped logical cell keeps the same answer-token identity while moving through row-major serialization.
+
+The model does not free-generate text. A readable 9x9 answer-grid template is appended after the prompt. Separators and given digits are fixed. Exactly the original blank cells are mask tokens, and exactly one blank is finalized per step. Therefore cell ↔ token position ↔ finalization rank is exact rather than inferred post hoc.
+
+## Decoder fidelity
+
+The v1 code incorrectly renormalized logits over digits `1..9`, which could create artificial confidence. G0 v2 fixes this.
+
+For each masked cell we choose the most likely *valid Sudoku digit*, but its scheduling score is its probability under the **full vocabulary**:
+
+`p(best_valid_digit | current masked sequence)`.
+
+Thus a digit with 1% full-vocabulary probability remains 1% confidence. If the native full-vocabulary argmax is itself a digit, the score equals standard LLaDA confidence for that position. We log `native_digit_argmax_fraction` so any remaining grammar-projection gap is visible rather than hidden.
+
+The public LLaDA generator likewise ranks masked positions by the full-vocabulary probability of the proposed token under confidence remasking; our only task-specific restriction is that a Sudoku cell must ultimately contain a digit.
 
 ## Frozen G0 sequence
 
-### G0-P: preflight
+### G0-P — preflight
 
-1. Generate deterministic unique Sudoku puzzles.
-2. Verify each has exactly one solution.
-3. Apply 20 random spatial isomorphisms and verify mapped solutions and blank sets exactly.
-4. Verify tokenizer encodes digits `1..9` as nine distinct single tokens.
-5. Verify configured mask ID.
+Before loading the 8B model:
 
-Any failure stops the run.
+- generate a deterministic unique Sudoku and verify exactly one solution;
+- verify 20 sampled spatial automorphisms preserve the solution and mapped blank set.
 
-### G0-A: seed-phenomenon replication
+With the tokenizer:
 
-Before testing invariance, verify the chosen model/protocol actually exhibits the phenomenon being interpreted. On correctly solved identity puzzles, compute the association between initial Sudoku candidate count and finalization step.
+- verify digits `1..9` are nine distinct exact single tokens;
+- verify the configured mask token;
+- build the fixed template and assert that mask tokens occur **only** at intended blank-cell positions.
 
-Locked diagnostic:
+Any failure is an engineering/measurement failure and must be repaired before looking at scientific results.
 
-`Spearman(initial_candidate_count, finalization_step)`.
+### G0-S — same-serialization stability
 
-Positive values mean less constrained cells are finalized later. `rho >= 0.15` is the preregistered minimal G0 signal. If this is absent, do not interpret later invariance as evidence about the seed paper's "easy-first" phenomenon.
+On the first 12 discovery puzzles, decode the exact same serialization twice under the locked temperature-0 protocol.
 
-### G0-B: instrument negative control
+Primary stability diagnostic:
 
-On a small subset, replace confidence-based token selection with random-remasking while leaving the model, puzzles and fixed-slot grammar unchanged. Compare random-control order with identity confidence order. Mean absolute Kendall tau should be <= 0.20. A strong non-zero result indicates a pipeline/order artifact and stops interpretation.
+`Kendall(finalization_order_run1, finalization_order_run2)`.
 
-### G0-C: exact isomorphism test
+Mean tau must be at least `0.95`. If the same serialized problem does not have a stable measurable order, low isomorphism tau cannot be interpreted as a structural effect.
 
-For each correctly solved identity puzzle and each correctly solved spatial isomorph, map blank cells back through the known transform and compute pairwise Kendall tau-b between their finalization steps.
+This replaces the old `candidate_count -> finalization` kill gate. Static candidate count is only a crude local Sudoku difficulty proxy and is now reported as secondary characterization.
 
-Primary result:
+### G0-O — outcome equivariance
 
-`tau_iso` distribution across exact puzzle/isomorph pairs.
+For every identity/isomorph pair, record exact-solve status before any filtering.
 
-No layer, prompt, threshold, transform family or subset search is allowed after seeing the discovery result.
+Report:
 
-### G0-D: positional diagnostic
+- identity exact accuracy;
+- isomorph exact accuracy;
+- isomorph exact retention conditional on identity success;
+- total solve-flip rate;
+- flip directions (`identity correct -> iso wrong` and the reverse).
 
-Secondary only: correlate cell movement toward/away from row-major sequence boundaries with mapped finalization-rank change.
+Do **not** discard solve flips. A substantial transformation-dependent success change is already a direct failure of policy equivariance.
 
-`Spearman(delta_boundary_distance, delta_finalization_step)`.
+At least 16/64 identity puzzles must be exactly solved before the controlled protocol is considered usable for scientific interpretation. If the base protocol almost never solves Sudoku, replace/fix the model or task formulation before drawing conclusions.
 
-This is explanatory follow-up, not required for the primary phenomenon.
+### G0-R — order equivariance
 
-## Data split and stopping discipline
+Only pairs where both identity and isomorph exactly solve the unique Sudoku enter the order analysis. For each such pair:
 
-`LOCKED_CONFIG.json` reserves 64 deterministic discovery puzzles and 64 independent confirmation puzzles, four spatial isomorphs each. Run discovery first. Confirmation stays untouched until the discovery decision is written down.
+`tau_iso = Kendall(r_x(c), r_T(x)(T(c)))`.
 
-A puzzle/isomorph pair enters the primary tau analysis only when both outputs exactly solve their respective puzzles. This prevents comparing generation orders of failed trajectories that may not correspond to the same solved CSP.
+Because four transforms share one source puzzle, uncertainty is clustered by **puzzle**: average transform-level tau within each puzzle, then bootstrap across puzzle means. Do not treat the four transforms as independent samples.
 
-At least 50 exact identity/isomorph pairs are required before interpreting G0-C. If the model cannot produce that many under the frozen protocol, the experimental object is not available cheaply enough and the topic should be stopped or the model replaced **before** inspecting alternative measurements.
+The locked minimum for a quantitative order conclusion is 30 both-correct pairs spanning at least 12 source puzzles. Failure to reach this threshold because isomorphs frequently turn successes into failures is not a null result; it falls back to G0-O outcome non-equivariance.
 
-## Interpretation, not significance fishing
+### G0-N — positional nulls
 
-- high positive `tau_iso`: solution order behaves approximately as a structural invariant;
-- near-zero `tau_iso`, especially with systematic positional rank shifts: the apparent logical order is substantially serialization/sampler dependent;
-- intermediate stable `tau_iso`: structural scheduling and sampler scheduling both matter.
+For every exact pair, compute two parameter-free null trajectories using the *same transform geometry*:
 
-All three answer the same question. The project is killed only by failed identifiability/prerequisite gates, not because tau points in an inconvenient direction.
+- **surface-order null:** a scheduler that always follows absolute row-major cell index;
+- **boundary-first null:** a scheduler driven only by distance to the two ends of the 81-cell row-major sequence.
 
-## Efficiency choices
+Report observed `tau_iso` beside both null taus and the per-puzzle excess:
 
-- one 8B DLM for G0 rather than an early model sweep;
-- exactly one token finalized per step to eliminate tied-rank ambiguity;
-- no external Sudoku dataset: deterministic unique-puzzle generator plus reserved seed;
-- originals are decoded once and reused across their four transforms;
-- no hidden states, probes, judges or training;
-- confirmation set is generated upfront but not run until the discovery decision.
+`tau_observed - tau_surface_null`
+
+`tau_observed - tau_boundary_null`.
+
+This makes an intermediate tau interpretable. We no longer call `tau=0.4` "mixed" merely by inspection; we ask whether it preserves substantially more mapped order than simple positional schedulers would under the exact same automorphisms.
+
+### G0-C — secondary controls and characterization
+
+On 12 discovery puzzles, randomize which masked position is revealed while keeping the same model and Sudoku digit grammar. Its order should have no systematic correlation with confidence order. This is a sanity check, not the central identification argument.
+
+Also report, within each correctly solved identity puzzle, Spearman correlation between initial candidate count and finalization step. Summarize these **per-puzzle** correlations; never pool cells across puzzles. This indicates whether the controlled protocol resembles the seed paper's easy-first story, but it is not allowed to kill an otherwise well-identified invariance result.
+
+## Frozen data discipline
+
+`LOCKED_CONFIG.json` creates 64 discovery and 64 reserved confirmation puzzles, each with four digit-preserving spatial automorphisms. The manifest is generated once from the locked seed.
+
+The runner is idempotent by construction:
+
+- existing output requires explicit `--resume` or `--overwrite`;
+- `--resume` skips completed trace keys;
+- duplicate trace keys cause analysis to fail loudly rather than inflate sample size.
+
+Do not run confirmation until the discovery interpretation has been written down. Do not search prompts, thresholds, transform subsets, or alternative order metrics after seeing discovery.
+
+## What establishes the topic
+
+The project is healthy if the controlled decoder solves enough identity puzzles and same-serialization order is stable. From there, either scientific direction is useful:
+
+- **high outcome retention + tau far above positional nulls:** strong evidence that generation order tracks a structural property of the CSP;
+- **solve flips and/or tau near positional nulls:** strong evidence that apparent adaptive ordering is substantially serialization/sampler dependent;
+- **high outcome retention with intermediate tau significantly above positional nulls:** both structural and positional forces are present.
+
+The goal is not to manufacture a negative result. The goal is to make the first experiment strong enough that a positive invariance result genuinely establishes a reusable property, while a negative result cannot be dismissed as a measurement artifact.
