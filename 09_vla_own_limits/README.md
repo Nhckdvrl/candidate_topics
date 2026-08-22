@@ -46,6 +46,14 @@ p_hat(pi,s) = successes / 8
 
 A state is a robust A-win only when `p_A - p_B >= 0.50`; reverse for B. Smaller gaps are ambiguous and do not support the claim.
 
+That rule is still not noise-free. Two checkpoints that are *equally* competent at a state
+produce a spurious robust win about 3.8% of the time at `p=0.5`, so a 150-state panel would
+be expected to show roughly six false wins in each direction with no competence difference
+anywhere. G0 therefore also runs an exact **within-state relabeling null**: each state's 16
+observed outcomes are pooled and re-split, holding that state's difficulty exactly fixed
+while destroying the checkpoint association. Crossover that does not beat this null is
+sampling noise, and the topic stops.
+
 ## Same state means actually the same state
 
 The protocol follows OpenPI's official LIBERO evaluator: fixed LIBERO init state, environment seed 7, ten dummy settling steps, 224x224 image preprocessing, five executed actions per replan, official LIBERO success.
@@ -68,10 +76,12 @@ init_idx 0..14 per task = 150 physical states
 
 `src/analyze_disagreement.py` selects the pair with the most bidirectional robust support.
 
-Require at least **15 robust A-wins and 15 robust B-wins**. Otherwise:
+Require at least **15 robust A-wins and 15 robust B-wins**, and require that support to
+beat the sampling-noise null. Otherwise:
 
 ```text
 STOP_NO_NATURAL_CROSSOVER
+STOP_CROSSOVER_EXPLAINED_BY_SAMPLING_NOISE
 ```
 
 No perturbation search, special checkpoint training, or lowered threshold after seeing data.
@@ -119,6 +129,12 @@ AUROC >= 0.70
 bootstrap 95% lower bound > 0.60
 ```
 
+A failed relative gate is reported as one of two different things. If the readout does
+track success *within* a checkpoint, the negative is informative — the signal is generic
+difficulty. If it tracks nothing at all, the paired test simply had no signal to reverse
+and the result is `INCONCLUSIVE`, not evidence about self-knowledge. That power control is
+pre-declared and one-directional: it can only downgrade a negative, never create a pass.
+
 Why this is informative:
 
 - physical state, task, images and proprioception are fixed inside each pair;
@@ -137,7 +153,8 @@ If G1 passes, only then does the mechanism question become natural: **where alon
 ## Files
 
 ```text
-LOCKED_CONFIG.json              frozen v2 constants / state split / noise seeds
+LOCKED_CONFIG.json              frozen v3 constants / state split / noise seeds
+ENVIRONMENT.md                  reproducible openpi + LIBERO setup and its traps
 VALIDATION.md                   exact scientific contract and kill lines
 DATA_CONTRACT.md                behavior + feature schemas
 SERVER_HANDOFF.md               cluster execution order
@@ -147,10 +164,12 @@ src/openpi_instrumented_server.py controlled-noise inference + observational lay
 src/preflight.py                state/RNG/feature identity checks
 src/collect_behavior.py         repeated same-state rollouts
 src/panel.py                    robust Monte-Carlo crossover statistics
+src/noise_null.py               within-state relabeling null for the crossover claim
 src/analyze_disagreement.py     G0 pair selection / stop decision
 src/collect_features.py         repeated common-noise layer-11 extraction
 src/feature_panel.py            feature validation and averaging
 src/relative_probe.py           shared linear readout + paired metrics
 src/run_g1.py                   independent G1 confirmation / verdict
+run_g0_fleet.sh                 multi-GPU shard runner for the behavior panel
 tests/                          false-positive and instrumentation tests
 ```
