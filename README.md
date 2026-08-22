@@ -23,7 +23,8 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 | Priority | Topic | Natural question | Current gate |
 | --- | --- | --- | --- |
-| 1 | [Generative Policy Diversity Has Task Geometry](./08_generative_policy_task_geometry/) | When a generative robot policy produces diverse actions from the same state, does that diversity reflect task uncertainty or goal-equivalent redundancy? | Establish whether similar scalar action entropy can correspond to different actual task-outcome dispersion, then test whether task-sensitive vs task-null geometry explains the difference. |
+| 1 | [Does a VLA Know Its Own Limits?](./09_vla_own_limits/) | When a VLA signal predicts success, is it estimating the current policy's own competence or mostly generic state difficulty? | Find natural bidirectional same-state crossover among same-family pi0.5 checkpoints, then test whether one shared hidden-state success readout predicts which checkpoint wins. |
+| 2 | [Does Action Diversity Track Functional Uncertainty?](./08_generative_policy_task_geometry/) | Can a generative policy be highly action-diverse while remaining functionally certain, and does scalar action entropy therefore make wrong monitoring decisions? | Finish the episode-level branch test and ask whether a scalar-entropy monitor actually misranks functional uncertainty; task geometry is no longer the claim. |
 
 ## Archived topics
 
