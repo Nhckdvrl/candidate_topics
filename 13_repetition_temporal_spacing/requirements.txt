@@ -1,0 +1,7 @@
+# Qwen3 support is required; reuse an existing modern pretraining environment when available.
+torch>=2.4
+transformers>=4.51.0
+datasets>=3.0.0
+numpy>=1.24
+# Optional but recommended for --attn-implementation flash_attention_2
+flash-attn>=2.6.0
