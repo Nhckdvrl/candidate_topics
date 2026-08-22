@@ -68,7 +68,7 @@ def main() -> None:
                 df[OUTCOME][~near], nulldf[OUTCOME][~nnear]]
         labels = ["near\n(different\nchunks)", "near\n(SAME\nchunk)",
                   "far\n(different\nchunks)", "far\n(SAME\nchunk)"]
-        ax.boxplot([d.dropna() for d in data], labels=labels, showfliers=False)
+        ax.boxplot([d.dropna() for d in data], tick_labels=labels, showfliers=False)
         ax.set_ylabel("branch outcome dispersion (px)")
         ax.set_title("how much dispersion is the action choice?\n(null control: all branches share one chunk)")
     else:

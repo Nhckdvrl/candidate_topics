@@ -1,0 +1,10 @@
+{
+  "pretrained": "/home/xiang/work08/ckpt/diffusion_pusht",
+  "rollouts": 6,
+  "branches": 32,
+  "extra_steps": 88,
+  "probe_every": 3,
+  "null_control": true,
+  "n_branch_states": 64,
+  "elapsed_s": 1260.8029217720032
+}

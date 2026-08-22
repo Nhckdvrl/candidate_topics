@@ -144,37 +144,74 @@ and scalar entropy does conflate the two.
 8-step in-contact dispersion is ~1 px on a 512 px workspace, which is not obviously "task
 uncertainty" at all. `collect_e1b` therefore executes K=32 sampled chunks from the
 identical restored state and continues each **closed-loop under the same policy** for 88
-further steps. 978 branch states over 96 rollouts, 14 GPUs across 5 nodes.
+further steps. Final data: **1,112 branch states over 112 rollouts**, 14 GPUs across 5
+nodes.
 
-Episode-level outcomes are substantial: branch dispersion p50 **7.6 px**, p90 **47.4 px**,
-max **159 px**; and **53.3%** of states have branches that disagree on whether the goal is
+Episode-level outcomes are substantial: branch dispersion p50 **7.5 px**, p90 **45.1 px**,
+max **159 px**; and **55.2%** of states have branches that disagree on whether the goal is
 reached. The 8-step measure understates by roughly an order of magnitude.
 
-### 7c. But the deployed monitor is not broken — and that is what kills it
+### 7c. Most of that episode-level dispersion is not caused by the action choice
+
+Each branch continues for 88 further steps with the same policy sampling independently, so
+part of the measured dispersion is downstream stochasticity rather than a consequence of
+the initial chunk. This was checked directly with a null control: every branch at a probe
+state executes the **same** chunk (chunk 0) instead of its own sampled chunk, then
+continues closed-loop exactly as before. Any dispersion that remains is the floor the real
+measurement has to clear.
+
+Run within-state (457 paired probes, both conditions at the identical restored state,
+45 rollouts):
+
+```text
+real (different chunks)   median 6.89 px   p90 51.6 px
+null (same chunk)         median 6.17 px   p90 42.8 px
+ratio                     1.12x
+within-state (real-null)  median  0.32 px, mean 2.02 px
+frac(real > null)         0.606          (Wilcoxon signed-rank p < 1e-4)
+frac(real <= 1.10 x null) 0.497
+goal-disagreement         real 55.6%   null 50.8%
+```
+
+The difference is statistically real at this sample size but small: the median state gets
+only 12% more episode-level dispersion from actually varying the sampled chunk than from
+the policy's own downstream sampling noise alone, and roughly half of all states show no
+more than a 10% improvement over the null floor. **Most of what "episode-level outcome
+dispersion" measures is the policy re-sampling itself over 88 steps, not the consequence of
+which of the 256 initial chunks it happened to execute.**
+
+This does not revive the topic — if anything it sharpens the kill: even the outcome
+variable built specifically to give the phenomenon its best chance is dominated by noise
+unrelated to the action distribution being scored.
+
+### 7d. The deployed monitor is not broken — and that is what kills it
 
 The bar we set was operational: does a monitor thresholding scalar action entropy actually
 make wrong decisions? Measured at FIPER's own released operating quantiles against
-episode-level ground truth (top-quartile branch dispersion, base rate 0.251):
+episode-level ground truth (top-quartile branch dispersion, base rate 0.250), on the full
+1,112-state dataset:
 
 | quantile | alarms | precision | precision / base rate | alarms on benign states |
 |---|---|---|---|---|
-| 0.90 | 98 | 0.459 | **1.83x** | 12.2% |
-| 0.95 | 49 | 0.490 | **1.96x** | 10.2% |
-| 0.99 | 10 | 0.600 | **2.40x** | 10.0% |
+| 0.90 | 112 | 0.411 | **1.64x** | 14.3% |
+| 0.95 | 56 | 0.446 | **1.79x** | 10.7% |
+| 0.99 | 12 | 0.667 | **2.67x** | 8.3% |
 
-Pooled AUC **0.579** (CI 0.546-0.625). That is a weak but genuinely informative monitor.
+Pooled AUC **0.581** (CI 0.549-0.624). That is a weak but genuinely informative monitor.
 Roughly one alarm in ten lands on a state where all branches end up in the same place —
 nothing like "fires on states where every sampled action leads to the same place".
 
 The only striking result is stratified:
 
-| stratum | n | AUC | precision/base @ q=0.90 |
-|---|---|---|---|
-| near block (gap < 20 px) | 463 | **0.496** | 1.10 |
-| far from block | 515 | 0.645 | — |
+| stratum | n | AUC | 
+|---|---|---|
+| near block (gap < 20 px) | 530 | **0.525** |
+| far from block | 582 | 0.641 |
 
 **ACE's entire skill is a proxy for proximity to the object.** Conditioned on being near
-the block — the regime where actions actually matter — it is exactly at chance.
+the block — the regime where actions actually matter — it is close to chance. And section
+7c shows part of the reason: near the block, the outcome it is being scored against is
+itself mostly downstream noise rather than a function of the action choice ACE describes.
 
 ## 8. Why this is a KILL and not a CONTINUE
 
@@ -185,10 +222,14 @@ the block — the regime where actions actually matter — it is exactly at chan
 2. **The operational claim does not hold.** The version that would have mattered —
    existing entropy-based mechanisms systematically making wrong calls — is contradicted
    by the data. Precision is ~2x base rate at every FIPER operating point.
-3. **What survives is narrow.** "ACE tracks proximity to the object rather than functional
-   uncertainty" is true and cleanly measured, but it is a much smaller claim than the
-   topic was built for, it is confined to one stratum defined by a threshold we chose, and
-   it invites the obvious rebuttal that a proximity feature would fix it.
+3. **What survives is narrow, and partly explained away.** "ACE tracks proximity to the
+   object rather than functional uncertainty" is true and cleanly measured, but it is a
+   much smaller claim than the topic was built for, confined to one stratum defined by a
+   threshold we chose, and invites the obvious rebuttal that a proximity feature would fix
+   it. A state-matched null control (section 7c) also shows most of the episode-level
+   outcome measure near the block is downstream policy noise rather than a function of the
+   action chunk being scored, so even the one surviving result is measured against an
+   outcome variable that only weakly reflects what ACE was asked to predict.
 4. **The geometry story was never reached and should not be resurrected.** Going back to a
    task-sensitive/task-null decomposition would reintroduce exactly the chain of
    assumptions — local linearity, projector choice, matching tolerance — that made the
@@ -207,11 +248,15 @@ imperfect".
 ```bash
 pip install -r requirements-pusht.txt
 bash run_e1_pilot.sh                       # preflight + 8-step existence test
-bash run_e1b_fleet.sh disc                 # episode-level branching
+bash run_e1b_fleet.sh disc                 # episode-level branching (--paired-null for the noise-floor control)
 python -m src.pusht.decision_analysis \
   --csv results/pusht_e1b_disc/shard*/branch_states.csv \
   --out results/pusht_e1b_disc/decision_report.json
 ```
+
+`results/pusht_e1b_disc/archive_figure.png` reproduces the three summary panels: action
+entropy vs. episode-level outcome, the ROC curves by stratum, and the null-control
+comparison.
 
 Preflight (`src/pusht/preflight.py`) must pass before any number is interpreted; it is
 what caught both simulator bugs. Committed results are the small CSV/JSON summaries; raw

@@ -13,7 +13,7 @@ TAG="${1:-disc}"
 MODE="${2:-launch}"
 REPO=/home/xiang/candidate_topics/08_generative_policy_task_geometry
 PY=/home/xiang/venvs/topic08/bin/python
-CKPT="${CKPT:-/home/xiang/work08/ckpt/diffusion_pusht}"
+CKPT="${CKPT:-/home/xiang/shared_assets/pusht_diffusion_policy/ckpt/diffusion_pusht}"
 
 ROLLOUTS="${ROLLOUTS:-8}"
 BRANCHES="${BRANCHES:-32}"

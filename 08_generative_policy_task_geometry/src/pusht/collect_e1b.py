@@ -102,6 +102,10 @@ def main() -> None:
     p.add_argument("--max-steps", type=int, default=300)
     p.add_argument("--calib-rollouts", type=int, default=4)
     p.add_argument("--device", default="cuda")
+    p.add_argument("--paired-null", action="store_true",
+                   help="at each probe run BOTH the real branches and a same-state null "
+                        "control, so the action choice's contribution is measured within "
+                        "state rather than across two different state populations")
     p.add_argument("--null-control", action="store_true",
                    help="give every branch the SAME chunk; the resulting dispersion is the "
                         "downstream-stochasticity floor, not an effect of the action choice")
@@ -182,6 +186,21 @@ def main() -> None:
                         np.sqrt(((fk.mean(axis=0) - kp0) ** 2).sum(axis=-1).mean())
                     ),
                 }
+                if args.paired_null:
+                    # Same state, same branch count, but every branch executes chunk 0.
+                    # The difference between this and the row above is the part of the
+                    # episode-level dispersion that the *choice of action chunk* actually
+                    # caused; the rest is the policy's own downstream sampling.
+                    nsel = np.repeat(chunks[:1], args.branches, axis=0)
+                    nout = branch_from_state(bundle, envs, st, list(bundle.queue), nsel,
+                                             args.extra_steps)
+                    nfk, nfc = nout["final_keypoints"], nout["final_coverage"]
+                    row["null_final_kp_dispersion_px"] = keypoint_dispersion(nfk)
+                    row["null_final_cov_std"] = float(nfc.std(ddof=1))
+                    row["null_goal_disagreement"] = float(
+                        min(nout["reached_goal"].mean(), 1 - nout["reached_goal"].mean())
+                    )
+
                 row.update(action_dispersion(chunks))
                 rows.append(row)
                 restore_sim_state(env, st)
@@ -211,6 +230,7 @@ def main() -> None:
         "extra_steps": args.extra_steps,
         "probe_every": args.probe_every,
         "null_control": bool(args.null_control),
+        "paired_null": bool(args.paired_null),
         "n_branch_states": int(len(df)),
         "elapsed_s": time.time() - t0,
     }
