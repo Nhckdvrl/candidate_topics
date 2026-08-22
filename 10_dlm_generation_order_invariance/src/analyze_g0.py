@@ -30,6 +30,19 @@ def _dedupe_or_fail(records: list[dict]) -> list[dict]:
     return out
 
 
+def _validate_protocol(records: list[dict], manifest: list[dict], expected: str) -> None:
+    stale_manifest = [r.get("puzzle_id", "<unknown>") for r in manifest if r.get("protocol_version") != expected]
+    if stale_manifest:
+        raise ValueError(f"manifest protocol mismatch; expected {expected}, examples={stale_manifest[:3]}")
+    stale_traces = [
+        (r.get("puzzle_id"), r.get("variant_id"), r.get("metadata", {}).get("protocol_version"))
+        for r in records
+        if r.get("metadata", {}).get("protocol_version") != expected
+    ]
+    if stale_traces:
+        raise ValueError(f"trace protocol mismatch; expected {expected}, examples={stale_traces[:3]}")
+
+
 def _metadata_float(rec: dict, name: str) -> float | None:
     value = rec.get("metadata", {}).get(name)
     return None if value is None else float(value)
@@ -41,6 +54,9 @@ def _ci(values: list[float], seed: int) -> list[float]:
 
 def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | None = None) -> dict:
     cfg = cfg or {}
+    expected_protocol = cfg.get("protocol_version")
+    if expected_protocol:
+        _validate_protocol(records, manifest, expected_protocol)
     records = _dedupe_or_fail([r for r in records if r["split"] == split])
     manifest_by_id = {r["puzzle_id"]: r for r in manifest}
 
@@ -199,6 +215,7 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
     scheduler_mean = summarize(native_scheduler_agreements)["mean"]
 
     return {
+        "protocol_version": expected_protocol,
         "split": split,
         "n_puzzles_seen": len(low_conf),
         "n_identity_exact": n_identity_exact,
