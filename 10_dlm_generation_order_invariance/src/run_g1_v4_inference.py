@@ -31,7 +31,8 @@ def main() -> None:
         inputs = tokenizer(row["prompt"], return_tensors="pt").to(model.device)
         with torch.inference_mode():
             output = model.diffusion_generate(
-                **inputs,
+                inputs.input_ids,
+                attention_mask=inputs.attention_mask,
                 max_new_tokens=args.max_new_tokens,
                 steps=args.max_new_tokens,
                 temperature=0.0,
