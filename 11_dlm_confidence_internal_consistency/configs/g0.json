@@ -5,10 +5,15 @@
   "anchor_min": 20,
   "anchor_max": 89,
   "model": "GSAI-ML/LLaDA-8B-Instruct",
+  "revision": "main",
   "dtype": "bfloat16",
   "batch_size": 8,
   "max_intervention_tokens": 1,
+  "protocol_probe_pairs": 100,
+  "protocol_probe_seed": 20260823,
   "bootstrap": 10000,
-  "primary_score": "confidence_full",
-  "identification_guardrail": "confidence_tail"
+  "permutations": 20000,
+  "primary_identification_metric": "confidence_result_late",
+  "paper_compatible_score": "confidence_full",
+  "breadth_guardrail": "confidence_tail"
 }
