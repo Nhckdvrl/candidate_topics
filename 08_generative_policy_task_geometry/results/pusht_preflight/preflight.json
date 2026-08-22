@@ -1,0 +1,47 @@
+{
+  "all_pass": true,
+  "checks": [
+    {
+      "name": "P0_restore_round_trip",
+      "max_keypoint_diff_px": 0.0,
+      "max_state_diff": 0.0,
+      "coverage_diff": 0.0,
+      "pass": true
+    },
+    {
+      "name": "P1_determinism",
+      "max_keypoint_diff_px": 0.0,
+      "max_keypoint_diff_px_without_space_rebuild": 0.0,
+      "pass": true
+    },
+    {
+      "name": "P2_restore_fidelity",
+      "max_keypoint_diff_px": 0.0,
+      "pass": true
+    },
+    {
+      "name": "P3_step_physics_matches_env_step",
+      "max_keypoint_diff_px": 0.0,
+      "pass": true
+    },
+    {
+      "name": "P4_ace_matches_released_fiper",
+      "ours_bits": 5.021254584480886,
+      "released_path_bits": 5.021254584480886,
+      "abs_diff": 0.0,
+      "pass": true
+    },
+    {
+      "name": "P5_policy_sampling",
+      "chunk_shape": [
+        16,
+        8,
+        2
+      ],
+      "mean_std_across_samples_px": 6.504857063293457,
+      "action_min": 304.1471862792969,
+      "action_max": 448.2078857421875,
+      "pass": true
+    }
+  ]
+}

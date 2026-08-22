@@ -5,3 +5,6 @@
 **/external/
 **/_smoke/
 *.pyc
+*.npz
+*.pt
+*.safetensors
