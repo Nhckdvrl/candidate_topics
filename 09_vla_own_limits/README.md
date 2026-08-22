@@ -2,7 +2,12 @@
 
 ## Status
 
-**Candidate / identification-first. No mechanism claim yet.**
+**KILLED at G0 — 2026-08-22.** The full 3600-rollout discovery panel ran cleanly and found
+no natural bidirectional competence crossover: the best checkpoint pair reaches 3 robust
+states per direction against a required 15, and 2k is beaten on literally every one of 150
+states by both later checkpoints. See [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md) for the
+verdict and [`AUDIT.md`](./AUDIT.md) for the pre-data audit and the two bugs it caught.
+Everything below describes the protocol as designed and executed.
 
 > When a VLA carries a signal that predicts eventual success, is that signal specific to **this policy's own chance of succeeding**, or is it mostly a policy-agnostic estimate that **this state looks easy / hard**?
 
