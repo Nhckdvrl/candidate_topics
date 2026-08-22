@@ -1,0 +1,291 @@
+{
+  "topic": "Does Training-Time World Modeling Act Through a Predictive Policy State?",
+  "stage": "G1 matched future-on / future-off mechanism test",
+  "lightwam_revision": "b2785f66e13fd9987e94ae1ecc1c441d5059c9ae",
+  "checkpoints": {
+    "future_on": "/home/xiang/candidate_topics/15_predictive_policy_state/g1/runs/future_on/checkpoints/weights/step_002500.pt",
+    "future_off": "/home/xiang/candidate_topics/15_predictive_policy_state/g1/runs/future_off/checkpoints/weights/step_002500.pt"
+  },
+  "architecture": {
+    "future_on": {
+      "adapter_layers": [
+        8,
+        16,
+        24
+      ],
+      "layer_feature_sources": [
+        [
+          "adapted"
+        ],
+        [
+          "adapted"
+        ],
+        [
+          "adapted"
+        ]
+      ],
+      "token_pooling_type": "learned_query",
+      "video_hidden_dim": 1536,
+      "use_backbone_lora": false,
+      "lora_layers": [],
+      "video_latent_spatial_downsample_factor": 2,
+      "use_first_frame_residual_video_target": false
+    },
+    "future_off": {
+      "adapter_layers": [
+        8,
+        16,
+        24
+      ],
+      "layer_feature_sources": [
+        [
+          "adapted"
+        ],
+        [
+          "adapted"
+        ],
+        [
+          "adapted"
+        ]
+      ],
+      "token_pooling_type": "learned_query",
+      "video_hidden_dim": 1536,
+      "use_backbone_lora": false,
+      "lora_layers": [],
+      "video_latent_spatial_downsample_factor": 2,
+      "use_first_frame_residual_video_target": false
+    }
+  },
+  "design": {
+    "num_samples": 128,
+    "train_samples": 96,
+    "test_samples": 32,
+    "one_window_per_episode": true,
+    "episode_disjoint_probe_split": true,
+    "same_samples_for_both_arms": true,
+    "min_relative_effect": 0.05,
+    "bootstrap": 2000,
+    "seed": 20260822
+  },
+  "episode_ids": {
+    "train": [
+      173,
+      371,
+      326,
+      351,
+      344,
+      426,
+      282,
+      291,
+      85,
+      39,
+      198,
+      360,
+      332,
+      380,
+      3,
+      51,
+      124,
+      379,
+      216,
+      160,
+      60,
+      61,
+      316,
+      120,
+      350,
+      71,
+      123,
+      131,
+      248,
+      193,
+      343,
+      50,
+      49,
+      355,
+      134,
+      432,
+      378,
+      41,
+      163,
+      424,
+      104,
+      150,
+      375,
+      233,
+      82,
+      364,
+      418,
+      402,
+      399,
+      15,
+      298,
+      235,
+      31,
+      35,
+      287,
+      125,
+      362,
+      327,
+      113,
+      77,
+      420,
+      383,
+      48,
+      184,
+      389,
+      391,
+      58,
+      56,
+      340,
+      308,
+      99,
+      328,
+      43,
+      206,
+      107,
+      237,
+      414,
+      30,
+      166,
+      338,
+      210,
+      297,
+      110,
+      105,
+      42,
+      277,
+      4,
+      122,
+      46,
+      187,
+      232,
+      273,
+      139,
+      140,
+      251,
+      121
+    ],
+    "test": [
+      323,
+      162,
+      280,
+      303,
+      304,
+      242,
+      81,
+      53,
+      390,
+      29,
+      333,
+      284,
+      385,
+      12,
+      417,
+      74,
+      398,
+      90,
+      247,
+      361,
+      24,
+      92,
+      306,
+      2,
+      218,
+      358,
+      157,
+      336,
+      205,
+      171,
+      97,
+      278
+    ]
+  },
+  "metrics": {
+    "policy_gain": {
+      "future_on_action_loss": 0.04854508861899376,
+      "future_off_action_loss": 0.04757484421133995,
+      "relative_gain_from_future_supervision": 0.02039406379017718,
+      "paired_loss_reduction": {
+        "mean": -0.00097024226852227,
+        "ci95_low": -0.008335293993513914,
+        "ci95_high": 0.008418079797411328
+      }
+    },
+    "predictive_state": {
+      "future_on": {
+        "normal_r2": 0.09813086951659222,
+        "normal_mse": 0.12283845376637909,
+        "bypass_r2": 0.05784832332548473,
+        "bypass_mse": 0.12832510977958145,
+        "mean_target_baseline_mse": 0.136204300174391,
+        "relative_mse_gain_from_adapters": 0.04275590352212873,
+        "paired_mse_gain": {
+          "mean": 0.005486655049026012,
+          "ci95_low": 0.002208039665129036,
+          "ci95_high": 0.00853169359616004
+        }
+      },
+      "future_off": {
+        "normal_r2": 0.07600920727260674,
+        "normal_mse": 0.12585151929101537,
+        "bypass_r2": 0.05784832332548473,
+        "bypass_mse": 0.12832510977958145,
+        "mean_target_baseline_mse": 0.136204300174391,
+        "relative_mse_gain_from_adapters": 0.01927596627670808,
+        "paired_mse_gain": {
+          "mean": 0.0024735901970416307,
+          "ci95_low": -0.0025538158573908732,
+          "ci95_high": 0.0068661827739560964
+        }
+      },
+      "interaction_on_minus_off": {
+        "mean": 0.0030130648519843817,
+        "ci95_low": -0.0011668233841191976,
+        "ci95_high": 0.007958749055978839
+      }
+    },
+    "adapter_bypass_cost": {
+      "future_on": {
+        "normal_action_loss": 0.04854508861899376,
+        "bypass_action_loss": 0.11822547763586044,
+        "relative_loss_increase": 1.4353746382822241,
+        "paired_cost": {
+          "mean": 0.0696803905593697,
+          "ci95_low": 0.05538633023752482,
+          "ci95_high": 0.08394432128916376
+        }
+      },
+      "future_off": {
+        "normal_action_loss": 0.04757484421133995,
+        "bypass_action_loss": 0.3872547745704651,
+        "relative_loss_increase": 7.13990630952311,
+        "paired_cost": {
+          "mean": 0.339679901546333,
+          "ci95_low": 0.25491374694393015,
+          "ci95_high": 0.4179942310729529
+        }
+      },
+      "interaction_on_minus_off": {
+        "mean": -0.26999951316975057,
+        "ci95_low": -0.3480186070111813,
+        "ci95_high": -0.18955606520758012
+      }
+    },
+    "future_on_advantage": {
+      "under_normal_adapters": -0.0009702420211397111,
+      "under_adapter_bypass": 0.26902925968170166,
+      "paired_shrinkage": {
+        "mean": -0.26999950979370624,
+        "ci95_low": -0.34610206468496474,
+        "ci95_high": -0.1837784204690252
+      }
+    }
+  },
+  "gates": {
+    "policy_gain": false,
+    "predictive_state_gain": false,
+    "adapter_dependence_interaction": false
+  },
+  "verdict": "NO_POLICY_GAIN_FROM_FUTURE_SUPERVISION"
+}
