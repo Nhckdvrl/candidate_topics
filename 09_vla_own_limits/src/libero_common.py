@@ -28,8 +28,32 @@ def quat2axisangle(quat: np.ndarray) -> np.ndarray:
     return q[:3] * 2.0 * math.acos(q[3]) / den
 
 
+def _allow_libero_init_state_unpickling() -> None:
+    """LIBERO stores its fixed initial states as pickled numpy arrays.
+
+    `torch.load` defaults to `weights_only=True` from torch 2.6, which refuses to
+    reconstruct numpy arrays and makes `get_task_init_states` raise. The stored data are
+    the benchmark's own released initial states, so allowlisting the numpy reconstructors
+    restores the official behaviour without changing any of it.
+    """
+    import torch
+
+    try:
+        import numpy.core.multiarray as _ma
+    except ModuleNotFoundError:  # numpy>=2 layout
+        import numpy._core.multiarray as _ma
+
+    globs = [_ma._reconstruct, np.ndarray, np.dtype]
+    globs += [getattr(np, n) for n in ("float64", "float32", "int64") if hasattr(np, n)]
+    if hasattr(np, "dtypes"):
+        globs += [np.dtypes.Float64DType, np.dtypes.Float32DType, np.dtypes.Int64DType]
+    torch.serialization.add_safe_globals(globs)
+
+
 def get_task_suite(suite: str):
     from libero.libero import benchmark
+
+    _allow_libero_init_state_unpickling()
     return benchmark.get_benchmark_dict()[suite]()
 
 

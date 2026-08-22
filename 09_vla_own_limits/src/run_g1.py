@@ -10,7 +10,12 @@ import pandas as pd
 
 from .feature_panel import aggregate_feature_replicates, concat_feature_npz
 from .panel import aggregate_success, pair_state_table, validate_panel
-from .relative_probe import SharedLinearProbe, bootstrap_relative_auc, paired_relative_metrics
+from .relative_probe import (
+    SharedLinearProbe,
+    absolute_success_metrics,
+    bootstrap_relative_auc,
+    paired_relative_metrics,
+)
 
 
 def _dataset(behavior, feature_panel, a: str, b: str, *, min_trials: int, rate_gap: float):
@@ -77,6 +82,7 @@ def main() -> None:
     p.add_argument("--bootstrap", type=int, default=2000)
     p.add_argument("--auc-min", type=float, default=0.70)
     p.add_argument("--auc-ci-lower-min", type=float, default=0.60)
+    p.add_argument("--min-absolute-spearman", type=float, default=0.15)
     p.add_argument("--out", type=Path, required=True)
     args = p.parse_args()
 
@@ -99,6 +105,11 @@ def main() -> None:
     test_scores = probe.score(te[4])
     a_wins, b_wins = _unique_winner_counts(te[0], te[3])
 
+    # Power control, computed on every confirmation state (not only crossover states).
+    absolute = absolute_success_metrics(te[0], te[1], te[2], test_scores)
+    abs_rho = absolute["mean_within_checkpoint_spearman"]
+    has_absolute_signal = abs_rho is not None and abs_rho >= args.min_absolute_spearman
+
     report = {
         "checkpoint_a": a,
         "checkpoint_b": b,
@@ -110,6 +121,9 @@ def main() -> None:
         "min_trials": int(args.min_trials),
         "min_feature_seeds": int(args.min_feature_seeds),
         "probe": {"type": "shared_standardized_ridge", "alpha": float(args.ridge_alpha)},
+        "absolute_success_control": absolute,
+        "min_absolute_spearman": float(args.min_absolute_spearman),
+        "has_absolute_success_signal": bool(has_absolute_signal),
     }
 
     if min(a_wins, b_wins) < args.min_bidirectional:
@@ -122,13 +136,20 @@ def main() -> None:
         report["confirmation"] = metrics
         report["confirmation"]["relative_auc_ci95"] = boot["ci95"]
         lo = boot["ci95"][0]
-        report["verdict"] = (
-            "PASS_POLICY_SPECIFIC_SUCCESS_SIGNAL"
-            if metrics["relative_auc"] >= args.auc_min
+        passed = (
+            metrics["relative_auc"] >= args.auc_min
             and lo is not None
             and lo > args.auc_ci_lower_min
-            else "KILL_SELF_KNOWLEDGE_INTERPRETATION"
         )
+        if passed:
+            report["verdict"] = "PASS_POLICY_SPECIFIC_SUCCESS_SIGNAL"
+        elif not has_absolute_signal:
+            # The readout does not track success even within a checkpoint, so the paired
+            # test had no measurable signal to reverse. This is a measurement-power
+            # failure, not evidence about policy-specificity. It is still not a CONTINUE.
+            report["verdict"] = "INCONCLUSIVE_NO_ABSOLUTE_SUCCESS_SIGNAL"
+        else:
+            report["verdict"] = "KILL_SELF_KNOWLEDGE_INTERPRETATION"
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, indent=2))

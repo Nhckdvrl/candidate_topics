@@ -52,10 +52,16 @@ There are four feature-noise repeats per `(state,checkpoint)` in the locked prot
 `feature` is fixed as:
 
 ```text
+captured at the settled initial state (replan_idx 0)
 pi0.5 action-expert layer 11 full layer output
 -> mean over action tokens
 -> mean over 10 denoising steps
 ```
+
+The decision point matters as much as the layer. Both checkpoints are queried on the
+*identical* settled observation before either has acted, so images, proprioception and
+prompt are byte-identical across the pair. Any later timestep would silently compare two
+different physical states.
 
 The four common-noise feature repeats are then averaged.
 

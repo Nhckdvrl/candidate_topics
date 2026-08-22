@@ -33,6 +33,11 @@ def main() -> None:
     p.add_argument("--replan-steps", type=int, default=5)
     p.add_argument("--resize-size", type=int, default=224)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument(
+        "--resume",
+        action="store_true",
+        help="skip (state, policy_seed) rollouts already present in --out",
+    )
     args = p.parse_args()
 
     from openpi_client import websocket_client_policy
@@ -44,7 +49,20 @@ def main() -> None:
     policy_seeds = parse_int_spec(args.policy_seeds)
     client = websocket_client_policy.WebsocketClientPolicy(args.host, args.port)
     suite = get_task_suite(args.suite)
-    rows = []
+
+    # A full panel is thousands of rollouts and hours of wall clock; make it restartable.
+    rows: list[dict] = []
+    done_keys: set[tuple[int, int, int]] = set()
+    if args.resume and args.out.exists():
+        prev = pd.read_csv(args.out)
+        if len(prev):
+            if not (prev["checkpoint"].astype(str) == str(args.checkpoint)).all():
+                raise ValueError(f"{args.out} holds rows from a different checkpoint")
+            rows = prev.to_dict("records")
+            done_keys = {
+                (int(r["task_id"]), int(r["init_idx"]), int(r["policy_seed"])) for r in rows
+            }
+            print(f"resuming: {len(done_keys)} rollouts already complete in {args.out}")
 
     for task_id in task_ids:
         task = suite.get_task(task_id)
@@ -56,6 +74,8 @@ def main() -> None:
         try:
             for init_idx in init_indices:
                 for policy_seed in policy_seeds:
+                    if (task_id, init_idx, policy_seed) in done_keys:
+                        continue
                     obs, sim_hash = settle_initial_state(
                         env, init_states[init_idx], env_seed=args.env_seed, wait_steps=args.wait_steps
                     )

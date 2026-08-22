@@ -127,3 +127,48 @@ def bootstrap_relative_auc(
         "ci95": [float(np.quantile(vals, 0.025)), float(np.quantile(vals, 0.975))],
         "n_ok": int(len(vals)),
     }
+
+
+def absolute_success_metrics(
+    state_ids: np.ndarray,
+    checkpoints: np.ndarray,
+    targets: np.ndarray,
+    scores: np.ndarray,
+) -> dict:
+    """Pre-declared *power* control: does the readout track success at all?
+
+    The paired test is designed so that a signal which is purely generic state difficulty
+    cancels in `q_A - q_B`. That cancellation makes a null relative AUROC ambiguous: it
+    happens both when the representation carries only state difficulty (an informative
+    negative) and when the representation carries no success information whatsoever at
+    the initial decision point (an uninformative measurement failure).
+
+    This control separates those. It measures, *within* each checkpoint, the rank
+    correlation between the shared readout and the Monte-Carlo success rate. It can only
+    downgrade a negative result to "inconclusive"; it can never turn a negative into a
+    positive, so it is not a rescue knob.
+    """
+    from scipy.stats import spearmanr
+
+    checkpoints = np.asarray(checkpoints).astype(str)
+    targets = np.asarray(targets, float)
+    scores = np.asarray(scores, float)
+
+    per_checkpoint = {}
+    for cp in sorted(np.unique(checkpoints)):
+        m = checkpoints == cp
+        if m.sum() < 3 or np.std(targets[m]) == 0 or np.std(scores[m]) == 0:
+            per_checkpoint[cp] = {"n": int(m.sum()), "spearman": None, "p_value": None}
+            continue
+        r = spearmanr(scores[m], targets[m])
+        per_checkpoint[cp] = {
+            "n": int(m.sum()),
+            "spearman": float(r.statistic),
+            "p_value": float(r.pvalue),
+        }
+
+    vals = [v["spearman"] for v in per_checkpoint.values() if v["spearman"] is not None]
+    return {
+        "per_checkpoint": per_checkpoint,
+        "mean_within_checkpoint_spearman": float(np.mean(vals)) if vals else None,
+    }

@@ -1,9 +1,13 @@
 {
-  "protocol_version": "topic09-v2",
+  "protocol_version": "topic09-v3",
   "suite": "libero_10",
   "openpi_config": "pi05_libero",
   "openpi_reference_commit": "15a9616a00943ada6c20a0f158e3adb39df2ccac",
-  "checkpoints": ["2k", "3k", "9k"],
+  "checkpoints": [
+    "2k",
+    "3k",
+    "9k"
+  ],
   "env_seed": 7,
   "wait_steps": 10,
   "replan_steps": 5,
@@ -21,7 +25,8 @@
   "feature": {
     "source": "pi0.5_action_expert",
     "layer": 11,
-    "pool": "mean_action_tokens_then_mean_10_denoise_steps"
+    "pool": "mean_action_tokens_then_mean_10_denoise_steps",
+    "decision_point": "settled_initial_state_replan_idx_0"
   },
   "probe": {
     "type": "shared_standardized_ridge",
@@ -30,6 +35,22 @@
   "confirmation_gate": {
     "relative_auc_min": 0.7,
     "bootstrap_ci95_lower_min": 0.6,
-    "bootstrap_states": 2000
+    "bootstrap_states": 2000,
+    "min_absolute_within_checkpoint_spearman": 0.15
+  },
+  "amended": {
+    "date": "2026-08-22",
+    "from": "topic09-v2",
+    "reason": "pre-data audit; no behavior or feature data had been collected",
+    "changes": [
+      "G0 now additionally requires the bidirectional crossover to beat an exact within-state relabeling null (sampling-noise control)",
+      "G1 now reports a pre-declared within-checkpoint absolute-signal power control; it can only downgrade a negative to INCONCLUSIVE, never create a PASS",
+      "feature decision point stated explicitly: settled initial state, replan_idx 0"
+    ]
+  },
+  "sampling_noise_null": {
+    "test": "within_state_relabeling_permutation",
+    "n_permutations": 2000,
+    "alpha": 0.05
   }
 }

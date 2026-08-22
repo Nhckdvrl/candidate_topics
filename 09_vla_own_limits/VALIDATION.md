@@ -1,4 +1,10 @@
-# Validation contract — v2
+# Validation contract — v3
+
+> **Amendment record.** v2 -> v3 on 2026-08-22, after a pre-data audit and **before any
+> behavior or feature data existed**. Three changes: (1) G0 must now beat an explicit
+> sampling-noise null; (2) G1 reports a pre-declared power control that can only downgrade
+> a negative to *inconclusive*, never manufacture a pass; (3) the feature decision point is
+> stated explicitly. Everything else, including all thresholds, is unchanged.
 
 ## Scientific object
 
@@ -93,6 +99,33 @@ otherwise the state is ambiguous
 
 This is deliberately a large effect threshold, not a significance test.
 
+### The crossover must beat sampling noise
+
+Requiring `p_A - p_B >= 0.5` over eight rollouts is a large-effect rule, but it is not
+noise-free. If two checkpoints are equally competent at a state with true rate `p`, the
+probability that noise alone produces a robust "A win" is:
+
+```text
+p=0.1 -> 0.002    p=0.3 -> 0.026    p=0.5 -> 0.038
+p=0.7 -> 0.026    p=0.9 -> 0.013
+```
+
+At the worst case (`p=0.5` everywhere) a 150-state panel would be expected to yield about
+**6 spurious A-wins and 6 spurious B-wins with no competence difference anywhere**. The
+`min(...) >= 15` rule sits above that floor, but only by roughly four standard deviations,
+and the true per-state rates are unknown.
+
+`src/noise_null.py` therefore runs an exact **within-state relabeling test**. For each
+physical state the 16 observed rollout outcomes (8 from each checkpoint) are pooled and
+randomly re-split into two groups of eight. This holds each state's pooled difficulty
+*exactly* fixed and destroys only the outcome/checkpoint association, so any crossover
+surviving the permutation is sampling noise by construction.
+
+Reported statistics are the observed and null values of `min(n_a_wins, n_b_wins)` and of
+the direction-free `n_a_wins + n_b_wins`. Note the permutation null is symmetric in A/B,
+whereas a real global quality gap would *lower* the bidirectional count; the direction-free
+count is therefore the cleaner noise diagnostic and both must pass.
+
 ### G0 stop rule
 
 Select the checkpoint pair only by natural **bidirectional robust support**:
@@ -109,6 +142,13 @@ If no pair reaches this:
 STOP_NO_NATURAL_CROSSOVER
 ```
 
+The selected pair must additionally beat the sampling-noise null at `alpha=0.05` on both
+statistics, with observed bidirectional support above the null 95th percentile. Otherwise:
+
+```text
+STOP_CROSSOVER_EXPLAINED_BY_SAMPLING_NOISE
+```
+
 Do not create perturbations, train special checkpoints, lower the rate-gap after seeing data, or replace success with a hand-designed difficulty score.
 
 If one pair passes, freeze that pair before hidden-state work.
@@ -122,6 +162,12 @@ Primary feature is fixed before collection:
 ```text
 pi0.5 action-expert decoder layer 11 output
 ```
+
+The **decision point is also frozen**: the feature is read at the settled initial state
+(`replan_idx = 0`), the identical first decision both checkpoints face on that physical
+state. Reading at a later timestep would compare different physical states, because the
+two policies diverge the moment they act. Both checkpoints therefore see byte-identical
+images, proprioception and prompt when the feature is captured.
 
 OpenPI's PyTorch inference calls the action expert once per denoising step. `src/openpi_instrumented_server.py` attaches an observational forward hook to layer 11; it never edits activations or model outputs.
 
@@ -187,11 +233,31 @@ Then:
 PASS_POLICY_SPECIFIC_SUCCESS_SIGNAL
 ```
 
-Otherwise:
+Otherwise the power control decides which negative this is.
+
+### Power control (pre-declared, cannot create a pass)
+
+The paired contrast deliberately cancels generic state difficulty. That makes a null
+relative AUROC ambiguous between two very different situations:
+
+1. the representation carries success information, but only the policy-agnostic part
+   (an informative negative about self-knowledge);
+2. the representation carries no success information at all at `replan_idx 0`
+   (a measurement-power failure that says nothing about self-knowledge).
+
+`absolute_success_metrics` separates these by measuring, **within** each checkpoint, the
+Spearman correlation between the shared readout `q` and the Monte-Carlo success rate
+`p_hat`, over *all* confirmation states. The frozen threshold is a mean within-checkpoint
+Spearman of `0.15`.
 
 ```text
-KILL_SELF_KNOWLEDGE_INTERPRETATION
+relative gate passed                    -> PASS_POLICY_SPECIFIC_SUCCESS_SIGNAL
+relative gate failed, |rho| >= 0.15     -> KILL_SELF_KNOWLEDGE_INTERPRETATION
+relative gate failed, |rho| <  0.15     -> INCONCLUSIVE_NO_ABSOLUTE_SUCCESS_SIGNAL
 ```
+
+This control is one-directional by construction: it can only downgrade a negative, never
+turn a negative into a positive. Neither of the two lower branches is a CONTINUE.
 
 Balanced accuracy of `sign(q_A-q_B)` is secondary only.
 
