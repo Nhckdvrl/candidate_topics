@@ -1,0 +1,5 @@
+# Reuse the same LLaDA environment/cache as Topic 10 when available.
+# The official LLaDA repository documents transformers==4.38.2.
+torch>=2.1
+transformers==4.38.2
+numpy>=1.24

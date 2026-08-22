@@ -1,0 +1,14 @@
+{
+  "seed": 20260822,
+  "num_pairs": 256,
+  "min_eligible_pairs": 128,
+  "anchor_min": 20,
+  "anchor_max": 89,
+  "model": "GSAI-ML/LLaDA-8B-Instruct",
+  "dtype": "bfloat16",
+  "batch_size": 8,
+  "max_intervention_tokens": 1,
+  "bootstrap": 10000,
+  "primary_score": "confidence_full",
+  "identification_guardrail": "confidence_tail"
+}
