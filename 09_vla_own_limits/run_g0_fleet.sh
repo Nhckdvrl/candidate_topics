@@ -47,6 +47,12 @@ shard_tasks() {  # $1 = shard index, $2 = n shards
   echo "$out"
 }
 
+# openpi imports JAX even on the PyTorch path, where it is only used for jax.tree.map on
+# host arrays. Left on GPU it would preallocate device memory that PyTorch then cannot use,
+# which matters as soon as several servers share a card.
+export JAX_PLATFORMS=cpu
+export XLA_PYTHON_CLIENT_PREALLOCATE=false
+
 cleanup() { echo "shutting down fleet"; kill 0 2>/dev/null || true; }
 trap cleanup EXIT INT TERM
 

@@ -75,6 +75,17 @@ servers accidentally sharing one checkpoint would produce a flawless null result
 Then check that each checkpoint's LIBERO success is in a sane range. A broken
 normalization or action stack shows up here, not in the analysis.
 
+Before the full panel, size it with real numbers rather than a guess:
+
+```bash
+MUJOCO_GL=egl $CLIENT_PY -m src.pilot_timing --port 8100 \
+  --task-ids 0,5 --init-indices 0,1 --policy-seeds 110000,110001 \
+  --out results/pilot_timing.json
+```
+
+It reports seconds per rollout split into inference and simulator time, and projects the
+discovery and confirmation wall clock at a given number of parallel streams.
+
 ## 2. G0 behavior panel
 
 ```bash
