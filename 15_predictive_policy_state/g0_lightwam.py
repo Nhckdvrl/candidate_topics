@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""G0 for Topic 15: does training-time world modeling act through a predictive policy state?
+"""G0 screen for Topic 15.
 
-This script is deliberately narrow. On a released Light-WAM checkpoint it asks only:
+Question at this stage:
 
-1) Does the exact state read by the deployed action expert contain more held-out
-   future-latent information after the native WAM adapter than immediately before it?
-2) If the action expert is fed the corresponding pre-adapter state instead, does
-   offline action error increase on the same held-out episodes?
+Does the released Light-WAM contain a simple native adapter route such that
+(1) enabling the trained WAM adapters makes the deployed policy state more
+predictive of the real future in the SAME latent space used by future training,
+and (2) bypassing those adapters worsens action prediction?
 
-No SAE/PCA/CCA/subspace search is used, and the causal intervention does not use
-probe directions. The intervention is architecture-native: adapted -> backbone
-at the action readout, using tensors cached by Light-WAM itself in the same pass.
+This is deliberately a SCREEN, not a full mediation proof. It does not claim
+that the particular linearly decodable future bits are themselves the causal
+code used by the action expert. A positive result says that a native pathway is
+both more future-predictive and action-relevant, and is therefore worth a
+matched-training mediation experiment.
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ import os
 import random
 import subprocess
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -39,25 +42,9 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("--lightwam-root", type=Path, required=True)
     p.add_argument("--checkpoint", type=Path, required=True)
-    p.add_argument(
-        "--training-config",
-        type=Path,
-        default=None,
-        help="Saved Light-WAM training config.yaml. If omitted, search checkpoint parents.",
-    )
-    p.add_argument(
-        "--dataset-stats",
-        type=Path,
-        default=None,
-        help="dataset_stats.json. If omitted, search checkpoint parents.",
-    )
-    p.add_argument(
-        "--dataset-dir",
-        type=Path,
-        action="append",
-        default=None,
-        help="Override data.train.dataset_dirs. Repeat for multiple directories.",
-    )
+    p.add_argument("--training-config", type=Path, default=None)
+    p.add_argument("--dataset-stats", type=Path, default=None)
+    p.add_argument("--dataset-dir", type=Path, action="append", default=None)
     p.add_argument("--latent-cache-dir", type=Path, default=None)
     p.add_argument("--text-cache-dir", type=Path, default=None)
     p.add_argument("--output-dir", type=Path, default=Path("./g0_results"))
@@ -67,45 +54,29 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--test-fraction", type=float, default=0.25)
     p.add_argument("--batch-size", type=int, default=4)
     p.add_argument("--seed", type=int, default=20260822)
-    p.add_argument(
-        "--probe-ridge",
-        type=float,
-        default=1e-2,
-        help="Single frozen ridge value; this script never searches over it.",
-    )
+    p.add_argument("--probe-ridge", type=float, default=1e-2)
     p.add_argument("--target-chunk-size", type=int, default=4096)
     p.add_argument("--bootstrap", type=int, default=2000)
     p.add_argument(
         "--min-relative-effect",
         type=float,
         default=0.05,
-        help="Pilot continuation floor, not a publication claim threshold.",
+        help="Continuation floor only; not a publication threshold.",
     )
-    p.add_argument(
-        "--save-tensors",
-        action="store_true",
-        help="Save pooled features/targets for debugging. Off by default because targets are large.",
-    )
+    p.add_argument("--save-tensors", action="store_true")
     return p.parse_args()
 
 
-def _resolve_near_checkpoint(
-    checkpoint: Path,
-    explicit: Path | None,
-    filename: str,
-) -> Path:
+def _resolve_near_checkpoint(checkpoint: Path, explicit: Path | None, filename: str) -> Path:
     if explicit is not None:
         path = explicit.expanduser().resolve()
         if not path.exists():
             raise FileNotFoundError(path)
         return path
-    candidates = []
     checkpoint = checkpoint.expanduser().resolve()
-    for parent in [checkpoint.parent, *list(checkpoint.parents)[:5]]:
-        candidates.append(parent / filename)
     seen = set()
-    for path in candidates:
-        path = path.resolve()
+    for parent in [checkpoint.parent, *list(checkpoint.parents)[:5]]:
+        path = (parent / filename).resolve()
         if path in seen:
             continue
         seen.add(path)
@@ -131,26 +102,22 @@ def _git_revision(root: Path) -> str:
         return "unknown"
 
 
-def _prepare_lightwam_import(root: Path):
+def _prepare_lightwam_import(root: Path) -> Path:
     root = root.expanduser().resolve()
     if not (root / "src" / "lightwam").exists():
         raise FileNotFoundError(f"Not a Light-WAM checkout: {root}")
     for path in (root, root / "src"):
-        path_str = str(path)
-        if path_str not in sys.path:
-            sys.path.insert(0, path_str)
+        s = str(path)
+        if s not in sys.path:
+            sys.path.insert(0, s)
     return root
 
 
 def _load_cfg(args: argparse.Namespace, lightwam_root: Path):
     from lightwam.utils.config_compat import load_compatible_omegaconf
 
-    training_config = _resolve_near_checkpoint(
-        args.checkpoint, args.training_config, "config.yaml"
-    )
-    stats_path = _resolve_near_checkpoint(
-        args.checkpoint, args.dataset_stats, "dataset_stats.json"
-    )
+    training_config = _resolve_near_checkpoint(args.checkpoint, args.training_config, "config.yaml")
+    stats_path = _resolve_near_checkpoint(args.checkpoint, args.dataset_stats, "dataset_stats.json")
     cfg = load_compatible_omegaconf(str(training_config))
 
     cfg.data.train.use_latent_cache = True
@@ -178,14 +145,11 @@ def _load_cfg(args: argparse.Namespace, lightwam_root: Path):
 def _instantiate_model_and_dataset(cfg, args: argparse.Namespace):
     from hydra.utils import instantiate
 
-    model = instantiate(
-        cfg.model,
-        model_dtype=_dtype(args.dtype),
-        device=args.device,
-    )
+    model = instantiate(cfg.model, model_dtype=_dtype(args.dtype), device=args.device)
     model.load_checkpoint(str(args.checkpoint.expanduser().resolve()))
     model.eval()
 
+    # Latent-cache G0 does not need the VAE or text encoder resident on GPU.
     if getattr(model, "text_encoder", None) is not None:
         model.text_encoder.to("cpu")
     if getattr(model, "vae", None) is not None:
@@ -201,6 +165,7 @@ def _architecture_audit(model) -> dict[str, Any]:
     problems = []
     if not hasattr(model, "uses_state_fusion_action_expert") or not model.uses_state_fusion_action_expert():
         problems.append("checkpoint is not using Light-WAM state-fusion action mode")
+
     expert = getattr(model, "state_fusion_action_expert", None)
     video_expert = getattr(model, "video_expert", None)
     if expert is None:
@@ -219,19 +184,28 @@ def _architecture_audit(model) -> dict[str, Any]:
                 "G0 requires the released adapted-only action readout; current feature sources are "
                 + repr(layer_sources)
             )
-        for method in ("_pool_source_tokens", "forward"):
-            if not hasattr(expert, method):
-                problems.append(f"state_fusion_action_expert missing {method}")
     if video_expert is not None:
         adapter_layers = [int(x) for x in getattr(video_expert, "adapter_layer_indices", ())]
         if not adapter_layers:
             problems.append("video expert has no WAM adapter layers")
+        adapters = getattr(video_expert, "wam_adapters", None)
+        if adapters is None or len(adapters) == 0:
+            problems.append("video expert exposes no wam_adapters")
+        else:
+            for name, adapter in adapters.items():
+                if not hasattr(adapter, "scale"):
+                    problems.append(f"WAM adapter {name} has no mutable scale for clean bypass")
         if not hasattr(video_expert, "get_wam_action_fusion_layer_states"):
             problems.append("video expert does not expose native fusion layer states")
-    if not hasattr(model, "_build_multilayer_action_fusion_inputs"):
-        problems.append("model missing _build_multilayer_action_fusion_inputs")
-    if not hasattr(model, "_build_action_observation_video_pre"):
-        problems.append("model missing _build_action_observation_video_pre")
+
+    for method in (
+        "_build_multilayer_action_fusion_inputs",
+        "_build_action_observation_video_pre",
+        "_build_video_training_supervision_latents",
+        "_maybe_downsample_video_latents_for_backbone",
+    ):
+        if not hasattr(model, method):
+            problems.append(f"model missing {method}")
 
     if problems:
         raise RuntimeError("Architecture audit failed:\n- " + "\n- ".join(problems))
@@ -243,6 +217,12 @@ def _architecture_audit(model) -> dict[str, Any]:
         "video_hidden_dim": int(getattr(expert, "video_hidden_dim", -1)),
         "use_backbone_lora": bool(getattr(video_expert, "use_backbone_lora", False)),
         "lora_layers": [int(x) for x in getattr(video_expert, "lora_layer_indices", ())],
+        "video_latent_spatial_downsample_factor": int(
+            getattr(model, "video_latent_spatial_downsample_factor", 1)
+        ),
+        "use_first_frame_residual_video_target": bool(
+            getattr(model, "use_first_frame_residual_video_target", False)
+        ),
     }
 
 
@@ -299,20 +279,73 @@ def _is_clean_sample(sample: dict[str, Any]) -> bool:
         value = sample.get(key)
         if value is None:
             return False
-        value = torch.as_tensor(value, dtype=torch.bool)
-        if bool(value.any().item()):
+        if bool(torch.as_tensor(value, dtype=torch.bool).any().item()):
             return False
     return True
 
 
-def _pool_action_readout(expert, layer_states, tensor_key: str) -> torch.Tensor:
+def _fixed_state_summary(layer_states) -> torch.Tensor:
+    """Parameter-free summary used ONLY for representation measurement.
+
+    The action expert's learned-query pooler was trained only on adapted states.
+    Using that learned pooler for a normal-vs-bypass representation comparison
+    would bias the measurement toward the normal distribution. We therefore use
+    the same fixed token mean on both sides, layer by layer, then concatenate.
+    """
     pooled = []
-    for pos, state in enumerate(layer_states):
-        if tuple(expert.layer_feature_sources[pos]) != ("adapted",):
-            raise RuntimeError("Unexpected action feature source during extraction")
-        tokens = state[tensor_key]
-        pooled.append(expert._pool_source_tokens(pos, "adapted", tokens))
+    for state in layer_states:
+        tokens = state["adapted"]
+        if tokens.ndim != 3:
+            raise ValueError(f"Expected [B,S,D] adapted tokens, got {tuple(tokens.shape)}")
+        pooled.append(tokens.mean(dim=1))
     return torch.cat(pooled, dim=-1)
+
+
+@contextmanager
+def _wam_adapter_scale(video_expert, scale: float):
+    adapters = getattr(video_expert, "wam_adapters", None)
+    if adapters is None or len(adapters) == 0:
+        raise RuntimeError("No WAM adapters available for bypass")
+    old = {}
+    try:
+        for name, adapter in adapters.items():
+            old[name] = float(adapter.scale)
+            adapter.scale = float(scale)
+        yield
+    finally:
+        for name, adapter in adapters.items():
+            adapter.scale = old[name]
+
+
+def _build_action_pre(model, observation_latents, inputs):
+    timestep = torch.zeros(
+        observation_latents.shape[0],
+        dtype=observation_latents.dtype,
+        device=observation_latents.device,
+    )
+    return model._build_action_observation_video_pre(
+        observation_latents=observation_latents,
+        timestep_video=timestep,
+        context=inputs["context"],
+        context_mask=inputs["context_mask"],
+        fuse_vae_embedding_in_latents=inputs["fuse_vae_embedding_in_latents"],
+    )
+
+
+def _action_forward_and_states(model, video_pre, horizon: int):
+    _ = model.video_expert.forward_backbone(video_pre)
+    layer_states = model._build_multilayer_action_fusion_inputs()
+    pred = model.state_fusion_action_expert(layer_states, action_horizon=horizon)
+    return pred, layer_states
+
+
+def _future_target_in_training_space(model, input_latents: torch.Tensor) -> torch.Tensor:
+    """Build a clean future-change target in the spatial latent space used by video training."""
+    future_latents = model._build_video_training_supervision_latents(input_latents)
+    factor = int(getattr(model, "video_latent_spatial_downsample_factor", 1))
+    if factor > 1:
+        future_latents, _ = model._maybe_downsample_video_latents_for_backbone(future_latents)
+    return future_change_target(future_latents)
 
 
 def _run_native_batch(model, batch: dict[str, Any]) -> dict[str, torch.Tensor]:
@@ -324,57 +357,56 @@ def _run_native_batch(model, batch: dict[str, Any]) -> dict[str, torch.Tensor]:
     if observation_latents.shape[2] != 1:
         raise ValueError(f"Expected one observation latent frame, got {tuple(observation_latents.shape)}")
 
-    timestep = torch.zeros(
-        observation_latents.shape[0],
-        dtype=observation_latents.dtype,
-        device=observation_latents.device,
-    )
-    video_pre = model._build_action_observation_video_pre(
-        observation_latents=observation_latents,
-        timestep_video=timestep,
-        context=inputs["context"],
-        context_mask=inputs["context_mask"],
-        fuse_vae_embedding_in_latents=inputs["fuse_vae_embedding_in_latents"],
-    )
-    _ = model.video_expert.forward_backbone(video_pre)
-    layer_states = model._build_multilayer_action_fusion_inputs()
-    expert = model.state_fusion_action_expert
     horizon = int(inputs["action"].shape[1])
 
-    pred_adapted = expert(layer_states, action_horizon=horizon)
-    backbone_readout_states = []
-    for state in layer_states:
-        replaced = dict(state)
-        replaced["adapted"] = state["backbone"]
-        backbone_readout_states.append(replaced)
-    pred_backbone = expert(backbone_readout_states, action_horizon=horizon)
+    # Normal deployed state.
+    normal_pre = _build_action_pre(model, observation_latents, inputs)
+    pred_normal, normal_states = _action_forward_and_states(model, normal_pre, horizon)
+    feature_normal = _fixed_state_summary(normal_states)
+
+    # Clean module intervention: rerun the SAME observation with every WAM adapter
+    # set to identity (scale=0). This removes both local residuals and their
+    # downstream propagation through later layers. Backbone LoRA is intentionally
+    # left unchanged; this G0 isolates the explicit WAM-adapter route only.
+    bypass_pre = _build_action_pre(model, observation_latents, inputs)
+    with _wam_adapter_scale(model.video_expert, 0.0):
+        pred_bypass, bypass_states = _action_forward_and_states(model, bypass_pre, horizon)
+
+    # At scale zero every adapter output should exactly equal its local input.
+    max_bypass_residual = 0.0
+    for state in bypass_states:
+        residual = (state["adapted"].float() - state["backbone"].float()).abs().max().item()
+        max_bypass_residual = max(max_bypass_residual, float(residual))
+    if max_bypass_residual > 1e-6:
+        raise RuntimeError(
+            f"Adapter bypass failed: max |adapted-backbone|={max_bypass_residual:.3e}"
+        )
+    feature_bypass = _fixed_state_summary(bypass_states)
 
     target_action = inputs["action"]
     action_is_pad = inputs["action_is_pad"]
-    loss_adapted = model._compute_action_loss_per_sample(
-        pred_action=pred_adapted,
+    loss_normal = model._compute_action_loss_per_sample(
+        pred_action=pred_normal,
         target_action=target_action,
         action_is_pad=action_is_pad,
     )
-    loss_backbone = model._compute_action_loss_per_sample(
-        pred_action=pred_backbone,
+    loss_bypass = model._compute_action_loss_per_sample(
+        pred_action=pred_bypass,
         target_action=target_action,
         action_is_pad=action_is_pad,
     )
     action_shift = torch.sqrt(
-        ((pred_backbone.float() - pred_adapted.float()) ** 2).mean(dim=(1, 2))
+        ((pred_bypass.float() - pred_normal.float()) ** 2).mean(dim=(1, 2))
     )
 
-    feature_adapted = _pool_action_readout(expert, layer_states, "adapted")
-    feature_backbone = _pool_action_readout(expert, layer_states, "backbone")
-    target_future = future_change_target(latents)
+    target_future = _future_target_in_training_space(model, latents)
 
     return {
-        "feature_adapted": feature_adapted.detach().float().cpu(),
-        "feature_backbone": feature_backbone.detach().float().cpu(),
+        "feature_normal": feature_normal.detach().float().cpu(),
+        "feature_bypass": feature_bypass.detach().float().cpu(),
         "target_future": target_future,
-        "loss_adapted": loss_adapted.detach().float().cpu(),
-        "loss_backbone": loss_backbone.detach().float().cpu(),
+        "loss_normal": loss_normal.detach().float().cpu(),
+        "loss_bypass": loss_bypass.detach().float().cpu(),
         "action_shift": action_shift.detach().float().cpu(),
     }
 
@@ -423,80 +455,80 @@ def _analyse(
     test: dict[str, torch.Tensor],
     args: argparse.Namespace,
 ) -> tuple[dict[str, Any], str]:
-    probe_adapted = linear_ridge_probe(
-        train["feature_adapted"],
+    probe_normal = linear_ridge_probe(
+        train["feature_normal"],
         train["target_future"],
-        test["feature_adapted"],
+        test["feature_normal"],
         test["target_future"],
         ridge=args.probe_ridge,
         target_chunk_size=args.target_chunk_size,
     )
-    probe_backbone = linear_ridge_probe(
-        train["feature_backbone"],
+    probe_bypass = linear_ridge_probe(
+        train["feature_bypass"],
         train["target_future"],
-        test["feature_backbone"],
+        test["feature_bypass"],
         test["target_future"],
         ridge=args.probe_ridge,
         target_chunk_size=args.target_chunk_size,
     )
 
-    future_mse_gain = probe_backbone.per_sample_mse - probe_adapted.per_sample_mse
+    future_mse_gain = probe_bypass.per_sample_mse - probe_normal.per_sample_mse
     future_ci = _mean_ci(future_mse_gain, args.seed + 101, args.bootstrap)
     future_rel_gain = (
-        (probe_backbone.mse - probe_adapted.mse) / probe_backbone.mse
-        if probe_backbone.mse > 0 else float("nan")
+        (probe_bypass.mse - probe_normal.mse) / probe_bypass.mse
+        if probe_bypass.mse > 0 else float("nan")
     )
 
-    action_delta = test["loss_backbone"] - test["loss_adapted"]
+    action_delta = test["loss_bypass"] - test["loss_normal"]
     action_ci = _mean_ci(action_delta, args.seed + 202, args.bootstrap)
     action_rel_increase = relative_change(
-        float(test["loss_backbone"].mean().item()),
-        float(test["loss_adapted"].mean().item()),
+        float(test["loss_bypass"].mean().item()),
+        float(test["loss_normal"].mean().item()),
     )
 
-    future_present = (
-        math.isfinite(probe_adapted.r2)
-        and probe_adapted.r2 > 0.0
+    future_gain = (
+        math.isfinite(probe_normal.r2)
+        and probe_normal.r2 > 0.0
         and future_rel_gain >= args.min_relative_effect
         and future_ci["ci95_low"] > 0.0
     )
-    action_used = (
+    adapter_action_route = (
         action_rel_increase >= args.min_relative_effect
         and action_ci["ci95_low"] > 0.0
     )
 
-    if future_present and action_used:
-        verdict = "PROMISING_NATIVE_MEDIATOR"
-    elif future_present and not action_used:
-        verdict = "PREDICTIVE_BUT_NOT_ACTION_USED"
-    elif (not future_present) and action_used:
-        verdict = "ACTION_RELEVANT_BUT_NOT_PREDICTIVE"
+    if future_gain and adapter_action_route:
+        verdict = "PROCEED_TO_MATCHED_TRAINING"
+    elif future_gain and not adapter_action_route:
+        verdict = "FUTURE_GAIN_WITHOUT_CLEAN_ADAPTER_ACTION_EFFECT"
+    elif (not future_gain) and adapter_action_route:
+        verdict = "ADAPTER_ACTION_EFFECT_WITHOUT_FUTURE_GAIN"
     else:
-        verdict = "NO_CLEAN_NATIVE_SIGNAL"
+        verdict = "NO_CLEAN_ADAPTER_ROUTE"
 
     metrics = {
-        "future_probe": {
-            "adapted": {
-                "r2": probe_adapted.r2,
-                "mse": probe_adapted.mse,
-                "mean_target_baseline_mse": probe_adapted.baseline_mse,
+        "future_probe_fixed_pooling": {
+            "normal_adapters": {
+                "r2": probe_normal.r2,
+                "mse": probe_normal.mse,
+                "mean_target_baseline_mse": probe_normal.baseline_mse,
             },
-            "backbone": {
-                "r2": probe_backbone.r2,
-                "mse": probe_backbone.mse,
-                "mean_target_baseline_mse": probe_backbone.baseline_mse,
+            "adapter_bypass": {
+                "r2": probe_bypass.r2,
+                "mse": probe_bypass.mse,
+                "mean_target_baseline_mse": probe_bypass.baseline_mse,
             },
-            "adapted_relative_mse_gain_vs_backbone": future_rel_gain,
+            "relative_mse_gain_from_adapters": future_rel_gain,
             "paired_mse_gain": future_ci,
-            "passes_clean_signal_bar": bool(future_present),
+            "passes_screen": bool(future_gain),
         },
-        "causal_action_readout": {
-            "adapted_action_loss_mean": float(test["loss_adapted"].mean().item()),
-            "backbone_intervention_action_loss_mean": float(test["loss_backbone"].mean().item()),
+        "causal_adapter_bypass": {
+            "normal_action_loss_mean": float(test["loss_normal"].mean().item()),
+            "adapter_bypass_action_loss_mean": float(test["loss_bypass"].mean().item()),
             "relative_loss_increase": action_rel_increase,
             "paired_loss_increase": action_ci,
             "action_rms_shift_mean": float(test["action_shift"].mean().item()),
-            "passes_clean_signal_bar": bool(action_used),
+            "passes_screen": bool(adapter_action_route),
         },
     }
     return metrics, verdict
@@ -529,8 +561,7 @@ def main() -> None:
     if not checkpoint.exists():
         raise FileNotFoundError(checkpoint)
 
-    output_dir = args.output_dir
-    output_dir.mkdir(parents=True, exist_ok=True)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
 
     print("[setup] instantiating released Light-WAM checkpoint", flush=True)
     model, dataset = _instantiate_model_and_dataset(cfg, args)
@@ -555,6 +586,7 @@ def main() -> None:
 
     result = {
         "topic": "Does Training-Time World Modeling Act Through a Predictive Policy State?",
+        "stage": "released-checkpoint native-route screen",
         "platform": "Light-WAM",
         "lightwam_revision": _git_revision(lightwam_root),
         "checkpoint": str(checkpoint),
@@ -567,10 +599,17 @@ def main() -> None:
             "test_samples": len(test_idx),
             "one_window_per_episode": True,
             "episode_disjoint_probe_split": True,
-            "probe": "single fixed linear ridge on exact action-pooled native states",
+            "representation_summary": "fixed per-layer token mean; no trained action pooler used for the probe",
+            "probe": "single fixed linear ridge",
             "probe_ridge": args.probe_ridge,
-            "future_target": "all cached future VAE latents minus first latent frame; flattened, no PCA",
-            "intervention": "replace each action-readout adapted tensor with its same-pass same-layer backbone tensor",
+            "future_target": (
+                "clean future VAE-latent change in the same spatial latent space used by the checkpoint's "
+                "future/video training objective; flattened, no PCA"
+            ),
+            "intervention": (
+                "second action-backbone pass on the identical observation with every explicit WAM adapter "
+                "scale set to zero; backbone LoRA remains unchanged"
+            ),
             "min_relative_effect": args.min_relative_effect,
             "bootstrap": args.bootstrap,
             "seed": args.seed,
@@ -578,20 +617,22 @@ def main() -> None:
         "sample_indices": {"train": train_idx, "test": test_idx},
         "episode_ids": {"train": train_eps, "test": test_eps},
         "dimensions": {
-            "pooled_feature": int(train["feature_adapted"].shape[1]),
+            "fixed_pooled_feature": int(train["feature_normal"].shape[1]),
             "future_target": int(train["target_future"].shape[1]),
         },
         "metrics": metrics,
         "verdict": verdict,
         "interpretation_limit": (
-            "This G0 tests the native Light-WAM adapted-state route. Because the released model also "
-            "uses trainable backbone LoRA and action supervision, a positive result is evidence for a "
-            "causally action-used predictive state, not yet proof that future loss uniquely mediates the "
-            "full WAM performance gain or that the state is an action-conditioned world model."
+            "This screen cannot identify the particular decodable future component as the causal code for action. "
+            "A positive result only shows that enabling the native WAM-adapter pathway simultaneously increases "
+            "future decodability and improves action readout. The released model also uses action supervision and "
+            "backbone LoRA, so the full training-time mediation claim requires a matched-training experiment. "
+            "A negative result kills this simple Light-WAM adapter route as the project's intended clean mechanism; "
+            "it does not mathematically prove that no predictive state exists elsewhere in the model."
         ),
     }
 
-    result_path = output_dir / "g0_result.json"
+    result_path = args.output_dir / "g0_result.json"
     result_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
     if args.save_tensors:
         torch.save(
@@ -601,7 +642,7 @@ def main() -> None:
                 "train_indices": train_idx,
                 "test_indices": test_idx,
             },
-            output_dir / "g0_tensors.pt",
+            args.output_dir / "g0_tensors.pt",
         )
 
     print("\n=== G0 RESULT ===")
