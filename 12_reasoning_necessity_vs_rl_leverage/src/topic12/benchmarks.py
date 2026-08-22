@@ -137,7 +137,15 @@ def grade_math(response: str, gold: str) -> tuple[bool, bool, str | None]:
     try:
         from math_verify import parse, verify
 
+        # MATH-500 stores several answers as bare expressions (for example
+        # ``(-1,6)`` or ``\\frac{1}{4}``).  Math-Verify intentionally extracts
+        # boxed answers, so parsing those dataset strings directly reports an
+        # empty parse even when the answer is valid.  Normalize only the gold
+        # serialization; the model response remains untouched so parser
+        # failure/termination is still a causal outcome of the intervention.
         gold_parsed = parse(gold)
+        if not gold_parsed:
+            gold_parsed = parse(rf"\\boxed{{{gold}}}")
         pred_parsed = parse(response)
         parse_ok = bool(gold_parsed) and bool(pred_parsed)
         if parse_ok:
