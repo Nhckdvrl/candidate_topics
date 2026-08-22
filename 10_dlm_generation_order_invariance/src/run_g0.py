@@ -79,17 +79,22 @@ def main() -> None:
     ap.add_argument("--split", choices=["discovery", "confirmation"], default="discovery")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--num-shards", type=int, default=1)
+    ap.add_argument("--shard-index", type=int, default=0)
     ap.add_argument("--resume", action="store_true", help="skip already completed trace keys")
     ap.add_argument("--overwrite", action="store_true", help="replace an existing output file")
     ap.add_argument("--skip-controls", action="store_true")
     args = ap.parse_args()
     if args.resume and args.overwrite:
         raise ValueError("choose at most one of --resume and --overwrite")
+    if args.num_shards < 1 or not 0 <= args.shard_index < args.num_shards:
+        raise ValueError("require num_shards>=1 and 0<=shard_index<num_shards")
 
     cfg = json.loads(Path(args.config).read_text())
-    rows = [r for r in read_jsonl(args.manifest) if r["split"] == args.split]
+    split_rows = [r for r in read_jsonl(args.manifest) if r["split"] == args.split]
+    indexed_rows = [(i, r) for i, r in enumerate(split_rows) if i % args.num_shards == args.shard_index]
     if args.limit is not None:
-        rows = rows[: args.limit]
+        indexed_rows = indexed_rows[: args.limit]
     model, tokenizer = load_model_and_tokenizer(cfg["model_id"], device=args.device, dtype=cfg["dtype"])
 
     out = Path(args.out)
@@ -104,45 +109,42 @@ def main() -> None:
 
     with out.open(mode, encoding="utf-8") as f:
         def emit(trace: TraceRecord) -> None:
-            key = record_key(json.loads(trace.to_json()))
+            payload = json.loads(trace.to_json())
+            key = record_key(payload)
             if key in done:
                 return
             f.write(trace.to_json() + "\n")
             f.flush()
             done.add(key)
 
-        for row_n, rec in enumerate(rows):
+        for local_n, (split_idx, rec) in enumerate(indexed_rows):
             puzzle = decode_grid(rec["puzzle"])
             solution = decode_grid(rec["solution"])
-            base_seed = cfg["decode_seed"] + row_n * 1000
+            base_seed = cfg["decode_seed"] + split_idx * 1000
 
-            base = run_variant(model, tokenizer, rec, puzzle, solution, None, "identity", cfg, "low_confidence", base_seed)
-            emit(base)
+            emit(run_variant(model, tokenizer, rec, puzzle, solution, None, "identity", cfg, "low_confidence", base_seed))
 
-            if row_n < n_repeat:
-                repeat = run_variant(
+            if split_idx < n_repeat:
+                emit(run_variant(
                     model, tokenizer, rec, puzzle, solution, None,
                     "identity-repeat", cfg, "low_confidence", base_seed + 777,
-                )
-                emit(repeat)
+                ))
 
             for t_idx, t_dict in enumerate(rec["transforms"]):
                 t = SudokuTransform.from_dict(t_dict)
                 tp, ts = t.apply(puzzle), t.apply(solution)
-                tr = run_variant(
+                emit(run_variant(
                     model, tokenizer, rec, tp, ts, t,
                     f"iso-{t_idx}", cfg, "low_confidence", base_seed,
-                )
-                emit(tr)
+                ))
 
-            if row_n < n_random:
-                random_rec = run_variant(
+            if split_idx < n_random:
+                emit(run_variant(
                     model, tokenizer, rec, puzzle, solution, None,
                     "random-control", cfg, "random", base_seed + 900,
-                )
-                emit(random_rec)
+                ))
 
-            print(f"[{row_n + 1}/{len(rows)}] {rec['puzzle_id']}")
+            print(f"[{local_n + 1}/{len(indexed_rows)} shard={args.shard_index}/{args.num_shards}] {rec['puzzle_id']}")
 
 
 if __name__ == "__main__":
