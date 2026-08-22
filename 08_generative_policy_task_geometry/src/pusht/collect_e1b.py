@@ -102,6 +102,9 @@ def main() -> None:
     p.add_argument("--max-steps", type=int, default=300)
     p.add_argument("--calib-rollouts", type=int, default=4)
     p.add_argument("--device", default="cuda")
+    p.add_argument("--null-control", action="store_true",
+                   help="give every branch the SAME chunk; the resulting dispersion is the "
+                        "downstream-stochasticity floor, not an effect of the action choice")
     args = p.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -148,6 +151,12 @@ def main() -> None:
                 st = save_sim_state(env)
                 kp0, cov0, gap0 = block_keypoints(env), coverage(env), agent_block_gap(env)
                 sel = chunks[: args.branches]
+                if args.null_control:
+                    # Every branch executes chunk 0. Any dispersion that survives is
+                    # produced purely by the policy's own sampling during the closed-loop
+                    # continuation, so it is the floor that the real measurement must
+                    # clear before it can be attributed to the choice of action chunk.
+                    sel = np.repeat(chunks[:1], args.branches, axis=0)
                 out = branch_from_state(bundle, envs, st, list(bundle.queue), sel, args.extra_steps)
                 fk, fc = out["final_keypoints"], out["final_coverage"]
                 row = {
@@ -201,6 +210,7 @@ def main() -> None:
         "branches": args.branches,
         "extra_steps": args.extra_steps,
         "probe_every": args.probe_every,
+        "null_control": bool(args.null_control),
         "n_branch_states": int(len(df)),
         "elapsed_s": time.time() - t0,
     }

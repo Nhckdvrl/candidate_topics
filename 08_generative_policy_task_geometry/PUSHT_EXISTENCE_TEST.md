@@ -1,3 +1,7 @@
+> **EXECUTED AND CLOSED.** This is the pre-registered design, written before any result.
+> It is left unedited so the frozen criteria can be checked against what was actually
+> found. Results and verdict: [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md).
+
 # E1 — PushT counterfactual existence test (design, frozen before results)
 
 ## The one question

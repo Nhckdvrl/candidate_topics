@@ -1,3 +1,7 @@
+> **OBSOLETE.** Handoff instructions for the killed planar-arm G0 prototype. The runnable
+> pipeline is the PushT one described in [`README.md`](./README.md); the verdict is in
+> [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md). Kept unedited for the record.
+
 # Server handoff
 
 ## Goal

@@ -1,13 +1,21 @@
 # 08 — Does action diversity track functional uncertainty?
 
+> **ARCHIVED / KILLED AT THE OPERATIONAL BAR (2026-08-22).**
+> Read [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md) first; it carries the verdict and all
+> the numbers. This README describes the design that produced them.
+
 ## Status
 
-| | |
+| stage | outcome |
 |---|---|
-| planar-arm G0 (original prototype) | **killed** — see `AUDIT.md` |
-| PushT existence test E1 (8-step outcome) | discovery complete |
-| PushT branch test E1b (episode-level outcome) | running |
-| decision-level test (does a deployed monitor misfire?) | the actual bar; pending E1b |
+| planar-arm G0 (original prototype) | **killed before running** — its primary gate was an algebraic identity (`AUDIT.md` A1) |
+| PushT existence test E1 (8-step outcome) | phenomenon confirmed: 33.7% of states have zero outcome dispersion; matched-pair reduction 0.978 |
+| PushT branch test E1b (episode-level outcome) | 978 branch states, 96 rollouts; branch dispersion p50 7.6 px, p90 47.4 px |
+| decision-level test (does a deployed monitor misfire?) | **failed the bar** — ACE reaches 1.8-2.4x base-rate precision at FIPER's operating quantiles |
+
+The one result that survived: ACE's skill is entirely a proxy for proximity to the object
+(AUC 0.496 near the block vs 0.645 far from it). That is real and cleanly measured, but it
+is a much narrower claim than the topic needed.
 
 ## The question, after demotion
 
@@ -51,6 +59,8 @@ chunking), not a geometric curiosity. `src/pusht/decision_analysis.py` measures 
 episode-level branch outcomes: AUC for ranking states by true functional uncertainty, and
 precision at FIPER's own released operating quantiles (0.90/0.95/0.99) against the base
 rate. A monitor at chance is the finding; a monitor that works is the kill.
+
+**It works.** See `ARCHIVE_SUMMARY.md` section 7c.
 
 ## Setup
 

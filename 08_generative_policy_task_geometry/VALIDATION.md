@@ -1,3 +1,8 @@
+> **SUPERSEDED / ARCHIVED.** This is the validation design for the planar-arm G0
+> prototype, which was killed before it ran: its primary contrast was an algebraic
+> identity satisfied by any action distribution. See [`AUDIT.md`](./AUDIT.md) finding A1
+> and [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md). Kept unedited for the record.
+
 # Validation design
 
 ## Primary scientific object

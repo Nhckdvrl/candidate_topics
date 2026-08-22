@@ -454,9 +454,125 @@ If the answer is not clearly yes under the frozen discovery contract, archive an
 
 ---
 
+## Topic 08 — Does Action Diversity Track Functional Uncertainty?
+
+**Final status:** archived / killed at the operational bar.
+
+[Archive summary](./08_generative_policy_task_geometry/ARCHIVE_SUMMARY.md)
+
+### Original idea
+
+Generative robot policies sample many different action chunks from the same state. The
+proposed claim was that scalar action entropy conflates genuine task uncertainty with
+goal-equivalent variability, so:
+
+> Two policy states can have similar scalar action entropy but different functional risk
+> because their variability points in different task-relative directions.
+
+### What happened
+
+This topic stopped twice, at two different layers, and both are worth recording.
+
+**First stop — the original design was unfalsifiable, and was killed before it ever ran.**
+The planar-arm prototype defined "functional risk" from the end-effector's progress after
+executing `q + dt * sum_h a_h`, and defined task-sensitive variance with the row-space
+projector of the *same* frozen `J(q)`. Since `fk(q + dq) - fk(q) = J(q) dq` to first
+order, progress is an affine function of `P_task dq`. The headline gate therefore held for
+**any** action distribution, isotropic Gaussian noise included. There was no experiment
+inside it — only an algebraic identity dressed as a prediction.
+
+**Second stop — the stripped-down version produced a real phenomenon that did not matter.**
+Everything constructed was discarded and the question was reduced to a form needing no
+hidden modes, no Jacobian and no linearity assumption: sample B=256 action chunks from a
+pretrained Diffusion Policy at one PushT state, execute each from an exactly restored
+simulator state, and compare action spread with true task-outcome spread.
+
+The phenomenon was confirmed:
+
+```text
+33.7%  of probe states have EXACTLY zero outcome dispersion
+0.081  in-contact outcome dispersion / block displacement
+0.978  matched_pair_reduction (matching on ACE cuts outcome difference by ~2%)
+0.66-0.93  same, across ACE cellsize factors 0.03 / 0.01 / 0.003 / 0.001
+```
+
+But the bar had been raised, correctly, before looking: for this to matter, an entropy
+monitor people actually deploy would have to make wrong decisions. Measured against
+episode-level branch outcomes (978 branch states, 96 rollouts) at FIPER's own released
+operating quantiles:
+
+```text
+q=0.90  precision 0.459  = 1.83x base rate   12.2% of alarms on benign states
+q=0.95  precision 0.490  = 1.96x base rate   10.2%
+q=0.99  precision 0.600  = 2.40x base rate   10.0%
+pooled AUC 0.579 (CI 0.546-0.625)
+```
+
+That is a weak-but-informative monitor, not a broken one. Only the stratified result
+survived — `AUC 0.496` near the block versus `0.645` far from it, i.e. ACE tracks proximity
+to the object rather than functional uncertainty — which is a far narrower claim than the
+topic was built for and invites the obvious rebuttal that a proximity feature fixes it.
+
+### Failure / stop type
+
+**Layer A/B for the original design** (the proposed measurement could not fail), then
+**Layer D for the replacement** (the phenomenon is real but the effect that would make it
+important is contradicted, not merely unproven).
+
+### Main lessons
+
+1. **Check whether the primary contrast is an identity before running anything.** Write the
+   outcome and the predictor in the same algebra and see whether one is a linear function
+   of the other. Topic 08's original gate would have "confirmed" the hypothesis on white
+   noise. This costs ten minutes and would have saved the entire prototype.
+2. **A statistic that selects on the outcome cannot be evidence for the outcome.** The
+   PushT analysis initially formed matched pairs by taking the top and bottom quartiles of
+   the outcome and then matching on entropy. The resulting ratio is bounded below by
+   Q75/Q25 no matter what the score does, and it was a CONTINUE condition. Any pairing,
+   binning, or subgroup definition must be constructible without looking at the outcome.
+3. **Write the kill criteria into the gate code, not just the design document.** The doc
+   already committed to killing on within-rollout disappearance and contact-state
+   explanation; the gate checked neither. Prose criteria that are not executable are
+   decoration.
+4. **Measure the estimator noise floor when the predictor and the outcome share samples.**
+   ACE and outcome dispersion were both computed from the same 256 draws, so finite-B noise
+   could by itself manufacture "same entropy, different outcome". Split-half reliability
+   (0.989 outcome, 0.941 ACE; noise 6.5% of between-state IQR) closed this. It is cheap and
+   should be routine.
+5. **Reproduce the baseline from released code, never from the paper.** FIPER's actual
+   `cellsize_factor` is `0.03`, its horizon aggregation is a mean, and it already computes
+   entropy on Cartesian *position*. Two of those were wrong in our first implementation,
+   and the third meant a planned "contribution" was already the baseline.
+6. **Verify a restored simulator state against the state that was saved, not against another
+   replay.** Two bugs — a 59 px block teleport from pymunk's centre-of-gravity rotation
+   order, and 3.67 px of drift from Chipmunk's warm-start contact cache — both survive
+   replay-determinism checks, because a restore that is wrong identically every time is
+   perfectly reproducible. The first zeroed every outcome dispersion in the first run.
+7. **Verify the pretrained checkpoint reproduces its published number before measuring
+   anything with it.** LeRobot 0.4.4 silently discards this checkpoint's normalisation
+   buffers. An unnormalised policy still emits plausible actions — it just becomes uncertain
+   everywhere, which would have manufactured a positive result for exactly this topic.
+   Replicating 68.0% +/- 6.6% against the released 65.4% was what ruled it out.
+8. **Set the "would this surprise anyone?" bar before collecting, not after.** Nonlinear
+   contact dynamics make "diverse in free space, sensitive near contact" the default
+   expectation. Any version of this result that stops at "entropy and outcome are
+   imperfectly correlated" was never going to be worth a paper, and recognising that early
+   is what turned a 978-state dataset into a clean archive instead of a rescue attempt.
+
+### Reusable warning sign
+
+If a design needs a chain of constructions to make the phenomenon visible — inject the
+structure, require identical observations, define a decomposition, assume local linearity,
+match on a scalar, threshold a risk — then even complete success reads as "we put the
+effect in and then found it". Ask what the result looks like with every constructed
+element removed. If nothing is left, there was no phenomenon; if something is left, run
+*that* first.
+
+---
+
 # 4. Cross-topic lessons
 
-The six archived projects now cover distinct ways a research candidate can stop:
+The seven archived projects now cover distinct ways a research candidate can stop:
 
 | Topic | Failure / stop layer | What failed or remained unresolved |
 |---|---|---|
@@ -466,6 +582,7 @@ The six archived projects now cover distinct ways a research candidate can stop:
 | 05 | Conceptual identification | the proposed observable could not distinguish retained competence from task simplification/conditional continuation |
 | 06 | Prerequisite phenomenon / acquisition | the chosen LLM agent did not robustly acquire the controllability-dependent state required for the higher-order question |
 | 07 | Frozen discovery / explanatory-axis strength | the seed PI>RI phenomenon replicated, but the preregistered memory-architecture contrast was not large, robust, or qualitative enough to justify confirmation |
+| 08 | Unfalsifiable design, then insufficient importance | the original gate was an algebraic identity that any action distribution satisfies; the rebuilt version confirmed the phenomenon but showed the deployed entropy monitor is weak-but-informative rather than systematically wrong |
 
 The ordering matters. Future projects should try to fail **as early as possible**:
 
