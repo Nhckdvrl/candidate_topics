@@ -1,0 +1,19 @@
+{
+  "source_checkpoint": "/tmp/candidate_topics/dream_g1_e2_cpu2/global_step_24",
+  "resume_checkpoint": "/tmp/candidate_topics/dream_g1_resume_smoke/global_step_25",
+  "source": {
+    "global_step": 24,
+    "saved_epoch": 1,
+    "scheduler_last_epoch": 24,
+    "optimizer_state_bytes": 60925160493
+  },
+  "resumed": {
+    "global_step": 25,
+    "saved_epoch": 2,
+    "scheduler_last_epoch": 25,
+    "optimizer_state_bytes": 60925160493
+  },
+  "boundary_fix": "dream_resume_epoch_boundary.patch",
+  "status": "pass",
+  "note": "The smoke used total_training_steps=36 only to execute one resumed step; its post-step LR is not the formal 60-step schedule. Continuity is established by restored step/epoch/scheduler state and the complete optimizer state."
+}
