@@ -1,63 +1,107 @@
-# Server handoff
+# Server handoff — validation v2
 
-Work from the repository's current topic branch / merged `main` after this topic lands.
+Work from `topic-09-vla-own-limits` until PR #24 lands, then from `main`.
 
-## What the project is asking
+## Question
 
-Recent VLA work shows that frozen internal signals can predict whether a rollout will succeed. We want to know whether those signals represent **the current policy's own competence** or mostly **generic state difficulty**.
+Do VLA success/reliability representations track **this policy's own competence**, or mostly generic state difficulty?
 
-The clean experiment uses the same LIBERO state with several checkpoints from one pi0.5 fine-tuning trajectory (2k / 3k / 9k).
+The entire first validation is one same-state paired contrast. Do not add mechanism work before it passes.
 
-## Step 1 — reproduce the released policy path
+## 1. Environment / checkpoint preflight
 
-Make sure the public pi0.5 LIBERO checkpoints load under the intended openpi / LIBERO evaluation stack and obtain sensible published-scale success behavior.
+Use the official `Physical-Intelligence/openpi` LIBERO stack pinned in `LOCKED_CONFIG.json`. Obtain the released pi0.5 LIBERO 2k / 3k / 9k checkpoints; convert them with OpenPI's official JAX->PyTorch script if the release is not already PyTorch.
 
-Purpose: rule out checkpoint, normalization, action-chunk, or environment mismatches before interpreting any failure.
+Run the Topic-09 controlled server from inside the OpenPI environment:
 
-## Step 2 — behavioral panel only
-
-Run all three checkpoints on exactly the same task/seed panel and save:
-
-```text
-task, seed, checkpoint, success
+```bash
+python -m src.openpi_instrumented_server \
+  --config pi05_libero \
+  --checkpoint-dir <checkpoint> \
+  --port <port> --device cuda:<gpu>
 ```
 
-Run `src/analyze_disagreement.py`.
+Then run:
 
-Purpose: determine whether natural **bidirectional** checkpoint disagreement exists. If not, stop. Do not manufacture hard states.
+```bash
+python -m src.preflight --port <port> --out results/preflight_<ckpt>.json
+```
 
-## Step 3 — freeze one identifiable pair
+Do not collect science data until preflight passes. Also verify checkpoint success is in a sensible range relative to the released evaluation rather than silently accepting a broken normalization/action stack.
 
-Choose the checkpoint pair using discovery states only, based on two-way crossover support. Freeze it and use disjoint states for the representation test.
+## 2. G0 discovery behavior panel
 
-Purpose: prevent a global “later checkpoint is better” shortcut.
+Use every LIBERO-10 task, init indices `0-14`, and eight behavior seeds `110000-110007` for each of 2k / 3k / 9k.
 
-## Step 4 — extract one predeclared hidden state
+One checkpoint shard looks like:
 
-Audit COAST / openpi code and hook the corresponding pi0.5 action-expert representation around layer 11. Do not layer-sweep.
+```bash
+python -m src.collect_behavior \
+  --port <port> --checkpoint 2k \
+  --suite libero_10 --task-ids 0-9 --init-indices 0-14 \
+  --policy-seeds 110000-110007 \
+  --out results/g0_disc_2k.csv
+```
 
-Purpose: test the already motivated success representation, not search for any layer that works.
+Split task IDs / states across idle GPUs if useful; merged CSVs are accepted. **Never give different policy-seed sets to different checkpoints.**
 
-## Step 5 — shared-probe paired test
+Analyze only after all three panels are complete:
 
-Fit one shared linear success probe on discovery states from both checkpoints. On independent crossover states, compare the two probe scores from the identical physical state.
+```bash
+python -m src.analyze_disagreement \
+  --csv results/g0_disc_*.csv \
+  --min-trials 8 --rate-gap 0.5 --min-bidirectional 15 \
+  --out results/g0_discovery.json
+```
 
-Purpose: ask whether the score follows **which checkpoint actually succeeds**, while generic state difficulty is held fixed by construction.
+If the verdict is `STOP_NO_NATURAL_CROSSOVER`, stop the topic. Do not manufacture hard states.
+
+If it passes, freeze the selected pair.
+
+## 3. G1 discovery features for the frozen pair
+
+For each checkpoint in the frozen pair, extract only the predeclared layer-11 representation on discovery states with feature seeds `310000-310003`:
+
+```bash
+python -m src.collect_features \
+  --port <port> --checkpoint <A> \
+  --suite libero_10 --task-ids 0-9 --init-indices 0-14 \
+  --feature-seeds 310000-310003 \
+  --out results/features_disc_A.npz
+```
+
+The server hook is observational: full action-expert layer-11 output -> mean action tokens -> mean 10 denoise steps. Four common-noise feature repeats are then averaged by analysis.
+
+## 4. Independent confirmation
+
+Use init indices `15-29`, behavior seeds `210000-210007`, and feature seeds `410000-410003`. Only the already frozen pair is run.
+
+Do not reuse discovery states or noise-seed families.
+
+Run G1 once:
+
+```bash
+python -m src.run_g1 \
+  --train-behavior results/g0_disc_A.csv results/g0_disc_B.csv \
+  --test-behavior results/g0_conf_A.csv results/g0_conf_B.csv \
+  --train-features results/features_disc_A.npz results/features_disc_B.npz \
+  --test-features results/features_conf_A.npz results/features_conf_B.npz \
+  --checkpoint-a <A> --checkpoint-b <B> \
+  --out results/g1_confirmation.json
+```
+
+The script first checks that bidirectional robust crossover replicates, then fits one shared ridge readout on discovery success rates and applies the frozen AUROC gate on confirmation states.
 
 ## Resources
 
-Use idle GPUs freely on:
+Idle GPUs may be used on:
 
 ```text
 fvcrc10 fvcrc11 fvcrc12 fvcrc13 fvcrc15 fvcrc20 fvcrc21
 ```
 
-Independent checkpoint/seed shards are preferable to cross-node distributed training. There should be essentially no large-model training here; the expensive part is simulator rollout and frozen VLA inference.
+Use independent checkpoint/task shards, not cross-node distributed training. There is no large-model training here. Prefer existing local environments; create an isolated one if dependencies conflict.
 
-Prefer existing local environments. If dependencies conflict, make an isolated environment and fix them without modifying shared system packages.
+## Stop rule
 
-## Stop behavior
-
-The goal is to kill the topic quickly if the clean contrast is absent.
-
-Do not add perturbations, new confidence methods, hand-selected states, layer sweeps, or complicated controls after a negative result.
+After a clean negative result, do not add perturbations, nonlinear probes, separate checkpoint probes, representation alignment, layer sweeps, SAE, or new confidence metrics. The point of this candidate is that the core contrast should be simple.

@@ -1,5 +1,4 @@
-"""G0: test whether same-family checkpoints have enough natural two-way crossover."""
-
+"""G0: robust natural crossover using repeated common-noise rollouts."""
 from __future__ import annotations
 
 import argparse
@@ -13,30 +12,39 @@ from .panel import all_pair_stats, choose_identifiable_pair, task_pair_table, va
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--csv", type=Path, required=True)
+    p.add_argument("--csv", type=Path, nargs="+", required=True)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--min-trials", type=int, default=8)
+    p.add_argument("--rate-gap", type=float, default=0.50)
     p.add_argument("--min-bidirectional", type=int, default=15)
     args = p.parse_args()
 
-    df = validate_panel(pd.read_csv(args.csv))
-    stats = all_pair_stats(df)
-    chosen = choose_identifiable_pair(df)
+    df = pd.concat([pd.read_csv(x) for x in args.csv], ignore_index=True)
+    df = validate_panel(df, min_trials=args.min_trials)
+    stats = all_pair_stats(df, min_trials=args.min_trials, rate_gap=args.rate_gap)
+    chosen = choose_identifiable_pair(df, min_trials=args.min_trials, rate_gap=args.rate_gap)
 
     report = {
-        "n_rows": int(len(df)),
-        "n_states": int(df[["task", "seed"]].drop_duplicates().shape[0]),
+        "inputs": [str(x) for x in args.csv],
+        "n_rollout_rows": int(len(df)),
+        "n_physical_states": int(df.state_id.nunique()),
         "checkpoints": sorted(df.checkpoint.unique().tolist()),
-        "pairs": [s.to_dict() for s in stats],
+        "min_trials_per_checkpoint_state": int(args.min_trials),
+        "robust_winner_rate_gap": float(args.rate_gap),
         "min_bidirectional_required": int(args.min_bidirectional),
+        "pairs": [s.to_dict() for s in stats],
     }
-
     if chosen is None:
         report["selected_pair"] = None
         report["verdict"] = "STOP_NO_NATURAL_CROSSOVER"
     else:
         report["selected_pair"] = chosen.to_dict()
         report["selected_pair_by_task"] = task_pair_table(
-            df, chosen.checkpoint_a, chosen.checkpoint_b
+            df,
+            chosen.checkpoint_a,
+            chosen.checkpoint_b,
+            min_trials=args.min_trials,
+            rate_gap=args.rate_gap,
         )
         report["verdict"] = (
             "G0_PASS_FREEZE_PAIR"

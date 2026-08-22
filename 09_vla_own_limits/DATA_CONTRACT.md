@@ -1,64 +1,88 @@
-# Data contract
+# Data contract — v2
 
-The first validation intentionally keeps the data model small.
+## Physical state identity
 
-## G0 behavioral panel
-
-CSV columns:
+A scientific state is keyed by:
 
 ```text
-task,seed,checkpoint,success
+suite, task_id, init_idx, env_seed
+```
+
+and verified by:
+
+```text
+sim_state_hash
+```
+
+`sim_state_hash` is computed from the settled MuJoCo simulator state after the official ten dummy actions. The hash must be identical across checkpoints and stochastic repeats. A mismatch aborts analysis.
+
+## G0 behavior panel
+
+One CSV row is one stochastic policy rollout:
+
+```text
+suite,task_id,init_idx,env_seed,sim_state_hash,checkpoint,policy_seed,success,status,steps,replans
 ```
 
 Requirements:
 
-- every `(task, seed)` state is evaluated by every checkpoint included in a comparison;
-- `checkpoint` is a stable label such as `2k`, `3k`, `9k`;
-- `success` is binary `0/1`, using the official LIBERO success definition;
-- discovery and confirmation seeds are disjoint;
-- do not drop hard states or failed rollouts after seeing outcomes.
+- every physical state is evaluated by every checkpoint present in the panel;
+- every checkpoint on a state uses exactly the same `policy_seed` set;
+- `policy_seed` defines a full deterministic inference-noise stream, not one reused noise tensor;
+- `success` is official LIBERO binary success;
+- `status` must be `ok`; technical-error rows are never interpreted as failures;
+- no state/rollout is dropped after seeing outcomes.
 
-Example:
+The analyzer aggregates the repeated rows to `p_hat(checkpoint,state)` before defining crossover.
 
-```csv
-task,seed,checkpoint,success
-libero_10_0,1000,2k,0
-libero_10_0,1000,3k,1
-libero_10_0,1000,9k,1
-libero_10_0,1001,2k,1
-libero_10_0,1001,3k,0
-libero_10_0,1001,9k,1
-```
+## G1 raw feature panel
 
-## G1 representation panel
-
-Each physical state has two rows, one per frozen checkpoint in the selected pair:
+Features are stored as NPZ arrays:
 
 ```text
-state_id,task,seed,checkpoint,success,feature
+state_id       [N]
+checkpoint     [N]
+sim_state_hash [N]
+feature_seed   [N]
+feature        [N,D]
 ```
 
-`state_id` must uniquely identify the shared physical initial state. `feature` is the frozen predeclared hidden representation for that checkpoint/state.
+There are four feature-noise repeats per `(state,checkpoint)` in the locked protocol. The two checkpoints must use exactly the same feature-seed set. Analysis averages the four features before fitting the shared readout.
 
-For practical storage, features may be stored separately in an `.npz` file with arrays:
+`feature` is fixed as:
 
 ```text
-state_id      [N]
-checkpoint    [N]
-success       [N]
-feature       [N, D]
+pi0.5 action-expert layer 11 full layer output
+-> mean over action tokens
+-> mean over 10 denoising steps
 ```
 
-The two checkpoint rows belonging to the same `state_id` must always stay on the same side of any train/test split.
+The four common-noise feature repeats are then averaged.
 
-## What must not enter the primary analysis
+## Train / confirmation separation
 
-Do not condition state inclusion on:
+Frozen LIBERO-10 split:
+
+```text
+discovery:    init_idx 0..14 for each task
+confirmation: init_idx 15..29 for each task
+reserve:      init_idx 30..49
+```
+
+Discovery and confirmation also use disjoint behavior policy seeds and disjoint feature-noise seeds.
+
+No physical `state_id` may appear on both sides.
+
+## What cannot define state inclusion
+
+Do not filter on:
 
 - probe score;
-- hidden-state geometry;
+- feature geometry;
 - failure subtype;
-- camera or visual perturbation response;
-- hand-selected interesting trajectories.
+- camera/visual perturbation response;
+- action entropy;
+- hand-selected trajectories;
+- whether the example makes the story look clean.
 
-The primary same-state panel is defined before representation analysis.
+The only primary eligibility rule is the frozen Monte-Carlo crossover definition in `VALIDATION.md`.
