@@ -8,6 +8,7 @@ from typing import Any, Iterable
 
 @dataclass(frozen=True)
 class PuzzleSpec:
+    protocol_version: str
     puzzle_id: str
     puzzle: str
     solution: str
