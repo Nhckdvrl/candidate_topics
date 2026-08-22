@@ -19,5 +19,6 @@
   "min_identity_exact_puzzles_for_interpretation": 16,
   "min_both_exact_pairs_for_order_analysis": 30,
   "min_both_exact_puzzles_for_order_analysis": 12,
-  "same_serialization_tau_floor": 0.95
+  "same_serialization_tau_floor": 0.95,
+  "native_scheduler_agreement_floor": 0.80
 }
