@@ -1,4 +1,5 @@
-results/
+# Keep result JSON under version control; exclude only heavy tensor dumps.
+results/**/*.pt
 __pycache__/
 .pytest_cache/
 *.pyc

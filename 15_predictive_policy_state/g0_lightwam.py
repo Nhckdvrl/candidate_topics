@@ -110,6 +110,8 @@ def _prepare_lightwam_import(root: Path) -> Path:
         s = str(path)
         if s not in sys.path:
             sys.path.insert(0, s)
+    # Engineering-only: upstream resolves `model_id` against this base path.
+    os.environ.setdefault("DIFFSYNTH_MODEL_BASE_PATH", str(root / "checkpoints"))
     return root
 
 

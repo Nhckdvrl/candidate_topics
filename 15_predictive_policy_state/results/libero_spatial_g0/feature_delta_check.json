@@ -1,0 +1,26 @@
+{
+  "train": {
+    "num_samples": 192,
+    "feature_dim": 4608,
+    "rms_normal": 1.0331910848617554,
+    "rms_delta": 0.10610684007406235,
+    "relative_delta_norm": 0.10073193907737732,
+    "across_sample_var_normal": 687.339599609375,
+    "across_sample_var_delta": 29.74736213684082,
+    "relative_delta_norm_layer0": 0.09374023228883743,
+    "relative_delta_norm_layer1": 0.10071766376495361,
+    "relative_delta_norm_layer2": 0.1103397011756897
+  },
+  "test": {
+    "num_samples": 64,
+    "feature_dim": 4608,
+    "rms_normal": 1.0338962078094482,
+    "rms_delta": 0.10950254648923874,
+    "relative_delta_norm": 0.10308866947889328,
+    "across_sample_var_normal": 703.7735595703125,
+    "across_sample_var_delta": 32.75994873046875,
+    "relative_delta_norm_layer0": 0.09954581409692764,
+    "relative_delta_norm_layer1": 0.10113038122653961,
+    "relative_delta_norm_layer2": 0.11022214591503143
+  }
+}
