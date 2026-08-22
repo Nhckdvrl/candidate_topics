@@ -11,9 +11,11 @@
   "max_intervention_tokens": 1,
   "protocol_probe_pairs": 100,
   "protocol_probe_seed": 20260823,
+  "min_primary_effect": 0.01,
   "bootstrap": 10000,
   "permutations": 20000,
-  "primary_identification_metric": "confidence_result_late",
+  "primary_identification_metric": "confidence_result_middle",
   "paper_compatible_score": "confidence_full",
-  "breadth_guardrail": "confidence_tail"
+  "min_arithmetic_probe_gap": 0.10,
+  "min_alias_probe_gap": 0.02
 }
