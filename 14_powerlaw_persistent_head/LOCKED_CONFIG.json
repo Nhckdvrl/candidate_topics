@@ -1,0 +1,11 @@
+{
+  "scientific_question": "Does temporal persistence of a power-law head matter when the finite training-batch multiset is exactly matched?",
+  "task": {"group": "S5", "n_skills": 120, "hops": 4, "alpha": 1.5},
+  "model": {"layers": 4, "d_model": 256, "heads": 8, "ff_mult": 4, "dropout": 0.0},
+  "optimizer": {"name": "AdamW", "lr": 0.0002, "betas": [0.9, 0.999], "eps": 1e-8, "weight_decay": 0.000001},
+  "warmup": {"distribution": "uniform", "steps": 1000, "schedule": "linear_to_peak", "shared_checkpoint_per_seed": true},
+  "primary_core": {"lr_schedule": "constant", "pilot_steps": 80000, "full_steps": 160000, "full_phase_steps": 80000, "full_seeds": [0, 1, 2, 3, 4]},
+  "primary_metric": "normalized AUC of exact 5-token sequence accuracy on a fixed uniform evaluation panel",
+  "engineering_decision_margins": {"anchor_median": 0.03, "anchor_positive_fraction": 0.8, "persistence_abs_median": 0.10, "persistence_sign_fraction": 0.8, "near_zero_median": 0.03, "near_zero_per_seed": 0.06, "near_zero_fraction": 0.8},
+  "no_posthoc_tuning": ["alpha", "mapping_pair", "head_definition", "architecture", "primary_metric", "decision_margins"]
+}
