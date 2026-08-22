@@ -1,255 +1,323 @@
 # 12 — Does Functional Necessity Predict Causal RL Adaptation Leverage?
 
-**Status:** VALIDATION IMPLEMENTED — RUN G-0 BEFORE ANY MECHANISM WORK
+**Status:** VALIDATION HARDENED — RUN THE LOCKED G-0 BEFORE MECHANISM WORK
 
-## Question
+## Scientific question
 
-> Are the transformer layers that are most necessary for mathematical reasoning
-> also the layers where an RL update can most efficiently improve reasoning?
+> Are the transformer layers that are required for mathematical competence also
+> the layers in which isolated RL updates most efficiently improve that competence?
 
-The two quantities are deliberately causal but different:
+The project compares two different causal quantities on the **same Qwen3-1.7B
+base model**:
 
-- **functional necessity** `I_l`: paired accuracy loss when decoder layer `l` is
-  bypassed at inference;
-- **RL adaptation leverage** `C_l`: fraction of full-parameter RL gain recovered
-  when **only** layer `l` is trainable.
+- **functional necessity** `I_l`: how often competence that the base model
+  demonstrably has is destroyed when decoder layer `l` is bypassed;
+- **RL adaptation leverage** `C_l`: how much of full-parameter RL gain is
+  recovered when only decoder layer `l` is trainable.
 
-We do **not** use weight-change magnitude as a proxy for learning, and we do not
-claim that reasoning literally "lives" in a layer.
+This is not a weight-change study. We do not infer learning from `||ΔW||`, and
+we do not claim reasoning literally “lives” in a layer.
 
-## Why Qwen3-1.7B-Base is the locked G-0
+## Why this experiment can decide the topic cheaply
 
-The 2026 single-layer-RL paper provides a **full 28-layer scan** for
-`Qwen/Qwen3-1.7B-Base`, not just selected layers. Its Appendix Table 13 also
-publishes the per-layer MATH500 and GSM8K scores, so we can compare our
-necessity intervention against **task-matched** RL leverage without retraining 28
-RL models.
+The 2026 paper *Is One Layer Enough? Training A Single Transformer Layer Can
+Match Full-Parameter RL Training* already publishes a complete **28-layer GRPO
+scan for Qwen3-1.7B-Base**. Appendix Table 13 gives MATH500 and GSM8K scores for
+the base model, full RL model, and every independently trained single-layer
+model. Therefore we should not pay to repeat 28 RL runs before knowing whether
+the missing relation exists.
 
-The RL paper's primary Qwen3 setup uses GRPO on NuminaMath-CoT; it defines
+For a score `S`, the paper defines
 
-`C(l) = (S_l - S_base) / (S_full - S_base)`.
+`C_l = (S_l - S_base) / (S_full - S_base)`.
 
-For the primary comparison we apply this exact formula to the published
-MATH500+GSM8K columns, matching the task support of our necessity curve.
-The paper's published four-task `C_math` is a locked robustness check. Table 13
-also reports layer 10 at `C_math=1.14` and layer 24 at `C_math=0.28`. The exact
-values are frozen in `data/qwen3_1p7b_table13_math.csv`.
+The locked primary `C_l` in this repository applies that exact formula to the
+published **MATH500+GSM8K average**, matching the task support of our necessity
+measurement. The paper's published four-math-benchmark `C_math` is retained as
+a frozen robustness check.
 
-This choice is important: G-0 should spend compute on the missing quantity
-`I_l`, not needlessly reproduce an already published 28-run RL sweep.
+## Why the necessity metric is paired
 
-## Primary intervention
+A naive importance score is
 
-For each layer, let the ordinary residual block output be
+`baseline accuracy - ablated accuracy`.
 
-`h_out = h_in + delta_l`.
+That is useful descriptively, but it can hide real necessity: a layer deletion
+might destroy one problem that the base solves while accidentally changing a
+previously wrong answer into a correct answer. The two transitions cancel in
+net accuracy even though the first transition is direct evidence that the
+existing competence depended on the layer.
 
-The runner replaces only the visible residual-stream output with
+The **primary** Topic-12 necessity score is therefore
+
+`I_l,t = P(ablated wrong | baseline correct, task=t)`
+
+and the final curve is the equal-weight average over MATH500 and GSM8K.
+
+The old net accuracy-drop curve is still reported as a locked robustness check.
+No result is discarded because it disagrees with the primary metric.
+
+## Locked model / data / prompt contract
+
+G-0 is pinned to:
+
+- model: `Qwen/Qwen3-1.7B-Base`;
+- model revision: `912d2727784ca0a6f718845aa14d4d9e5f48fe26`;
+- decoder layers: exactly 28;
+- MATH500: `HuggingFaceH4/MATH-500` revision
+  `6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be`;
+- GSM8K: `openai/gsm8k`, `main/test`, revision
+  `7cf1290ed87c28a31f867e0f47a7cb62a61d502e`;
+- prompt: the Qwen mathematical-reasoning prompt used by the seed
+  layer-ablation work (`qwen_math_seed`);
+- decoding: greedy, deterministic, KV cache enabled;
+- 256 frozen examples per task, selected by SHA-256 over stable example IDs;
+- seed: `20260822`;
+- primary full-bypass intervention: `residual_scale=0.0`;
+- maximum input length: 2048 tokens; **any input truncation fails integrity**;
+- maximum generated length: 1536 tokens;
+- Math-Verify primary grading.
+
+Every output directory contains `run_contract.json`. Its hash is embedded in
+every generated row. A stale result from a different seed, prompt, model
+revision, sample size, ablation strength, or token limit is refused rather than
+silently “resumed”.
+
+## Intervention
+
+For a decoder block with visible residual-stream mapping
+
+`h_out = h_in + delta_l`,
+
+we expose downstream layers to
 
 `h'_out = h_in + alpha * delta_l`.
 
-Primary G-0 locks `alpha=0`, i.e. a complete decoder-block bypass. The original
-layer still executes internally so Hugging Face can maintain a valid KV cache;
-downstream layers only see the bypassed residual stream. This is dramatically
-faster than disabling KV caching for autoregressive generation.
+The target layer is still executed internally, so Hugging Face can maintain its
+KV-cache bookkeeping, but its visible contribution to the downstream residual
+stream is modified.
 
-The **only** predeclared intervention confirmation is `alpha=0.5`, a milder
-half-residual perturbation. It is not run to rescue a null result. It is run only
-after a large interpretable G-0 to check that the ordering is not created solely
-by catastrophic deletion.
+- `alpha=0.0`: exact block bypass, primary G-0;
+- `alpha=0.5`: predeclared mild intervention.
 
-## G-0 protocol
+The implementation special-cases `alpha=0` and `alpha=1` so the endpoints are
+exact in bf16/fp16 rather than merely algebraically equivalent in real
+arithmetic. `scripts/preflight_model.py` verifies on the real Qwen checkpoint
+that `alpha=1` is exact identity, `alpha=0` actually changes logits, the model
+has 28 layers, and cached generation still works under the hook.
 
-Locked before seeing results:
+## Protocol gate happens before the expensive sweep
 
-- model: `Qwen/Qwen3-1.7B-Base`;
-- layers: **all 28**, no cherry-picking;
-- tasks: MATH500 + GSM8K;
-- 128 examples per task chosen by stable SHA-256 sampling with seed `20260822`;
-- same exact examples for baseline and every layer;
-- deterministic greedy decoding;
-- fixed prompt asking for step-by-step reasoning and a final `\boxed{}`;
-- Math-Verify 0.8+ grading;
-- full block bypass (`alpha=0`);
-- equal weight for MATH500 and GSM8K when constructing `I_l`;
-- primary external target: Table-13 contribution recomputed on the exact matched MATH500+GSM8K task pair;
-- locked robustness target: the paper’s published four-task `C_math`;
-- primary statistic: Spearman `rho(I, C_matched[MATH500+GSM8K])`;
+The external `C_l` curve is only meaningful if our evaluation protocol is
+reasonably compatible with the published base model scores. Table 13 reports:
+
+- MATH500 base: 57.4;
+- GSM8K base: 74.4.
+
+The launcher therefore runs the unablated baseline **first** and immediately
+calls `check_integrity.py --baseline-only`. If this fails, the 28-layer sweep is
+not started.
+
+The baseline gate checks:
+
+- one frozen run contract;
+- model/data/prompt ledger consistency;
+- no silent input truncation;
+- <=5% Math-Verify fallback;
+- <=10% output truncation;
+- compatibility with each published baseline score.
+
+For published-score compatibility, the allowed absolute gap is
+
+`max(5 percentage points, 2 * binomial SE around the published score)`.
+
+With the locked `n=256`, this is much tighter than the previous arbitrary 15pp
+window while still allowing expected subset sampling noise. If this gate fails,
+that is **INCONCLUSIVE MEASUREMENT**, not evidence for or against the research
+hypothesis. Fix the evaluation protocol before running layers.
+
+## G-0
+
+Run every decoder layer once. There is no layer discovery or selected subset.
+
+Primary output:
+
+`rho = Spearman(I_conditional, C_matched[MATH500+GSM8K])`.
+
+Also frozen before seeing results:
+
 - paired item bootstrap, 2,000 replicates, 90% CI;
-- descriptive task-matched correlations against MATH500-specific and
-  GSM8K-specific RL leverage;
-- top-5 overlap, because the RL paper itself uses top-5 layer groups.
+- Kendall tau;
+- top-5 overlap;
+- MATH500-only and GSM8K-only relations;
+- correlation between the two task-specific necessity profiles;
+- robustness to the old net accuracy-drop definition of `I`;
+- robustness to the published four-task `C_math`;
+- parser-failure and max-token diagnostics.
 
-There is no search over layer subsets, task weights, thresholds, or alternate
-correlation metrics.
+### Broad depth shape is not enough
 
-## A necessary extra check: broad depth shape vs exact layer relation
+The RL paper already shows a strong middle-layer concentration. If our necessity
+curve is also just “middle layers matter”, raw Spearman can look impressive
+without establishing that the **same individual layers** are special.
 
-Both curves might simply be "middle layers are special." A high raw correlation
-would then sound stronger than it is.
+The locked fine-grained check fits a quadratic function of normalized depth to
+each raw curve separately and correlates the two residual curves. This asks
+whether deviations among neighboring layers line up beyond the broad depth
+profile. A circular-shift null is also reported because the curves are smooth
+along depth.
 
-So the analysis predeclares two non-rescue diagnostics:
+A true partial-rank depth statistic is additionally reported as descriptive
+diagnostics, but it is not the gate: a quadratic model of ranked values does not
+perfectly absorb a nonlinear U-shaped rank profile.
 
-1. **depth-residual rho**: fit a quadratic function of normalized depth to each
-   curve separately, then correlate the residuals;
-2. **circular-shift null**: circularly shift one full curve along depth and
-   recompute `|rho|`, preserving smooth depth autocorrelation.
+## Do not mistake destructive ablation for a scientific null
 
-If raw rho is high but the depth-residual relation vanishes, the code reports
-`BROAD_DEPTH_ALIGNMENT_ONLY`, not a layer-specific architectural law.
+Hard deletion is a strong intervention. Layer-induced parser failure or runaway
+generation is retained as a causal outcome; those examples are **never filtered
+out** after seeing the result. However, if full deletion destroys so much of the
+model that layers cannot be ranked meaningfully, the run is not allowed to kill
+the topic.
 
-## Measurement-integrity gates
+`alpha=0` is automatically labeled `TOO_DESTRUCTIVE_USE_MILD_SWEEP` if either:
 
-`check_integrity.py` refuses to analyze:
+- at least 25% of layers destroy >=90% of baseline-solved items; or
+- at least 25% of layers have >=50% parser fallback; or
+- at least 25% of layers have >=50% output truncation.
 
-- missing layers;
-- duplicate or different example ledgers across conditions;
-- >5% Math-Verify fallback on the **unablated baseline**;
-- >10% max-token truncation on the **unablated baseline**;
-- >15 percentage-point mismatch between our unablated task accuracy and the published Table-13 base score.
+That yields `INCONCLUSIVE_INTERVENTION`. The next and only predeclared
+measurement is the full `alpha=0.5` sweep.
 
-Ablation-induced parser failure or overlong generation is **not filtered out**:
-destroying answer format or termination can be a real consequence of deleting a
-critical block. Those rates are recorded per layer in `integrity_report.json`
-and flagged for interpretation. This prevents a strong causal effect from being
-silently censored while still revealing when "reasoning necessity" is actually
-broad generation damage.
+Crucially, G-0 and the mild sweep now use the **same 256/task ledger, same prompt,
+same model revision, same token limits, same statistics**. The only scientific
+variable changed is `alpha: 0.0 -> 0.5`.
 
-The audit also warns if baseline accuracy lies outside `[0.10, 0.95]`, because
-an almost-always-wrong or almost-always-correct baseline has too little paired
-variance for a useful accuracy-drop necessity measure. This is a measurement
-prerequisite, not a scientific-result threshold.
+## Frozen result labels
 
-The final analysis additionally reports, for every layer, baseline-correct→wrong
-and baseline-wrong→correct transition rates plus parser/truncation rates. It also
-reports `rho(necessity, parser_failure)` and `rho(necessity, truncation)`. These
-are interpretation diagnostics, not post-hoc filters: if the apparent
-"necessity" curve is mostly a format/termination-collapse curve, we call it
-broad generation fragility rather than overselling it as reasoning-specific.
+Operational labels are defined in `src/topic12/stats.py`; they are not tunable
+after results arrive.
 
-## Predeclared result labels
+- `STRONG_LAYER_LEVEL_ALIGNMENT`: large positive rho, bootstrap lower bound
+  positive, and a nontrivial relation remains after broad depth removal.
+- `BROAD_DEPTH_ALIGNMENT_ONLY`: raw positive alignment is strong but fine
+  layer-to-layer alignment disappears after depth-shape removal.
+- `STRONG_NEGATIVE_RELATION`: necessity and isolated RL plasticity run in
+  opposite directions.
+- `DISSOCIATION_CANDIDATE`: near-zero relation with a sufficiently narrow paired
+  bootstrap interval. This is a candidate structural dissociation, not yet a
+  paper-level law because the published RL curve itself has finite experimental
+  uncertainty.
+- `INCONCLUSIVE_INTERVENTION`: hard deletion is too destructive; use the locked
+  mild sweep rather than interpreting the run scientifically.
+- `INCONCLUSIVE_DO_NOT_TUNE`: no clean conclusion. Do not search layer subsets,
+  task weights, thresholds, correlations, or new ablation definitions.
 
-These labels are deliberately fixed in code (`src/topic12/stats.py`).
+The purpose of these labels is to prevent post-hoc storytelling, not to maximize
+the probability that the topic survives.
 
-### `STRONG_LAYER_LEVEL_ALIGNMENT`
+## Fast execution
 
-`rho >= 0.50`, bootstrap 90% lower bound `>= 0.20`, and depth-residual
-`rho >= 0.25`.
-
-Interpretation: functionally necessary layers are also unusually high-leverage
-adaptation targets at finer resolution than a generic middle-layer effect.
-
-### `BROAD_DEPTH_ALIGNMENT_ONLY`
-
-Strong raw positive relation, but depth-residual `rho < 0.25`.
-
-Interpretation: both quantities share a broad depth profile, but we do not yet
-have evidence that necessity predicts leverage among neighboring layers.
-Scientifically weaker; usually stop unless the raw shape itself is exceptionally
-sharp and independently replicates.
-
-### `STRONG_NEGATIVE_RELATION`
-
-`rho <= -0.50` with bootstrap 90% upper bound `<= -0.20`.
-
-This would be especially interesting: indispensable computation is least
-plastic under isolated RL adaptation.
-
-### `CREDIBLE_DISSOCIATION`
-
-`|rho| <= 0.20` and the 90% CI is contained in `[-0.35, 0.35]`.
-
-This is an equivalence-style condition, not "p > .05 therefore no relation."
-
-### `INCONCLUSIVE_DO_NOT_TUNE`
-
-Everything else. **Stop.** Do not search new layer subsets, change task weights,
-or try ten ablation definitions until one looks good.
-
-## Fastest execution
-
-Install into an existing CUDA/PyTorch environment:
+Use an existing CUDA/PyTorch environment; `requirements.txt` intentionally does
+not reinstall PyTorch.
 
 ```bash
 cd 12_reasoning_necessity_vs_rl_leverage
 pip install -r requirements.txt
 pytest -q
-```
-
-Tiny end-to-end smoke test:
-
-```bash
 bash scripts/smoke_test.sh
-```
-
-Locked four-GPU G-0:
-
-```bash
 bash scripts/launch_g0_4gpu.sh
 ```
 
-The launcher:
+The G-0 launcher does:
 
-1. evaluates the unablated baseline once;
-2. loads one 1.7B model per GPU and assigns layers by `layer % 4`;
-3. resumes completed `layer_XX.jsonl` files automatically after interruption;
-4. audits ledger/grader/truncation integrity;
-5. writes `REPORT.md`, `relation_metrics.json`, `layer_relation.csv`, and
-   `relation.png`.
+1. real-model intervention preflight on GPU 0;
+2. unablated baseline on the frozen 256+256 ledger;
+3. **baseline protocol gate before expensive layer compute**;
+4. 28-layer sweep sharded by `layer % 4` across four independent GPUs;
+5. complete integrity audit;
+6. locked statistics and `REPORT.md`;
+7. emits whether the mild predeclared intervention is required.
 
-No inter-node communication is required. Four GPUs are used as four independent
-inference workers, which is exactly the right way to exploit a slow
-cross-node/network environment.
+No cross-GPU or cross-node communication is used. Each GPU loads its own 1.7B
+model and handles seven layers, which is appropriate for machines connected by
+slow inter-node networking.
 
-## Confirmation, only after a strong G-0
+Main outputs:
+
+```text
+results/g0_qwen3_1p7b_bypass/
+├── run_contract.json
+├── integrity_report.json
+├── baseline.jsonl
+├── layer_00.jsonl ... layer_27.jsonl
+├── layer_relation.csv
+├── relation_metrics.json
+├── relation.png
+└── REPORT.md
+```
+
+If `REPORT.md` says `INCONCLUSIVE_INTERVENTION`, or if a strong G-0 should be
+confirmed at lower intervention strength:
 
 ```bash
 bash scripts/launch_g1_confirmation_4gpu.sh
 ```
 
-This keeps the model, tasks, ledger rule, statistic, and complete layer sweep
-fixed, while changing only `alpha` from `0.0` to `0.5` and increasing the sample
-to 256/task.
+Do not run this simply because an otherwise valid G-0 is an ordinary null.
 
-A serious paper claim should ultimately replicate on an independent model
-family, but **do not pay for that before G-0 survives**.
+## What is enough to keep the research topic alive?
 
-## Output interpretation
+A useful G-0 is not “some p-value passed.” We want a whole-depth pattern that is
+hard to explain away:
 
-The scientifically important possibilities are:
+- strong alignment that survives the broad-depth diagnostic; or
+- strong negative relation; or
+- a narrow, stable dissociation with similar conclusions on both tasks and an
+  independently replicated model family later.
 
-- **aligned**: the pretrained computation core is also the easiest place for RL
-  to improve that computation;
-- **dissociated**: computation and adaptation leverage are different structural
-  properties of the network;
-- **negative**: the most indispensable computation is comparatively resistant
-  to isolated adaptation.
+If the only story is “both curves peak somewhere in the middle”, the result is
+weaker than the proposed architectural principle. If the task-specific necessity
+curves disagree strongly, treat the aggregate cautiously. If necessity mostly
+tracks parser/truncation collapse, describe it as broad generation fragility,
+not mathematical reasoning machinery.
 
-The result is not interesting if it reduces to "middle layers are generally
-important" with no finer relation, or if the full 28-layer curve is noisy and
-requires post-hoc subset selection.
+Only after a clean G-0 should we spend compute on an independent model family,
+mechanism analysis, or a fresh RL reproduction.
 
-## References / provenance
+## References
 
 - Aadim Nepal et al., *Layer Importance for Mathematical Reasoning is Forged in
-  Pre-Training and Invariant after Post-Training*, 2025. Their released code
-  uses inference-time layer ablation on math tasks.
-- Zijian Zhang et al., *Is One Layer Enough? Training A Single Transformer
-  Layer Can Match Full-Parameter RL Training*, arXiv:2607.01232v2, 2026.
-  Qwen3-1.7B-Base has a full 28-layer GRPO scan; Table 13 is transcribed under
-  `data/`.
-- Math-Verify is used for symbolic/numeric answer grading.
+  Pre-Training and Invariant after Post-Training* (2025). The released setup
+  motivates exact layer bypass and supplies the locked Qwen math prompt.
+- Zijian Zhang et al., *Is One Layer Enough? Training A Single Transformer Layer
+  Can Match Full-Parameter RL Training*, arXiv:2607.01232v2 (2026). Appendix
+  Table 13 supplies the frozen Qwen3-1.7B per-layer RL evaluation curve.
 
-## Files
+## Repository layout
 
-- `scripts/run_ablation.py` — resumable deterministic generation for baseline
-  and arbitrary layer shards;
-- `scripts/launch_g0_4gpu.sh` — full G-0 on four GPUs;
-- `scripts/check_integrity.py` — fails closed on invalid measurements;
-- `scripts/analyze_relation.py` — locked statistics, bootstrap, plot, verdict;
-- `scripts/launch_g1_confirmation_4gpu.sh` — milder predeclared confirmation;
-- `src/topic12/ablation.py` — cache-safe residual-block intervention;
-- `src/topic12/benchmarks.py` — deterministic task ledgers + Math-Verify grader;
-- `src/topic12/stats.py` — correlation, depth-control, bootstrap, gate logic;
-- `data/qwen3_1p7b_table13_math.csv` — immutable published RL curve;
-- `tests/` — intervention and statistics unit tests.
+```text
+12_reasoning_necessity_vs_rl_leverage/
+├── README.md
+├── requirements.txt
+├── data/
+│   ├── README.md
+│   └── qwen3_1p7b_table13_math.csv
+├── scripts/
+│   ├── preflight_model.py
+│   ├── run_ablation.py
+│   ├── check_integrity.py
+│   ├── analyze_relation.py
+│   ├── launch_g0_4gpu.sh
+│   ├── launch_g1_confirmation_4gpu.sh
+│   └── smoke_test.sh
+├── src/topic12/
+│   ├── __init__.py
+│   ├── ablation.py
+│   ├── benchmarks.py
+│   └── stats.py
+└── tests/
+    ├── test_ablation.py
+    ├── test_benchmarks.py
+    ├── test_paper_table.py
+    └── test_stats.py
+```
