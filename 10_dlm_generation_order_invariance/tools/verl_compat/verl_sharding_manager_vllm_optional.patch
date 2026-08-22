@@ -1,0 +1,6 @@
+--- a/verl/workers/sharding_manager/__init__.py
++++ b/verl/workers/sharding_manager/__init__.py
+@@
+-if is_vllm_available():
++# Dream G1 ordinary FSDP audit does not use the optional vLLM manager.
++if False and is_vllm_available():

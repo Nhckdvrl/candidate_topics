@@ -17,10 +17,16 @@ The locked 9×9 seed-aligned prompt was passed through the official `AutoModel`/
 
 ## Official SFT dependency chain
 
-The Dream repository's `src.trainer.fsdp_sft_trainer` imports successfully only after using `verl==0.5.0`; the current `verl==0.9.0` package does not contain the required `verl.trainer.fsdp_sft_trainer` module. The remaining hard import is `flash_attn.bert_padding`.
+The Dream repository's `src.trainer.fsdp_sft_trainer` requires an older veRL layout. `verl==0.3.0.post1` provides both the required `verl.trainer.fsdp_sft_trainer` module and the expected `FSDPUlyssesShardingManager` export; `verl==0.9.0` does not. The node's newer vLLM is an optional import conflict with Dream's pinned transformers and is disabled only for the ordinary FSDP audit; see `tools/verl_compat/`.
 
 The available pip source distribution for `flash-attn` attempts to resolve a separate Torch 2.13/CUDA 13 stack. The node already has Torch 2.11.0+cu130, and that resolution would be an uncontrolled multi-hundred-megabyte-plus environment replacement. It was cancelled before installation. No custom trainer or scientific protocol substitution was made.
 
+With the explicit `tools/flash_attn_compat` import shim, the official trainer imports successfully. The official `random_with_input_pad` collator on two frozen train rows produces 454-token batches: 283 prompt-mask zeros and 171 non-pad response-mask ones. The 172nd gold token is EOS, which shares the pad ID and is intentionally removed by the upstream non-pad filter.
+
+## Import shim audit
+
+`tools/flash_attn_compat` is a deliberately explicit, pure-PyTorch import shim for `flash_attn.bert_padding`. It is only prepended to `PYTHONPATH` for the environment audit. With the official trainer configuration's sequence-parallel size fixed to 1, the Ulysses branch containing these helpers is not executed; the normal path uses the trainer's ordinary PyTorch loss. The shim is not a FlashAttention implementation and is not valid for sequence-parallel training.
+
 ## Next safe action
 
-Find or build a flash-attn wheel compatible with the existing Torch/CUDA ABI in an isolated temporary environment, then re-run only the official trainer import and a one-step dataloader/config smoke. Do not launch 10-epoch training until that import smoke passes.
+Run the official trainer import and a one-step dataloader/config smoke with the explicit shim, then inspect the actual branch and loss mask. Do not launch 10-epoch training until those checks pass.
