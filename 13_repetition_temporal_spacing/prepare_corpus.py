@@ -40,6 +40,7 @@ def main() -> None:
     p.add_argument("--eval-permille", type=int, default=25)
     p.add_argument("--shuffle-buffer", type=int, default=10000)
     p.add_argument("--stream-seed", type=int, default=0)
+    p.add_argument("--tokenize-batch", type=int, default=64)
     args = p.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -70,29 +71,44 @@ def main() -> None:
     ds = ds.shuffle(seed=args.stream_seed, buffer_size=args.shuffle_buffer)
 
     n_train = n_eval = scanned = long_enough = 0
+    batch_rows = []
+
+    def consume_batch(rows):
+        nonlocal n_train, n_eval, long_enough
+        if not rows:
+            return
+        texts = [r[1] for r in rows]
+        encoded = tok(texts, add_special_tokens=False, truncation=True, max_length=args.seq_len - 1)["input_ids"]
+        for (doc_id, _), ids in zip(rows, encoded):
+            if len(ids) < args.seq_len - 1:
+                continue
+            long_enough += 1
+            block = np.asarray(ids + [tok.eos_token_id], dtype=np.uint32)
+            assert len(block) == args.seq_len
+            is_eval = split_bucket(doc_id, args.split_seed) < args.eval_permille
+            if is_eval and n_eval < args.eval_blocks:
+                eval_mm[n_eval] = block
+                eval_ids[n_eval] = id64(doc_id)
+                n_eval += 1
+            elif (not is_eval) and n_train < args.train_blocks:
+                train_mm[n_train] = block
+                train_ids[n_train] = id64(doc_id)
+                n_train += 1
+
     for row in ds:
         if n_train >= args.train_blocks and n_eval >= args.eval_blocks:
             break
         scanned += 1
         text = row.get("text", "")
         doc_id = str(row.get("id", f"row-{scanned}"))
-        ids = tok(text, add_special_tokens=False, truncation=True, max_length=args.seq_len)["input_ids"]
-        if len(ids) < args.seq_len - 1:
-            continue
-        long_enough += 1
-        block = np.asarray(ids[: args.seq_len - 1] + [tok.eos_token_id], dtype=np.uint32)
-        assert len(block) == args.seq_len
-        is_eval = split_bucket(doc_id, args.split_seed) < args.eval_permille
-        if is_eval and n_eval < args.eval_blocks:
-            eval_mm[n_eval] = block
-            eval_ids[n_eval] = id64(doc_id)
-            n_eval += 1
-        elif (not is_eval) and n_train < args.train_blocks:
-            train_mm[n_train] = block
-            train_ids[n_train] = id64(doc_id)
-            n_train += 1
+        batch_rows.append((doc_id, text))
+        if len(batch_rows) >= args.tokenize_batch:
+            consume_batch(batch_rows)
+            batch_rows = []
         if scanned % 10000 == 0:
             print(f"scanned={scanned:,} long={long_enough:,} train={n_train:,}/{args.train_blocks:,} eval={n_eval:,}/{args.eval_blocks:,}", flush=True)
+    if (n_train < args.train_blocks or n_eval < args.eval_blocks) and batch_rows:
+        consume_batch(batch_rows)
 
     train_mm.flush(); eval_mm.flush(); train_ids.flush(); eval_ids.flush()
     if n_train != args.train_blocks or n_eval != args.eval_blocks:
@@ -116,6 +132,7 @@ def main() -> None:
         "eval_permille": args.eval_permille,
         "stream_seed": args.stream_seed,
         "shuffle_buffer": args.shuffle_buffer,
+        "tokenize_batch": args.tokenize_batch,
         "scanned_documents": scanned,
         "long_enough_documents": long_enough,
         "fixed_length_note": "first seq_len-1 Qwen3 tokens + EOS; short documents excluded"
