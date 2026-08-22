@@ -1,5 +1,9 @@
-# Keep result JSON under version control; exclude only heavy tensor dumps.
+# Keep result JSON and run manifests under version control; exclude heavy artifacts.
 results/**/*.pt
+g1/init/
+g1/runs/**/checkpoints/
+g1/probe*.yaml
 __pycache__/
 .pytest_cache/
 *.pyc
+g1/runs/**/dataset_stats.json

@@ -1,0 +1,64 @@
+Matched-mechanism requirement 3 (README "Keep the proprio path non-differential").
+
+Upstream `configure_trainable_modules` always leaves `proprio_encoder` trainable, and
+`build_inputs` appends the proprio token to the context consumed by BOTH the future-video
+branch and the action branch. In the matched future-on / future-off run that would be a
+second trainable route from future loss into the deployed policy, so it must be closed.
+
+The flag is opt-in via the environment so the upstream default path is unchanged.
+
+--- a/src/lightwam/models/wan22/lightwam.py
++++ b/src/lightwam/models/wan22/lightwam.py
+@@
+         proprio_encoder = getattr(self, "proprio_encoder", None)
+         if proprio_encoder is not None:
+-            proprio_encoder.train()
+-            proprio_encoder.requires_grad_(True)
++            if os.environ.get("LIGHTWAM_FREEZE_PROPRIO", "0") == "1":
++                logger.info(
++                    "LIGHTWAM_FREEZE_PROPRIO=1: freezing proprio_encoder so future loss cannot "
++                    "reach the deployed action path through the shared proprio context token."
++                )
++                proprio_encoder.eval()
++                proprio_encoder.requires_grad_(False)
++            else:
++                proprio_encoder.train()
++                proprio_encoder.requires_grad_(True)
+
+
+Engineering-only companion fix (not a scientific change):
+
+`Wan22Trainer.__init__` logs the DeepSpeed ZeRO stage by unconditionally dereferencing
+`accelerator.state.deepspeed_plugin`, which is None under plain DDP. The matched run uses
+plain DDP rather than DeepSpeed ZeRO-1 so that `max_grad_norm` is the single, directly
+controlled clipping threshold (upstream's ds_zero1_config.json does not pin
+`gradient_clipping`, which would leave the "clipping is inactive" requirement unverifiable).
+
+--- a/src/lightwam/trainer.py
++++ b/src/lightwam/trainer.py
+@@
+-            self.accelerator.state.deepspeed_plugin.deepspeed_config.get("zero_optimization", {}).get("stage", "unknown"),
++            (
++                self.accelerator.state.deepspeed_plugin.deepspeed_config.get("zero_optimization", {}).get("stage", "unknown")
++                if getattr(self.accelerator.state, "deepspeed_plugin", None) is not None
++                else "none"
++            ),
+
+
+Engineering-only companion fix 2 (not a scientific change):
+
+Matched-mechanism requirement 2 says the inactive global clipping threshold must be VERIFIED
+from logged gradient norms. Upstream sends `grad_norm` only to wandb, which the matched run
+disables. This mirrors it into the console log so both arms leave an auditable record.
+
+--- a/src/lightwam/trainer.py
++++ b/src/lightwam/trainer.py
+@@
+-                        description = "[train] epoch=%d step=%d/%d loss=%.4f " % (
++                        description = "[train] epoch=%d step=%d/%d loss=%.4f grad_norm=%.4f " % (
+                             self.epoch,
+                             self.global_step,
+                             self.max_steps,
+                             global_loss,
++                            global_grad_norm,
+                         )

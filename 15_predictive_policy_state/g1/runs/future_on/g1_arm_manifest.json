@@ -1,0 +1,13 @@
+{
+  "lambda_video": 1.0,
+  "lambda_action": 1.0,
+  "use_backbone_lora": false,
+  "freeze_backbone": true,
+  "freeze_proprio_encoder": true,
+  "max_grad_norm": 1000000000.0,
+  "seed": 42,
+  "max_steps": 30000,
+  "batch_size": 32,
+  "learning_rate": 0.0002,
+  "init_checkpoint": "/home/xiang/candidate_topics/15_predictive_policy_state/g1/init/init.pt"
+}
