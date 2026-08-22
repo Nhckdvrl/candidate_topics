@@ -1,97 +1,99 @@
-# Server handoff — Topic 10 G0
+# Server handoff — Topic 10 G0 v2
 
 Run from `10_dlm_generation_order_invariance/`.
 
-## 1. Environment
+## 1. Environment and preflight
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-A recent CUDA PyTorch build and enough VRAM for `GSAI-ML/LLaDA-8B-Instruct` in BF16 are required.
-
-## 2. Preflight
-
-```bash
 python src/preflight.py --config LOCKED_CONFIG.json
 pytest -q tests
 ```
 
-Do not proceed if either fails.
+Use a recent CUDA PyTorch build and enough VRAM for `GSAI-ML/LLaDA-8B-Instruct` in BF16. Do not proceed past a failed preflight: a tokenizer/template/isomorphism failure means the measurement itself is invalid.
 
-## 3. Materialize the frozen manifest
+## 2. Freeze the manifest once
 
 ```bash
 python src/make_manifest.py --config LOCKED_CONFIG.json --out data/manifest.jsonl
 ```
 
-The manifest contains both discovery and untouched confirmation puzzles. Do not regenerate it with another seed after seeing results.
+This materializes both discovery and reserved confirmation puzzles. Do not regenerate with another seed after looking at results.
 
-## 4. Cheap smoke run
+## 3. Plumbing smoke
 
 ```bash
 python src/run_g0.py \
   --config LOCKED_CONFIG.json \
   --manifest data/manifest.jsonl \
   --split discovery \
-  --limit 8 \
-  --include-random-control \
+  --limit 4 \
+  --overwrite \
   --out results/smoke_traces.jsonl
 
 python src/analyze_g0.py \
+  --config LOCKED_CONFIG.json \
   --traces results/smoke_traces.jsonl \
   --manifest data/manifest.jsonl \
   --split discovery \
   --out results/smoke_summary.json
 ```
 
-Smoke is for plumbing only. Do not tune scientific thresholds on it.
+Smoke is only for engineering. Because it is tiny, ignore scientific decision flags.
 
-## 5. Frozen discovery G0
+## 4. Frozen discovery
 
 ```bash
 python src/run_g0.py \
   --config LOCKED_CONFIG.json \
   --manifest data/manifest.jsonl \
   --split discovery \
-  --include-random-control \
+  --overwrite \
   --out results/g0_discovery_traces.jsonl
 
 python src/analyze_g0.py \
+  --config LOCKED_CONFIG.json \
   --traces results/g0_discovery_traces.jsonl \
   --manifest data/manifest.jsonl \
   --split discovery \
   --out results/g0_discovery_summary.json
 ```
 
-## 6. Decision order
+If interrupted, rerun the first command with `--resume` instead of `--overwrite`. Never concatenate partial files manually; duplicate trace keys are deliberately rejected by analysis.
 
-Read fields in this order:
+## 5. Read the result in the correct order
 
-1. `identity_exact_accuracy` — can the model solve enough cases?
-2. `n_valid_exact_isomorph_pairs >= 50` — enough matched successful pairs?
-3. `seed_replication_candidate_count_vs_finalization_spearman >= 0.15` — seed easy-first signal present?
-4. `random_remasking_tau_vs_identity.mean` near zero — instrumentation negative control sane?
-5. only then interpret `tau_iso` and the positional diagnostic.
+1. `n_identity_exact` / `identity_exact_accuracy`: is the controlled Sudoku protocol usable at all?
+2. `same_serialization_repeat_tau`: is generation order stable when serialization is literally unchanged?
+3. `solve_flip_rate` and `solve_flip_directions`: does a mathematical isomorphism change solve/fail outcome?
+4. If enough both-correct pairs remain, inspect `tau_iso_per_puzzle` and its puzzle-cluster bootstrap CI.
+5. Compare observed tau with `surface_order_positional_null_per_puzzle` and `boundary_first_positional_null_per_puzzle`, plus the corresponding excess-tau summaries.
+6. Treat `easy_first_candidate_count_spearman_per_puzzle`, random-remasking tau, and `native_digit_argmax_fraction` as diagnostics/characterization, not the headline gate.
 
-Do **not** swap prompts, change blank count, add model families, change the transform set, or change the metric after seeing discovery unless the current protocol is formally killed and a new version is registered.
+A low number of both-correct pairs caused by many `identity correct -> iso wrong` flips is **not** an unusable run; it is direct outcome non-equivariance. Only low identity competence or unstable same-serialization order prevents interpretation.
 
-## 7. Confirmation
+Do not change prompt, blank count, transform subset, model, or metric after discovery to rescue a preferred story.
 
-Only if discovery yields a large, interpretable result worth a paper, freeze that interpretation in a short result note and run:
+## 6. Confirmation
+
+Only after writing down the discovery interpretation, run the untouched confirmation half:
 
 ```bash
 python src/run_g0.py \
   --config LOCKED_CONFIG.json \
   --manifest data/manifest.jsonl \
   --split confirmation \
+  --overwrite \
   --out results/g0_confirmation_traces.jsonl
 
 python src/analyze_g0.py \
+  --config LOCKED_CONFIG.json \
   --traces results/g0_confirmation_traces.jsonl \
   --manifest data/manifest.jsonl \
   --split confirmation \
   --out results/g0_confirmation_summary.json
 ```
+
+Confirmation intentionally does not repeat the discovery-only controls. Interpret it against the already frozen discovery claim.
