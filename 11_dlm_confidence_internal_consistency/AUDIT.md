@@ -1,74 +1,152 @@
-# Topic 11 pre-run validation audit
+# Topic 11 — second pre-run audit (v3)
 
 Date: 2026-08-22
 
-This audit was performed before any Topic-11 model score was inspected.
+This audit was completed **before any Topic-11 G-0 model scores were inspected**.
 
-## Goal
+## Bottom line
 
-Make the first experiment capable of killing or supporting the research question without post-hoc metric search.
+The v2 implementation was mechanically sound and substantially better than the original registration, but its construct was still vulnerable to a shallow explanation:
 
-## Risks found in the first implementation
+> internally consistent examples literally repeated the same anchor number between the announcement and Step 1, while inconsistent examples did not.
 
-### 1. Environment split with Topic 10
+For a bidirectional DLM, excluding Step-1 from the metric does not eliminate that relation: the whole observed sequence can influence every final-forward position. A positive v2 result could therefore be "numeric match sensitivity" rather than global reasoning consistency.
 
-Topic 11 pinned `transformers==4.38.2`, while Topic 10 uses a modern `transformers>=4.49` environment. That would unnecessarily create a second LLaDA environment and cache workflow.
+The v3 design removes that ambiguity instead of adding more post-hoc controls.
 
-**Fix:** Topic 11 now uses a compatible modern range and is explicitly designed to reuse Topic 10's environment.
+## Changes made
 
-### 2. Padding / attention-mask dependence
+### 1. Move the consistency intervention into the future
 
-The original scorer right-padded variable-length batches and relied on the remote LLaDA implementation's `attention_mask` path. LLaDA remote code has changed around attention-mask support, so this introduces an avoidable compatibility variable.
+v2:
 
-**Fix:** examples are bucketed by exact token length. Every model batch is rectangular without padding; no attention mask is needed.
+```text
+[announcement intervention]
+[trajectory]
+```
 
-### 3. Full-tail averaging can dilute the relevant signal
+v3:
 
-Most continuation tokens are boilerplate (`Step`, punctuation, operators). A genuine arithmetic-consistency effect could be diluted by averaging them together.
+```text
+[trajectory]
+[future consistency-check intervention]
+```
 
-**Fix:** the design records exact character spans of every downstream arithmetic result; the tokenizer maps those frozen spans to token positions. `confidence_result` is therefore deterministic and judge-free.
+The primary scored tokens are inside the trajectory, *before* the consistency intervention.
 
-### 4. First-step effects can be shallow locality
+This converts the key effect into a retroactive test. A future semantic contradiction must alter confidence on earlier unchanged reasoning tokens.
 
-A mismatched announced state is adjacent to Step 1. A Step-1 confidence drop alone could be local numeric compatibility rather than a trajectory-level signal.
+### 2. Remove literal anchor copying
 
-**Fix:** `confidence_result_late` excludes the first result and is the primary identification metric. First-result, final-result, all-result, all-tail and full-output scores are all produced from the same forward pass and reported transparently.
+Prompt and future check encode the anchor through different arithmetic aliases.
 
-### 5. A scorer bug could masquerade as a null research result
+For anchor 23:
 
-A wrong chat template, incompatible model revision, or incorrect final-forward probability implementation could return a clean null and wrongly kill the topic.
+```text
+prompt: 7 + 16
+trajectory literal: 23
+check: 11 + 12
+```
 
-**Fix:** the same loaded model runs a 100-pair arithmetic correct-vs-wrong positive control modeled on the seed paper's intervention. If this prerequisite does not reproduce a stable positive gap, the verdict is `INVALID_PROTOCOL_DO_NOT_INTERPRET` rather than a scientific negative.
+The builder rejects accidental residuals that collide with anchors, operation values, or states in either mirrored trajectory.
 
-### 6. Text-space matching does not imply token-space matching
+Thus the factor is semantic equivalence, not "same digit appears twice."
 
-Changing `23` to `29` can change multiple tokens under some tokenizers/contexts.
+### 3. Bracket the trajectory
 
-**Fix:** both mirrored orientations undergo a tokenizer-level audit. The default G-0 admits only one-token prompt and announcement interventions with identical lengths, identical downstream token IDs, and identical scored result positions.
+External correctness is stated at the end of the user prompt. Internal consistency is stated after the trajectory.
 
-### 7. Orientation-level pseudoreplication
+The primary Step-2/3 result tokens lie between the two manipulated regions, reducing the old positional asymmetry.
 
-The two mirrored orientations share the same anchor pair and operation chain.
+### 4. Add semantic-alias prerequisite
 
-**Fix:** effects are averaged across orientations first. Bootstrap and sign-flip inference operate on anchor-pair effects only.
+Because v3 deliberately removes literal copies, a null is uninterpretable if the frozen model/scorer does not understand the simple arithmetic aliases.
 
-## Locked G-0 stack
+A second protocol probe therefore tests confidence on an unchanged target token under correct vs incorrect alias expressions.
 
-1. unit tests;
-2. deterministic design construction;
-3. tokenizer-only eligibility audit;
-4. one model load per GPU;
-5. arithmetic scoring positive control on shard 0;
-6. factorial scoring on pair-sharded examples;
-7. pair-level bootstrap + sign-flip diagnostics;
-8. preregistered verdict.
+Failure => `INVALID_PROTOCOL_DO_NOT_INTERPRET`, not a topic kill.
 
-No generation, training, hidden states, learned judge, threshold search or prompt sweep is required.
+### 5. Strengthen the original protocol gate
 
-## Remaining limitations accepted for G-0
+The arithmetic positive control no longer passes merely because its confidence interval is infinitesimally above zero.
 
-- The task is synthetic arithmetic rather than free-form GSM8K. This is intentional for identification; ecological generality is a later question only if G-0 is strong.
-- `CW - IC` compares contradictions located in different textual regions (prompt vs trajectory). Therefore it is treated as the **strong** result, not the minimum evidence for an internal-consistency signal.
-- LLaDA is the first model family because the motivating seed paper centers on it. Cross-DLLM replication is not required to decide whether the phenomenon exists at all.
+Locked arithmetic gate:
 
-Do not add more controls before seeing G-0. If the locked late-result effect is absent, archive the topic.
+- lower 95% CI > 0;
+- mean gap >= 0.10.
+
+This guards against a changed/broken environment that technically produces the right sign but no longer resembles the seed-paper phenomenon.
+
+### 6. Add a scientific effect-size floor
+
+Statistical significance alone cannot make the topic interesting.
+
+Locked primary floor:
+
+```text
+Delta_consistency >= 0.01
+```
+
+If the 95% CI upper bound is below 0.01, G-0 has excluded a scientifically meaningful retroactive signal and the topic can be archived cleanly.
+
+### 7. Stop requiring "coherence beats correctness" for survival
+
+The scientific question first asks whether internal consistency is an independently identifiable signal.
+
+Therefore:
+
+- a meaningful stable retroactive consistency effect => topic stands;
+- `CW > IC` => stronger headline;
+- failure of `CW > IC` alone no longer kills a real consistency phenomenon.
+
+This prevents an unnecessarily strong secondary contrast from erasing the actual question.
+
+### 8. Freeze the runner in code, not only prose
+
+The previous shell wrapper described the design as frozen while still allowing several scientific values to be overridden through environment variables.
+
+v3 reads model identity, design size, seeds, intervention limit, probe gates, effect floor, and statistical settings directly from the locked config. Only infrastructure settings such as GPU count/IDs and batch size remain overrideable. The run directory snapshots the config and repository commit.
+
+## Why this can now be one-shot decisive
+
+A strong positive result cannot be explained by:
+
+- confidence on the edited token itself — primary tokens occur earlier and are unchanged;
+- immediate adjacency — primary tokens are Step 2/3, away from both manipulated boundaries;
+- literal anchor copying — prompt/check use distinct semantic aliases;
+- a favorite anchor token — X/Y roles are mirrored before inference;
+- final-answer correctness — it is an orthogonal factorial factor;
+- padding behavior — scoring batches contain only exact-length sequences;
+- LLM-judge subjectivity — all labels are programmatic;
+- a broken confidence scorer — two frozen protocol prerequisites must pass first.
+
+A meaningful negative is also interpretable: if both prerequisites work yet the primary CI excludes a 1pp effect, the particular "global retroactive structural-consistency confidence" hypothesis has failed.
+
+## Accepted limitations
+
+1. G-0 is synthetic arithmetic. This is deliberate because identification is the first goal.
+2. The final-forward confidence is the seed-paper observable; G-0 does not claim to identify the entire denoising dynamics.
+3. The 1pp effect-size floor is a preregistered scientific judgment, not a universal constant.
+4. Cross-DLM replication is G-1, not required to decide whether the phenomenon exists in LLaDA.
+
+## Frozen execution discipline
+
+Engineering fixes are allowed only if they restore the intended frozen measurement, e.g.:
+
+- compatible transformers/remote-code API changes;
+- GPU OOM solved by lowering batch size;
+- cache/model-path repair;
+- tokenizer API repair that preserves the one-token eligibility criterion;
+- shard/runtime bugs.
+
+Do not change after observing scores:
+
+- factorial construction;
+- primary metric;
+- alias templates/bases;
+- protocol thresholds;
+- effect-size threshold;
+- verdict rules;
+- seed/subset selection to improve the result.
+
+If a true scientific redesign is needed, preserve the v3 result and register the redesign explicitly rather than silently tuning G-0.

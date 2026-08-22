@@ -1,56 +1,29 @@
-import sys
-import unittest
+import sys,unittest
 from pathlib import Path
-
 import numpy as np
+ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
+from analyze import orientation_effect,verdict,sign_flip_pvalue,PRIMARY_METRIC
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+class AnalysisV3Test(unittest.TestCase):
+    def test_effect_algebra(self):
+        e=orientation_effect({"CC":.9,"IC":.7,"CW":.8,"IW":.6})
+        self.assertAlmostEqual(e["delta_consistency"],.2); self.assertAlmostEqual(e["delta_correctness"],.1)
+        self.assertAlmostEqual(e["coherent_wrong_minus_incoherent_correct"],.1)
+    def _protocol(self,gap=.2,lo=.15):
+        return {"arithmetic_result":{"gap_mean":gap,"gap_ci95":[lo,gap+.05]},"semantic_alias":{"gap_mean":gap,"gap_ci95":[lo,gap+.05]}}
+    def _metrics(self,mean=.03,ci=(.02,.04),cross=(.01,.03),c1=.03,c0=.03):
+        return {PRIMARY_METRIC:{"effects":{"delta_consistency":{"mean":mean,"ci95":list(ci)},"consistency_when_correct":{"mean":c1,"ci95":[.0,.06]},"consistency_when_wrong":{"mean":c0,"ci95":[.0,.06]},"coherent_wrong_minus_incoherent_correct":{"mean":sum(cross)/2,"ci95":list(cross)}}}}
+    def test_bad_protocol_never_kills_science(self):
+        v,_=verdict(self._protocol(gap=.01,lo=.005),self._metrics(),.10,.02,.01); self.assertEqual(v,"INVALID_PROTOCOL_DO_NOT_INTERPRET")
+    def test_strong_go(self):
+        v,_=verdict(self._protocol(),self._metrics(),.10,.02,.01); self.assertEqual(v,"GO_STRONG_COHERENCE_OVER_CORRECTNESS")
+    def test_topic_stands_without_dominance(self):
+        v,_=verdict(self._protocol(),self._metrics(cross=(-.01,.02)),.10,.02,.01); self.assertEqual(v,"GO_RETROACTIVE_CONSISTENCY_SIGNAL")
+    def test_equivalence_style_kill_excludes_meaningful_effect(self):
+        v,_=verdict(self._protocol(),self._metrics(mean=.002,ci=(-.002,.008)),.10,.02,.01); self.assertEqual(v,"KILL_NO_MEANINGFUL_RETROACTIVE_SIGNAL")
+    def test_uncertain_if_meaningful_effect_not_excluded(self):
+        v,_=verdict(self._protocol(),self._metrics(mean=.008,ci=(-.003,.02)),.10,.02,.01); self.assertEqual(v,"INCONCLUSIVE_FROZEN_DESIGN")
+    def test_signflip(self):
+        p=sign_flip_pvalue(np.linspace(.1,.3,20),np.random.default_rng(1),5000); self.assertLess(p,.01)
 
-from analyze import orientation_effect, sign_flip_pvalue, verdict
-
-
-class AnalysisTest(unittest.TestCase):
-    def test_effect_signs(self):
-        values = {"CC": 0.95, "IC": 0.70, "CW": 0.90, "IW": 0.65}
-        effects = orientation_effect(values)
-        self.assertAlmostEqual(effects["delta_consistency"], 0.25)
-        self.assertAlmostEqual(effects["delta_correctness"], 0.05)
-        self.assertGreater(effects["coherent_wrong_minus_incoherent_correct"], 0)
-
-    def test_sign_flip_detects_strong_positive(self):
-        x = np.linspace(0.1, 0.3, 20)
-        p = sign_flip_pvalue(x, np.random.default_rng(1), 5000)
-        self.assertLess(p, 0.01)
-
-    @staticmethod
-    def _metrics(cons_ci=(0.05, 0.15), compare_ci=(0.02, 0.10), full_ci=(0.03, 0.12), tail_ci=(0.01, 0.08)):
-        return {
-            "confidence_result_late": {
-                "effects": {
-                    "delta_consistency": {"ci95": list(cons_ci)},
-                    "coherent_wrong_minus_incoherent_correct": {"ci95": list(compare_ci)},
-                }
-            },
-            "confidence_tail": {"effects": {"delta_consistency": {"ci95": list(tail_ci)}}},
-            "confidence_full": {"effects": {"delta_consistency": {"ci95": list(full_ci)}}},
-        }
-
-    def test_protocol_failure_blocks_interpretation(self):
-        protocol = {"gap_ci95": [-0.01, 0.03]}
-        v, _ = verdict(protocol, self._metrics())
-        self.assertEqual(v, "INVALID_PROTOCOL_DO_NOT_INTERPRET")
-
-    def test_strong_signal_requires_late_result_and_cw_ic(self):
-        protocol = {"gap_ci95": [0.10, 0.30]}
-        v, _ = verdict(protocol, self._metrics())
-        self.assertEqual(v, "GO_STRONG_STRUCTURAL_SIGNAL")
-
-    def test_nonpositive_late_result_kills_topic(self):
-        protocol = {"gap_ci95": [0.10, 0.30]}
-        v, _ = verdict(protocol, self._metrics(cons_ci=(-0.10, -0.01)))
-        self.assertEqual(v, "KILL_NO_INTERNAL_CONSISTENCY_SIGNAL")
-
-
-if __name__ == "__main__":
-    unittest.main()
+if __name__=="__main__":unittest.main()
