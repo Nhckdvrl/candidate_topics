@@ -64,11 +64,28 @@ def run_variant(model, tokenizer, rec: dict, puzzle, solution, transform, varian
     )
 
 
-def _existing_keys(path: Path) -> set[tuple[str, str, str, str]]:
+def _validate_manifest(rows: list[dict], expected_protocol: str) -> None:
+    if not rows:
+        raise RuntimeError("manifest is empty")
+    bad = [r.get("puzzle_id", "<unknown>") for r in rows if r.get("protocol_version") != expected_protocol]
+    if bad:
+        raise RuntimeError(
+            f"manifest protocol mismatch: expected {expected_protocol}; "
+            f"regenerate the manifest before running (examples: {bad[:3]})"
+        )
+
+
+def _existing_keys(path: Path, expected_protocol: str) -> set[tuple[str, str, str, str]]:
     if not path.exists():
         return set()
     keys: set[tuple[str, str, str, str]] = set()
     for rec in read_jsonl(path):
+        observed = rec.get("metadata", {}).get("protocol_version")
+        if observed != expected_protocol:
+            raise RuntimeError(
+                f"stale trace protocol in {path}: expected {expected_protocol}, got {observed!r}; "
+                "use a fresh output path or --overwrite"
+            )
         key = record_key(rec)
         if key in keys:
             raise RuntimeError(f"duplicate trace already present in {path}: {key}")
@@ -96,7 +113,9 @@ def main() -> None:
         raise ValueError("require num_shards>=1 and 0<=shard_index<num_shards")
 
     cfg = json.loads(Path(args.config).read_text())
-    split_rows = [r for r in read_jsonl(args.manifest) if r["split"] == args.split]
+    manifest_rows = read_jsonl(args.manifest)
+    _validate_manifest(manifest_rows, cfg["protocol_version"])
+    split_rows = [r for r in manifest_rows if r["split"] == args.split]
     indexed_rows = [(i, r) for i, r in enumerate(split_rows) if i % args.num_shards == args.shard_index]
     if args.limit is not None:
         indexed_rows = indexed_rows[: args.limit]
@@ -105,7 +124,7 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists() and not (args.resume or args.overwrite):
         raise FileExistsError(f"{out} already exists; use --resume or --overwrite explicitly")
-    done = _existing_keys(out) if args.resume else set()
+    done = _existing_keys(out, cfg["protocol_version"]) if args.resume else set()
     mode = "w" if args.overwrite or not out.exists() else "a"
 
     n_repeat = 0 if args.skip_controls or args.split != "discovery" else int(cfg.get("same_serialization_repeat_puzzles", 0))
