@@ -1,0 +1,4 @@
+# Reuse an existing PyTorch environment when possible; no HF/Ray/torchrun needed.
+numpy>=1.24
+torch>=2.2
+# matplotlib is optional and used only by plot_results.py.
