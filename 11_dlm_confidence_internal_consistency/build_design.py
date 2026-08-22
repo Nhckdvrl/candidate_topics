@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Build the locked 2x2 factorial dataset for Topic 11.
 
-The design separates two factors with minimal interventions:
-  * internal consistency: whether the announced initial state matches the state
-    actually used by the downstream arithmetic trajectory;
-  * external correctness: whether that downstream state matches the initial
-    state specified by the problem prompt.
+The design orthogonalizes two relations around a fixed downstream arithmetic
+trajectory:
+  * internal consistency: announced state == downstream state;
+  * external correctness: prompt state == downstream state.
 
-For every anchor pair (x, y), we build two mirrored orientations so number-token
-preference cancels at the pair level.
+Every arithmetic equation is valid. Within one orientation, the entire
+continuation is text-identical in all four cells. Each anchor pair is mirrored so
+number-token preferences cancel before inference.
 """
 
 from __future__ import annotations
@@ -19,6 +19,9 @@ import random
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
+
+
+DESIGN_VERSION = "v2_result_spans"
 
 
 @dataclass(frozen=True)
@@ -45,6 +48,7 @@ class Operation:
 
 @dataclass(frozen=True)
 class Sample:
+    design_version: str
     pair_id: int
     orientation: int
     cell: str
@@ -61,6 +65,7 @@ class Sample:
     prompt: str
     announcement_text: str
     continuation_text: str
+    result_char_spans: list[list[int]]
     reported_final: int
     true_final: int
 
@@ -85,12 +90,23 @@ def render_prompt(anchor: int, operations: list[Operation], template_id: int) ->
     return templates[template_id % len(templates)]
 
 
+def _append_line(lines: list[str], spans: list[list[int]], line: str, result: int) -> None:
+    """Append one line and record the character span of its trailing result."""
+    result_text = str(result)
+    if not line.endswith(result_text):
+        raise AssertionError("result must be the final substring of the line")
+    cursor = sum(len(x) + 1 for x in lines)
+    start = cursor + len(line) - len(result_text)
+    spans.append([start, start + len(result_text)])
+    lines.append(line)
+
+
 def render_trajectory(
     branch_anchor: int,
     announced_anchor: int,
     operations: list[Operation],
     template_id: int,
-) -> tuple[str, str, int]:
+) -> tuple[str, str, int, list[list[int]]]:
     states, final = apply_chain(branch_anchor, operations)
     announcement_templates = [
         f"Initial state: {announced_anchor}\n",
@@ -100,12 +116,17 @@ def render_trajectory(
     ]
     announcement = announcement_templates[template_id % len(announcement_templates)]
     lines: list[str] = []
+    spans: list[list[int]] = []
     for i, op in enumerate(operations, start=1):
         lhs = states[i - 1]
         rhs = states[i]
-        lines.append(f"Step {i}: {lhs} {op.symbol} {op.value} = {rhs}")
-    lines.append(f"Final answer: {final}")
-    return announcement, "\n".join(lines), final
+        _append_line(lines, spans, f"Step {i}: {lhs} {op.symbol} {op.value} = {rhs}", rhs)
+    _append_line(lines, spans, f"Final answer: {final}", final)
+    continuation = "\n".join(lines)
+    for start, end in spans:
+        token = continuation[start:end]
+        assert token and token.lstrip("-").isdigit()
+    return announcement, continuation, final, spans
 
 
 def sample_operations(rng: random.Random, min_anchor: int) -> list[Operation]:
@@ -125,7 +146,6 @@ def sample_operations(rng: random.Random, min_anchor: int) -> list[Operation]:
         elif symbol == "*":
             value = rng.randint(2, 5)
         else:
-            # Keep all branches comfortably positive.
             value = rng.randint(1, max(1, min(9, current_floor - 1)))
         ops.append(Operation(symbol, value))
         if symbol == "+":
@@ -147,17 +167,14 @@ def build_orientation(
     operations: list[Operation],
     template_id: int,
 ) -> list[Sample]:
-    """Build A/B/C/D for one fixed downstream branch.
+    """Build CC/IC/CW/IW for one fixed downstream branch.
 
-    A/CC: prompt=branch, announce=branch  -> consistent, final correct
-    B/IC: prompt=branch, announce=alt     -> inconsistent, final correct
-    C/CW: prompt=alt,    announce=branch  -> consistent, final wrong
-    D/IW: prompt=alt,    announce=alt     -> inconsistent, final wrong
-
-    Within an orientation, the downstream continuation is *identical in all four
-    cells*. Only the prompt anchor and announcement anchor vary.
+    CC: prompt=branch, announce=branch -> consistent, externally correct
+    IC: prompt=branch, announce=alt    -> inconsistent, externally correct
+    CW: prompt=alt,    announce=branch -> consistent, externally wrong
+    IW: prompt=alt,    announce=alt    -> inconsistent, externally wrong
     """
-    _, _, reported_final = render_trajectory(branch_anchor, branch_anchor, operations, template_id)
+    _, _, reported_final, _ = render_trajectory(branch_anchor, branch_anchor, operations, template_id)
     _, true_final_branch = apply_chain(branch_anchor, operations)
     _, true_final_alt = apply_chain(alternate_anchor, operations)
     assert reported_final == true_final_branch
@@ -171,11 +188,12 @@ def build_orientation(
     ]
     out: list[Sample] = []
     for cell, consistent, correct, prompt_anchor, announced_anchor, true_final in specs:
-        announcement, continuation, reported = render_trajectory(
+        announcement, continuation, reported, spans = render_trajectory(
             branch_anchor, announced_anchor, operations, template_id
         )
         out.append(
             Sample(
+                design_version=DESIGN_VERSION,
                 pair_id=pair_id,
                 orientation=orientation,
                 cell=cell,
@@ -192,6 +210,7 @@ def build_orientation(
                 prompt=render_prompt(prompt_anchor, operations, template_id),
                 announcement_text=announcement,
                 continuation_text=continuation,
+                result_char_spans=spans,
                 reported_final=reported,
                 true_final=true_final,
             )
@@ -203,7 +222,7 @@ def build_pair(pair_id: int, rng: random.Random, anchor_min: int, anchor_max: in
     x, y = rng.sample(range(anchor_min, anchor_max + 1), 2)
     operations = sample_operations(rng, min(x, y))
     template_id = rng.randrange(4)
-    samples = []
+    samples: list[Sample] = []
     samples.extend(build_orientation(pair_id, 0, x, y, x, y, operations, template_id))
     samples.extend(build_orientation(pair_id, 1, y, x, x, y, operations, template_id))
     return samples
@@ -213,20 +232,22 @@ def validate_pair(samples: list[Sample]) -> None:
     assert len(samples) == 8
     by_orientation: dict[int, dict[str, Sample]] = {}
     for s in samples:
+        assert s.design_version == DESIGN_VERSION
         by_orientation.setdefault(s.orientation, {})[s.cell] = s
+        for start, end in s.result_char_spans:
+            assert 0 <= start < end <= len(s.continuation_text)
+            assert s.continuation_text[start:end].lstrip("-").isdigit()
     assert set(by_orientation) == {0, 1}
     for cells in by_orientation.values():
         assert set(cells) == {"CC", "IC", "CW", "IW"}
         cc, ic, cw, iw = (cells[k] for k in ("CC", "IC", "CW", "IW"))
-        # The downstream arithmetic is fixed across all four cells.
         assert len({s.continuation_text for s in cells.values()}) == 1
+        assert len({tuple(map(tuple, s.result_char_spans)) for s in cells.values()}) == 1
         assert len({s.reported_final for s in cells.values()}) == 1
-        # Correctness factor: same output, only the prompt anchor changes.
         assert cc.announcement_text == cw.announcement_text
         assert ic.announcement_text == iw.announcement_text
         assert cc.prompt == ic.prompt
         assert cw.prompt == iw.prompt
-        # Consistency factor: same prompt + same continuation, only announcement changes.
         assert cc.announcement_text != ic.announcement_text
         assert cw.announcement_text != iw.announcement_text
         assert cc.externally_correct and ic.externally_correct
