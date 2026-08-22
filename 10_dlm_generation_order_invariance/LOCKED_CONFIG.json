@@ -1,5 +1,5 @@
 {
-  "protocol_version": "g0-v1",
+  "protocol_version": "g0-v2",
   "model_id": "GSAI-ML/LLaDA-8B-Instruct",
   "dtype": "bfloat16",
   "mask_id": 126336,
@@ -11,10 +11,13 @@
   "n_confirmation_puzzles": 64,
   "transforms_per_puzzle": 4,
   "primary_transforms": "spatial_only_keep_digit_identity",
-  "primary_remasking": "low_confidence",
+  "primary_remasking": "full_vocab_probability_of_best_valid_digit",
   "negative_control_remasking": "random",
   "one_blank_finalized_per_step": true,
-  "min_exact_isomorph_pairs_for_interpretation": 50,
-  "seed_easy_first_spearman_floor": 0.15,
-  "random_control_abs_tau_ceiling": 0.20
+  "same_serialization_repeat_puzzles": 12,
+  "random_control_puzzles": 12,
+  "min_identity_exact_puzzles_for_interpretation": 16,
+  "min_both_exact_pairs_for_order_analysis": 30,
+  "min_both_exact_puzzles_for_order_analysis": 12,
+  "same_serialization_tau_floor": 0.95
 }
