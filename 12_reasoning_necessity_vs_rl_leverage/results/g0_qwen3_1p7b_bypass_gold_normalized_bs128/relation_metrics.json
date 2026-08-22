@@ -1,0 +1,63 @@
+{
+  "gate": "INCONCLUSIVE_DO_NOT_TUNE",
+  "intervention_informativeness": "INFORMATIVE",
+  "residual_scale": 0.0,
+  "tasks": [
+    "gsm8k",
+    "math500"
+  ],
+  "num_layers": 28,
+  "primary_necessity": "P(ablated_wrong | baseline_correct), equal task weight",
+  "primary_target": "paper_C_on_exact_matched_tasks",
+  "spearman_rho": 0.355275766294053,
+  "spearman_bootstrap_90ci": [
+    0.2996715506371678,
+    0.4020938863438201
+  ],
+  "kendall_tau": 0.2251657604191563,
+  "depth_residual_spearman": -0.2380952380952381,
+  "depth_partial_rank_diagnostic": -0.09297063354310868,
+  "circular_shift_p": 0.07142857142857142,
+  "task_profile_rho_math500_vs_gsm8k": 0.8776712658161486,
+  "net_accuracy_drop_robustness": {
+    "spearman_rho": 0.35806186695866415,
+    "depth_residual_spearman": -0.2194854953475643,
+    "depth_partial_rank_diagnostic": -0.0989754315468784
+  },
+  "c_math_4task_robustness": {
+    "spearman_rho": 0.314579081969321,
+    "kendall_tau": 0.20982902252759356,
+    "depth_residual_spearman": -0.2282430213464696,
+    "depth_partial_rank_diagnostic": -0.12441528788576596,
+    "circular_shift_p": 0.07142857142857142,
+    "topk_overlap": 1
+  },
+  "topk": 5,
+  "topk_overlap": 1,
+  "topk_expected_under_random": 0.8928571428571429,
+  "task_matched": [
+    {
+      "task": "gsm8k",
+      "baseline_accuracy": 0.78125,
+      "baseline_solved_n": 200,
+      "rho_conditional": 0.29277985758397973,
+      "rho_net_drop": 0.29524594903765855
+    },
+    {
+      "task": "math500",
+      "baseline_accuracy": 0.5859375,
+      "baseline_solved_n": 150,
+      "rho_conditional": 0.27932574699983187,
+      "rho_net_drop": 0.2712255559960147
+    }
+  ],
+  "generation_damage_diagnostics": {
+    "rho_necessity_vs_parser_fallback": 0.5862409693426226,
+    "rho_necessity_vs_truncation": 0.5146455161350917,
+    "max_parser_fallback_rate": 0.255859375,
+    "max_truncation_rate": 0.984375,
+    "fraction_layers_necessity_ge_0p90": 0.10714285714285714
+  },
+  "bootstrap_replicates": 2000,
+  "bootstrap_seed": 20260822
+}

@@ -1,0 +1,25 @@
+{
+  "contract_id": "8e4cfd710e56320e119e8044014c2ac799f937d4dc654be6e396f10aa1033672",
+  "model": "Qwen/Qwen3-1.7B-Base",
+  "model_source_is_local": false,
+  "requested_model_revision": "912d2727784ca0a6f718845aa14d4d9e5f48fe26",
+  "resolved_model_commit": "912d2727784ca0a6f718845aa14d4d9e5f48fe26",
+  "tasks": [
+    "gsm8k",
+    "math500"
+  ],
+  "dataset_revisions": {
+    "math500": "6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be",
+    "gsm8k": "7cf1290ed87c28a31f867e0f47a7cb62a61d502e"
+  },
+  "n_per_task": 256,
+  "seed": 20260822,
+  "prompt_style": "qwen_math_seed",
+  "residual_scale": 0.0,
+  "max_input_tokens": 2048,
+  "max_new_tokens": 1536,
+  "batch_size": 128,
+  "dtype": "bfloat16",
+  "attn_implementation": "sdpa",
+  "expected_layers": 28
+}
