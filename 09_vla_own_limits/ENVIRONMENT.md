@@ -14,7 +14,8 @@ paths so that no large artifact can be committed.
 ```text
 /home/xiang/projects/openpi_t09      openpi @ 15a9616 (pinned in LOCKED_CONFIG.json)
 /home/xiang/projects/openpi_t09/.venv  server venv (uv sync)
-/home/xiang/projects/LIBERO_t09      LIBERO checkout
+/home/xiang/simulation_envs/LIBERO        LIBERO checkout (shared, persistent -- see note below)
+/home/xiang/simulation_envs/LIBERO_assets simulation assets (meshes/textures, ~407M)
 /home/xiang/venvs/t09_client         client venv (python 3.11)
 /home/xiang/projects/t09_ckpts       downloaded + converted checkpoints
 ```
@@ -52,7 +53,10 @@ The version pin is unchanged, so openpi's `transformers_replace` patches still a
 ## Client venv
 
 ```bash
-git clone https://github.com/Lifelong-Robot-Learning/LIBERO.git /home/xiang/projects/LIBERO_t09
+# Only needed if /home/xiang/simulation_envs/LIBERO does not already exist --
+# check there first, this checkout is meant to be shared across topics.
+git clone https://github.com/Lifelong-Robot-Learning/LIBERO.git /home/xiang/simulation_envs/LIBERO
+
 uv venv --python 3.11 /home/xiang/venvs/t09_client
 VIRTUAL_ENV=/home/xiang/venvs/t09_client uv pip install \
   "numpy<2" "robosuite==1.4.1" "mujoco==3.1.6" "gym==0.25.2" "setuptools<70" \
@@ -68,18 +72,18 @@ VIRTUAL_ENV=/home/xiang/venvs/t09_client uv pip install --no-deps -e /home/xiang
    importable-looking but empty package. Put the checkout on the path instead:
 
    ```bash
-   echo /home/xiang/projects/LIBERO_t09 > /home/xiang/venvs/t09_client/lib/python3.11/site-packages/libero_repo.pth
+   echo /home/xiang/simulation_envs/LIBERO > /home/xiang/venvs/t09_client/lib/python3.11/site-packages/libero_repo.pth
    ```
 
 2. **LIBERO prompts interactively on first import** and writes `~/.libero/config.yaml`.
    Under a non-interactive shell that import raises `EOFError`. Write the file up front:
 
    ```yaml
-   benchmark_root: /home/xiang/projects/LIBERO_t09/libero/libero
-   bddl_files: /home/xiang/projects/LIBERO_t09/libero/libero/./bddl_files
-   init_states: /home/xiang/projects/LIBERO_t09/libero/libero/./init_files
-   datasets: /home/xiang/projects/LIBERO_t09/libero/libero/../datasets
-   assets: /home/xiang/projects/LIBERO_t09/libero/libero/./assets
+   benchmark_root: /home/xiang/simulation_envs/LIBERO/libero/libero
+   bddl_files: /home/xiang/simulation_envs/LIBERO/libero/libero/./bddl_files
+   init_states: /home/xiang/simulation_envs/LIBERO/libero/libero/./init_files
+   datasets: /home/xiang/simulation_envs/LIBERO/libero/libero/../datasets
+   assets: /home/xiang/simulation_envs/LIBERO_assets/assets
    ```
 
    The `datasets` warning is expected and harmless; we never load demonstrations.
@@ -89,6 +93,33 @@ VIRTUAL_ENV=/home/xiang/venvs/t09_client uv pip install --no-deps -e /home/xiang
    numpy reconstructors before building the benchmark. Without that,
    `get_task_init_states` raises `WeightsUnpickler error` — which would look like a
    missing-data problem rather than a serialization default.
+
+### The checkpoints, openpi checkout, and both venvs were deleted after the run
+
+Topic 09 killed at G0 (`ARCHIVE_SUMMARY.md`). The 55G of downloaded/converted checkpoints,
+the openpi checkout + server venv, and the client venv were all deleted after the run
+finished and results were pushed -- none of it is needed to read or audit the result, and
+rebuilding it from scratch is exactly the sequence documented below. Re-run this whole file
+top to bottom if the topic is ever revived.
+
+**The LIBERO checkout and its simulation assets were the one exception, and were kept.**
+LIBERO is a generic MuJoCo/robosuite simulation benchmark, not Topic-09-specific data --
+other work on this machine may want it, and the asset download step alone (`~/.cache/libero`
+scenes/objects/textures) is slow enough to be worth not repeating. Both now live under
+`/home/xiang/simulation_envs/`, moved out of `projects/` so they read as shared
+infrastructure rather than one topic's scratch directory:
+
+```text
+/home/xiang/simulation_envs/LIBERO         git checkout of Lifelong-Robot-Learning/LIBERO
+/home/xiang/simulation_envs/LIBERO_assets  simulation assets (meshes, textures, objects)
+```
+
+`~/.libero/config.yaml` points at both. Any future venv needs the same two-line setup as
+below, just against this shared checkout instead of a fresh clone:
+
+```bash
+echo /home/xiang/simulation_envs/LIBERO > <venv>/lib/python3.*/site-packages/libero_repo.pth
+```
 
 ### The server venv needs openpi's patched transformers
 
