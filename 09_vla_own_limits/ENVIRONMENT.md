@@ -27,8 +27,27 @@ cd /home/xiang/projects/openpi_t09 && git checkout 15a9616a00943ada6c20a0f158e3a
 uv sync
 ```
 
-Verified: `torch 2.7.1+cu126`, CUDA visible, `pi05_libero` config loads with
-`action_horizon=10`, `action_dim=32`.
+`pi05_libero` loads with `action_horizon=10`, `action_dim=32`.
+
+### These GPUs need the cu128 torch build
+
+`uv sync` resolves `torch==2.7.1+cu126`, whose compiled arch list stops at `sm_90`:
+
+```text
+arch list:  sm_50 sm_60 sm_70 sm_75 sm_80 sm_86 sm_90
+device cap: (12, 0)   # RTX PRO 6000 Blackwell
+```
+
+Inference then dies with `CUDA error: no kernel image is available for execution on the
+device` — at the first image-normalization op, which makes it look like a data problem
+rather than a build-target problem. Install the same pinned version from the cu128 index:
+
+```bash
+VIRTUAL_ENV=/home/xiang/projects/openpi_t09/.venv \
+  uv pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cu128
+```
+
+The version pin is unchanged, so openpi's `transformers_replace` patches still apply.
 
 ## Client venv
 
