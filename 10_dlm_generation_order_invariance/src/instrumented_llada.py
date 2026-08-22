@@ -10,12 +10,19 @@ class DecodeResult:
     finalization_step: dict[int, int]
     confidence_at_finalization: dict[int, float]
     native_argmax_is_digit: dict[int, bool]
+    native_scheduler_pick_same: dict[int, bool]
 
     @property
     def native_digit_argmax_fraction(self) -> float:
         if not self.native_argmax_is_digit:
             return float("nan")
         return sum(bool(v) for v in self.native_argmax_is_digit.values()) / len(self.native_argmax_is_digit)
+
+    @property
+    def native_scheduler_pick_same_fraction(self) -> float:
+        if not self.native_scheduler_pick_same:
+            return float("nan")
+        return sum(bool(v) for v in self.native_scheduler_pick_same.values()) / len(self.native_scheduler_pick_same)
 
 
 def _exact_digit_token_ids(tokenizer) -> dict[int, int]:
@@ -106,8 +113,11 @@ def decode_fixed_slots(
     Content is constrained to digits 1..9 because every mutable slot is a Sudoku
     cell. Scheduling confidence is *not* renormalized over those digits: the
     selected valid digit is scored by its probability under the full vocabulary.
-    When the native full-vocabulary argmax is already a digit, this is exactly the
-    ordinary LLaDA confidence for that position. That fidelity rate is logged.
+
+    For every confidence-decoding step we additionally compute which position the
+    completely native full-vocabulary LLaDA confidence scheduler would select.
+    Agreement between the two position choices is logged, so grammar-induced
+    scheduling drift is measurable rather than assumed away.
     """
     torch = _load_torch()
     if temperature < 0:
@@ -132,6 +142,7 @@ def decode_fixed_slots(
     finalization_step: dict[int, int] = {}
     finalization_conf: dict[int, float] = {}
     native_argmax_is_digit: dict[int, bool] = {}
+    native_scheduler_pick_same: dict[int, bool] = {}
 
     with torch.no_grad():
         for step in range(1, len(blank_positions) + 1):
@@ -151,20 +162,26 @@ def decode_fixed_slots(
                 local_choice = digit_logits.argmax(dim=-1)
             proposed_ids = allowed[local_choice]
 
+            slot_logits_f32 = slot_logits.to(torch.float32)
+            log_z = torch.logsumexp(slot_logits_f32, dim=-1)
             chosen_logits = slot_logits.gather(-1, proposed_ids.unsqueeze(-1)).squeeze(-1).to(torch.float32)
-            log_z = torch.logsumexp(slot_logits.to(torch.float32), dim=-1)
             conf = torch.exp(chosen_logits - log_z)
 
-            native_ids = slot_logits.argmax(dim=-1)
+            native_max_logits, native_ids = slot_logits_f32.max(dim=-1)
+            native_conf = torch.exp(native_max_logits - log_z)
             native_is_digit = (native_ids.unsqueeze(-1) == allowed.view(1, 1, -1)).any(dim=-1)
+
+            constrained_scores = conf[0].masked_fill(~active, float("-inf"))
+            native_scores = native_conf[0].masked_fill(~active, float("-inf"))
+            constrained_pick_j = int(constrained_scores.argmax().item())
+            native_pick_j = int(native_scores.argmax().item())
 
             if remasking == "random":
                 active_indices = torch.nonzero(active, as_tuple=False).flatten()
                 pick = torch.randint(active_indices.numel(), (1,), generator=generator, device=model.device)
                 pick_j = int(active_indices[pick].item())
             else:
-                scores = conf[0].masked_fill(~active, float("-inf"))
-                pick_j = int(scores.argmax().item())
+                pick_j = constrained_pick_j
 
             abs_pos = blank_positions[pick_j]
             cell_i = blank_cells[pick_j]
@@ -173,6 +190,8 @@ def decode_fixed_slots(
             finalization_step[cell_i] = step
             finalization_conf[cell_i] = float(conf[0, pick_j].item())
             native_argmax_is_digit[cell_i] = bool(native_is_digit[0, pick_j].item())
+            if remasking == "low_confidence":
+                native_scheduler_pick_same[cell_i] = constrained_pick_j == native_pick_j
 
     pred: list[int] = []
     for cell_i, pos in enumerate(cell_positions):
@@ -180,4 +199,10 @@ def decode_fixed_slots(
         if tok not in id_to_digit:
             raise RuntimeError(f"non-digit token survived in cell {cell_i}: {tok}")
         pred.append(id_to_digit[tok])
-    return DecodeResult(pred, finalization_step, finalization_conf, native_argmax_is_digit)
+    return DecodeResult(
+        pred,
+        finalization_step,
+        finalization_conf,
+        native_argmax_is_digit,
+        native_scheduler_pick_same,
+    )
