@@ -14,5 +14,10 @@
     "alg_temp": 0.0
   },
   "interpretation": "ordinary competence gate only; no 9x9 symmetry result was generated",
-  "observation": "Many failures contain explanatory text or malformed/flat/truncated matrices; this checkpoint is not yet a competent 9x9 solver."
+  "observation": "Many failures contain explanatory text or malformed/flat/truncated matrices; this checkpoint is not yet a competent 9x9 solver.",
+  "checkpoint_weight_finiteness": {
+    "tensors_numel": 7615616512,
+    "nonfinite_tensors": 0,
+    "max_abs": 322.0
+  }
 }
