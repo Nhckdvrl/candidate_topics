@@ -1,81 +1,185 @@
 import numpy as np
 import pandas as pd
+import pytest
+import torch
+from types import SimpleNamespace
 
-from src.panel import choose_identifiable_pair, pair_stats
+from src.feature_panel import aggregate_feature_replicates
+from src.openpi_instrumented_server import ActionExpertLayerCapture, ControlledInstrumentedPolicy
+from src.panel import choose_identifiable_pair, pair_stats, validate_panel
 from src.relative_probe import SharedLinearProbe, paired_relative_metrics
+from src.state_contract import deterministic_noise_seed, hash_sim_state
 
 
-def _panel(a, b, c=None):
+def _rows(spec, *, seeds=range(8), hash_value="abc"):
     rows = []
-    vals = {"2k": a, "9k": b}
-    if c is not None:
-        vals["3k"] = c
-    for checkpoint, ys in vals.items():
-        for seed, y in enumerate(ys):
-            rows.append({"task": "t", "seed": seed, "checkpoint": checkpoint, "success": y})
+    for cp, counts in spec.items():
+        for init_idx, n_success in enumerate(counts):
+            for j, ps in enumerate(seeds):
+                rows.append({
+                    "suite": "libero_10",
+                    "task_id": 0,
+                    "init_idx": init_idx,
+                    "env_seed": 7,
+                    "sim_state_hash": f"{hash_value}-{init_idx}",
+                    "checkpoint": cp,
+                    "policy_seed": int(ps),
+                    "success": int(j < n_success),
+                })
     return pd.DataFrame(rows)
 
 
-def test_pair_stats_counts_bidirectional_crossover():
-    df = _panel([1, 1, 0, 0, 1, 0], [0, 1, 1, 0, 0, 1])
-    s = pair_stats(df, "2k", "9k")
-    assert s.n_a_wins == 2
-    assert s.n_b_wins == 2
-    assert s.n_disagree == 4
-    assert s.bidirectional_support == 2
+def test_robust_crossover_uses_rates_not_single_draws():
+    df = _rows({"2k": [6, 2, 5], "9k": [2, 6, 4]})
+    s = pair_stats(df, "2k", "9k", min_trials=8, rate_gap=0.5)
+    assert s.n_a_wins == 1
+    assert s.n_b_wins == 1
+    assert s.n_ambiguous == 1
 
 
-def test_pair_selection_prefers_bidirectional_support():
-    # 2k vs 9k has more total disagreement but nearly all one-way.
-    # 2k vs 3k has fewer disagreements but much cleaner two-way support.
-    a = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1]
-    b = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
-    c = [0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1]
-    chosen = choose_identifiable_pair(_panel(a, b, c))
+def test_common_policy_seed_sets_are_mandatory():
+    df = _rows({"2k": [4], "9k": [4]})
+    mask = ~((df.checkpoint == "9k") & (df.policy_seed == 7))
+    with pytest.raises(ValueError, match="policy_seed sets differ|only 7 trials"):
+        validate_panel(df[mask], min_trials=1)
+
+
+def test_mismatched_physical_state_hash_is_rejected():
+    df = _rows({"2k": [4], "9k": [4]})
+    df.loc[(df.checkpoint == "9k") & (df.policy_seed == 0), "sim_state_hash"] = "wrong"
+    with pytest.raises(ValueError, match="sim_state_hash mismatch"):
+        validate_panel(df)
+
+
+def test_pair_selection_prefers_bidirectional_robust_support():
+    df = _rows({
+        "2k": [7, 7, 1, 1, 7, 1],
+        "9k": [1, 1, 1, 1, 7, 1],
+        "3k": [1, 7, 7, 1, 1, 7],
+    })
+    chosen = choose_identifiable_pair(df, min_trials=8, rate_gap=0.5)
     assert chosen is not None
     assert {chosen.checkpoint_a, chosen.checkpoint_b} == {"2k", "3k"}
     assert chosen.bidirectional_support >= 2
 
 
-def test_shared_relative_probe_detects_checkpoint_specific_signal():
-    rng = np.random.default_rng(1)
-    n = 300
-    # Half the states favor A and half favor B. Generic state difficulty is shared,
-    # while a checkpoint-specific component changes sign with the winner.
-    winner_a = rng.integers(0, 2, size=n)
-    generic = rng.normal(size=(n, 2))
-    x, y, sid, cp = [], [], [], []
-    for i in range(n):
-        direction = 1.0 if winner_a[i] else -1.0
-        xa = np.r_[generic[i], direction + 0.15 * rng.normal()]
-        xb = np.r_[generic[i], -direction + 0.15 * rng.normal()]
-        x.extend([xa, xb])
-        y.extend([int(winner_a[i]), int(not winner_a[i])])
-        sid.extend([i, i])
-        cp.extend(["A", "B"])
-    x = np.asarray(x)
-    y = np.asarray(y)
-    probe = SharedLinearProbe().fit(x, y)
-    scores = probe.score(x)
-    m = paired_relative_metrics(np.asarray(sid), np.asarray(cp), y, scores, "A", "B")
-    assert m["relative_auc"] > 0.95
-    assert m["zero_threshold_balanced_accuracy"] > 0.9
-
-
-def test_generic_state_only_features_cannot_predict_relative_winner():
-    # Identical features for both checkpoints in each physical state imply q_A-q_B=0.
-    n = 40
+def _paired_features(n=200, kind="specific", seed=1):
+    rng = np.random.default_rng(seed)
     winner_a = np.asarray([0, 1] * (n // 2))
-    state = np.arange(n)
-    state_features = np.stack([np.sin(state), np.cos(state)], axis=1)
-    x, y, sid, cp = [], [], [], []
+    generic = rng.normal(size=(n, 2))
+    x, target, sid, cp, winners = [], [], [], [], []
     for i in range(n):
-        x.extend([state_features[i], state_features[i]])
-        y.extend([int(winner_a[i]), int(not winner_a[i])])
-        sid.extend([i, i])
-        cp.extend(["A", "B"])
-    probe = SharedLinearProbe().fit(np.asarray(x), np.asarray(y))
-    scores = probe.score(np.asarray(x))
-    m = paired_relative_metrics(np.asarray(sid), np.asarray(cp), np.asarray(y), scores, "A", "B")
+        sign = 1.0 if winner_a[i] else -1.0
+        if kind == "specific":
+            xa = np.r_[generic[i], sign + 0.1 * rng.normal()]
+            xb = np.r_[generic[i], -sign + 0.1 * rng.normal()]
+        elif kind == "state_only":
+            xa = xb = np.r_[generic[i], 0.0]
+        elif kind == "checkpoint_only":
+            xa = np.r_[generic[i], 1.0]
+            xb = np.r_[generic[i], -1.0]
+        else:
+            raise ValueError(kind)
+        x += [xa, xb]
+        target += [float(winner_a[i]), float(1 - winner_a[i])]
+        sid += [str(i), str(i)]
+        cp += ["A", "B"]
+        w = "A" if winner_a[i] else "B"
+        winners += [w, w]
+    return np.asarray(x), np.asarray(target), np.asarray(sid), np.asarray(cp), np.asarray(winners)
+
+
+def test_shared_probe_detects_state_dependent_policy_specific_signal():
+    x, target, sid, cp, winners = _paired_features(kind="specific")
+    p = SharedLinearProbe().fit(x, target)
+    m = paired_relative_metrics(sid, cp, winners, p.score(x), "A", "B")
+    assert m["relative_auc"] > 0.95
+
+
+def test_state_only_signal_cancels_in_pair():
+    x, target, sid, cp, winners = _paired_features(kind="state_only")
+    p = SharedLinearProbe().fit(x, target)
+    m = paired_relative_metrics(sid, cp, winners, p.score(x), "A", "B")
     assert m["relative_auc"] == 0.5
-    assert m["zero_threshold_balanced_accuracy"] == 0.5
+
+
+def test_checkpoint_identity_only_cannot_solve_bidirectional_crossover():
+    x, target, sid, cp, winners = _paired_features(kind="checkpoint_only")
+    p = SharedLinearProbe().fit(x, target)
+    m = paired_relative_metrics(sid, cp, winners, p.score(x), "A", "B")
+    assert m["relative_auc"] == 0.5
+
+
+def test_state_hash_and_noise_stream_are_stable():
+    x = np.array([1.234567890123, 2.0, -3.0])
+    assert hash_sim_state(x) == hash_sim_state(x.copy())
+    a = deterministic_noise_seed(100, suite="libero_10", task_id=1, init_idx=2, replan_idx=3)
+    b = deterministic_noise_seed(100, suite="libero_10", task_id=1, init_idx=2, replan_idx=3)
+    c = deterministic_noise_seed(100, suite="libero_10", task_id=1, init_idx=2, replan_idx=4)
+    assert a == b and a != c
+
+
+def test_feature_replicates_use_same_seed_set_and_average():
+    raw = {"state_id": [], "checkpoint": [], "sim_state_hash": [], "feature_seed": [], "feature": []}
+    for cp, offset in [("A", 0.0), ("B", 10.0)]:
+        for fs in [1, 2, 3, 4]:
+            raw["state_id"].append("s")
+            raw["checkpoint"].append(cp)
+            raw["sim_state_hash"].append("h")
+            raw["feature_seed"].append(fs)
+            raw["feature"].append([offset + fs, 2.0])
+    raw = {k: np.asarray(v) for k, v in raw.items()}
+    p = aggregate_feature_replicates(raw, min_seeds=4)
+    assert p.feature.shape == (2, 2)
+    assert np.allclose(p.feature[0], [2.5, 2.0])
+    assert np.allclose(p.feature[1], [12.5, 2.0])
+
+
+def test_feature_replicates_reject_different_noise_seeds():
+    raw = {"state_id": [], "checkpoint": [], "sim_state_hash": [], "feature_seed": [], "feature": []}
+    for cp, seeds in [("A", [1, 2, 3, 4]), ("B", [1, 2, 3, 5])]:
+        for fs in seeds:
+            raw["state_id"].append("s")
+            raw["checkpoint"].append(cp)
+            raw["sim_state_hash"].append("h")
+            raw["feature_seed"].append(fs)
+            raw["feature"].append([float(fs)])
+    raw = {k: np.asarray(v) for k, v in raw.items()}
+    with pytest.raises(ValueError, match="feature_seed sets differ"):
+        aggregate_feature_replicates(raw, min_seeds=4)
+
+
+def test_action_expert_capture_is_observational_and_pools_steps():
+    class Layer(torch.nn.Module):
+        def forward(self, x):
+            return (x + 1.0,)
+
+    layer = Layer()
+    model = SimpleNamespace(
+        pi05=True,
+        paligemma_with_expert=SimpleNamespace(
+            gemma_expert=SimpleNamespace(model=SimpleNamespace(layers=torch.nn.ModuleList([layer])))
+        ),
+    )
+    x = torch.zeros(1, 4, 3)
+    with ActionExpertLayerCapture(model, 0, expected_denoise_steps=10) as cap:
+        for k in range(10):
+            y = layer(x + float(k))[0]
+            assert torch.allclose(y, x + float(k) + 1.0)
+    assert np.allclose(cap.pooled(), np.full(3, 5.5))
+
+
+def test_controlled_policy_noise_is_reproducible():
+    class Base:
+        metadata = {}
+        _is_pytorch_model = False
+
+        def infer(self, req, *, noise):
+            return {"actions": noise.copy()}
+
+    p = ControlledInstrumentedPolicy(Base(), action_horizon=2, action_dim=3)
+    r1 = p.infer({"__topic09_noise_seed": 123})["actions"]
+    r2 = p.infer({"__topic09_noise_seed": 123})["actions"]
+    r3 = p.infer({"__topic09_noise_seed": 124})["actions"]
+    assert np.array_equal(r1, r2)
+    assert not np.array_equal(r1, r3)
