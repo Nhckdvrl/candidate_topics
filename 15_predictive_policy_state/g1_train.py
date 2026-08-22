@@ -58,8 +58,14 @@ def main() -> None:
     cfg.resume = str(args.init_checkpoint.expanduser().resolve())
     Path(cfg.output_dir).mkdir(parents=True, exist_ok=True)
 
-    if bool(cfg.model.wam_adapter.use_backbone_lora):
-        raise ValueError("matched run requires use_backbone_lora=false")
+    lora_action_only = os.environ.get("LIGHTWAM_LORA_ACTION_ONLY", "0") == "1"
+    if bool(cfg.model.wam_adapter.use_backbone_lora) and not lora_action_only:
+        raise ValueError(
+            "matched run requires use_backbone_lora=false, unless LIGHTWAM_LORA_ACTION_ONLY=1 "
+            "restricts LoRA to action-loss gradient (capacity-restored arm)"
+        )
+    if lora_action_only and not bool(cfg.model.wam_adapter.use_backbone_lora):
+        raise ValueError("LIGHTWAM_LORA_ACTION_ONLY=1 is meaningless without backbone LoRA")
     if float(cfg.max_grad_norm) < 1.0e6:
         raise ValueError("matched run requires an inactive global clipping threshold")
 
@@ -77,6 +83,7 @@ def main() -> None:
         "lambda_video": float(cfg.model.loss.lambda_video),
         "lambda_action": float(cfg.model.loss.lambda_action),
         "use_backbone_lora": bool(cfg.model.wam_adapter.use_backbone_lora),
+        "lora_action_gradient_only": lora_action_only,
         "freeze_backbone": bool(cfg.model.wam_adapter.freeze_backbone),
         "freeze_proprio_encoder": os.environ["LIGHTWAM_FREEZE_PROPRIO"] == "1",
         "max_grad_norm": float(cfg.max_grad_norm),

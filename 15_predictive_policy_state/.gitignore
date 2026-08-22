@@ -7,3 +7,6 @@ __pycache__/
 .pytest_cache/
 *.pyc
 g1/runs/**/dataset_stats.json
+g1cap/init/
+g1cap/runs/**/checkpoints/
+g1cap/runs/**/dataset_stats.json

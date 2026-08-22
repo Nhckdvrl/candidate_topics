@@ -67,7 +67,7 @@ def main() -> None:
     cfg = load_compatible_omegaconf(str(args.config.expanduser().resolve()))
     cfg.model.load_text_encoder = False
 
-    if bool(cfg.model.wam_adapter.use_backbone_lora):
+    if bool(cfg.model.wam_adapter.use_backbone_lora) and os.environ.get("LIGHTWAM_LORA_ACTION_ONLY") != "1":
         raise ValueError(
             "The matched mechanism run requires `model.wam_adapter.use_backbone_lora=false` so that "
             "the WAM adapters are the only trainable representation module shared by the future and "
