@@ -2,12 +2,12 @@
 
 ## Status
 
-**KILLED at G0 — 2026-08-22.** The full 3600-rollout discovery panel ran cleanly and found
+**ARCHIVED / KILLED at G0 — 2026-08-22.** The full 3600-rollout discovery panel ran cleanly and found
 no natural bidirectional competence crossover: the best checkpoint pair reaches 3 robust
 states per direction against a required 15, and 2k is beaten on literally every one of 150
 states by both later checkpoints. See [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md) for the
-verdict and [`AUDIT.md`](./AUDIT.md) for the pre-data audit and the two bugs it caught.
-Everything below describes the protocol as designed and executed.
+final postmortem and [`AUDIT.md`](./AUDIT.md) for the pre-data audit and the two bugs it caught.
+G1 was never run. Everything below describes the protocol as designed and executed.
 
 > When a VLA carries a signal that predicts eventual success, is that signal specific to **this policy's own chance of succeeding**, or is it mostly a policy-agnostic estimate that **this state looks easy / hard**?
 
@@ -155,28 +155,46 @@ A weak shared-readout result does not logically prove that no nonlinear or repre
 
 If G1 passes, only then does the mechanism question become natural: **where along the VLA does generic state difficulty become policy-specific competence?**
 
+## Final G0 result
+
+```text
+pair        A-wins   B-wins   ambiguous   bidirectional support
+2k vs 3k       0       74         76              0
+2k vs 9k       0       77         73              0
+3k vs 9k       3        3        144              3
+```
+
+The predeclared gate required 15 wins in each direction. The 3+3 late-checkpoint reversals survived the sampling-noise null (`p=0.001`) but were far too sparse. Therefore:
+
+```text
+STOP_NO_NATURAL_CROSSOVER
+```
+
+The broader self-knowledge question remains open; this identification strategy is archived.
+
 ## Files
 
 ```text
-LOCKED_CONFIG.json              frozen v3 constants / state split / noise seeds
-ENVIRONMENT.md                  reproducible openpi + LIBERO setup and its traps
-VALIDATION.md                   exact scientific contract and kill lines
-DATA_CONTRACT.md                behavior + feature schemas
-SERVER_HANDOFF.md               cluster execution order
-src/state_contract.py           simulator-state hash + deterministic noise streams
-src/libero_common.py            frozen official LIBERO preprocessing/reset protocol
+ARCHIVE_SUMMARY.md               final postmortem and lessons
+LOCKED_CONFIG.json               frozen v3 constants / state split / noise seeds
+ENVIRONMENT.md                   reproducible openpi + LIBERO setup and its traps
+VALIDATION.md                    exact scientific contract and kill lines
+DATA_CONTRACT.md                 behavior + feature schemas
+SERVER_HANDOFF.md                cluster execution order
+src/state_contract.py            simulator-state hash + deterministic noise streams
+src/libero_common.py             frozen official LIBERO preprocessing/reset protocol
 src/openpi_instrumented_server.py controlled-noise inference + observational layer-11 hook
-src/preflight.py                state/RNG/feature identity checks
-src/check_checkpoints_differ.py verifies the checkpoints are not the same model
-src/wait_for_server.py          blocks until a policy server finishes loading
-src/collect_behavior.py         repeated same-state rollouts
-src/panel.py                    robust Monte-Carlo crossover statistics
-src/noise_null.py               within-state relabeling null for the crossover claim
-src/analyze_disagreement.py     G0 pair selection / stop decision
-src/collect_features.py         repeated common-noise layer-11 extraction
-src/feature_panel.py            feature validation and averaging
-src/relative_probe.py           shared linear readout + paired metrics
-src/run_g1.py                   independent G1 confirmation / verdict
-run_g0_fleet.sh                 multi-GPU shard runner for the behavior panel
-tests/                          false-positive and instrumentation tests
+src/preflight.py                 state/RNG/feature identity checks
+src/check_checkpoints_differ.py  verifies the checkpoints are not the same model
+src/wait_for_server.py           blocks until a policy server finishes loading
+src/collect_behavior.py          repeated same-state rollouts
+src/panel.py                     robust Monte-Carlo crossover statistics
+src/noise_null.py                within-state relabeling null for the crossover claim
+src/analyze_disagreement.py      G0 pair selection / stop decision
+src/collect_features.py          repeated common-noise layer-11 extraction
+src/feature_panel.py             feature validation and averaging
+src/relative_probe.py            shared linear readout + paired metrics
+src/run_g1.py                    independent G1 confirmation / verdict
+run_g0_fleet.sh                  multi-GPU shard runner for the behavior panel
+tests/                           false-positive and instrumentation tests
 ```
