@@ -10,3 +10,4 @@
 *.safetensors
 **/results/**/collect.log
 **/results/**/*.log
+**/results/_superseded_*/

@@ -270,3 +270,26 @@ def test_in_sample_scoring_would_manufacture_a_false_positive():
     in_sample = paired_relative_metrics(sid, cp, win, probe.score(x), "A", "B")["relative_auc"]
     assert in_sample > 0.65, "precondition: in-sample scoring inflates a state-only signal"
     assert _held_out_auc("state_only") < in_sample
+
+
+def test_collect_behavior_builds_one_environment_per_rollout():
+    """Guards the fix for env-history contamination of the settled state.
+
+    Reusing one environment across episodes stops reproducing the settled MuJoCo state
+    after enough episodes, even though a freshly built environment reproduces it exactly.
+    That is fatal here: the checkpoints being compared have different episode histories,
+    so "the same physical state" would quietly stop being the same. The construction must
+    therefore sit inside the per-rollout loop, not outside it.
+    """
+    import inspect
+
+    from src import collect_behavior
+
+    src = inspect.getsource(collect_behavior.main)
+    make_env_line = next(i for i, l in enumerate(src.splitlines()) if "make_env(" in l)
+    seed_loop_line = next(i for i, l in enumerate(src.splitlines()) if "for policy_seed in policy_seeds" in l)
+    assert make_env_line > seed_loop_line, (
+        "make_env must be inside the policy-seed loop so every rollout gets a fresh env"
+    )
+    assert src.count("make_env(") == 1
+    assert "env.close()" in src

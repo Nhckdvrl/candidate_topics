@@ -1,0 +1,3 @@
+suite,task_id,init_idx,env_seed,sim_state_hash,checkpoint,policy_seed,success,status,steps,replans
+libero_10,3,0,7,dee9d60f856fe009a20ecfca9c67ddc9edc1f8fe50839d03a59694b459d03ccc,2k,110000,1,ok,215,43
+libero_10,3,0,7,dee9d60f856fe009a20ecfca9c67ddc9edc1f8fe50839d03a59694b459d03ccc,2k,110001,0,ok,520,104

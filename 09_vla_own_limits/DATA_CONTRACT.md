@@ -14,7 +14,10 @@ and verified by:
 sim_state_hash
 ```
 
-`sim_state_hash` is computed from the settled MuJoCo simulator state after the official ten dummy actions. The hash must be identical across checkpoints and stochastic repeats. A mismatch aborts analysis.
+`sim_state_hash` is computed from the settled MuJoCo simulator state after the official ten
+dummy actions, reached in a **freshly constructed environment** — environments are never
+reused across rollouts, because the settled state turns out to depend on how many episodes
+the env has already run. The hash must be identical across checkpoints and stochastic repeats. A mismatch aborts analysis.
 
 ## G0 behavior panel
 

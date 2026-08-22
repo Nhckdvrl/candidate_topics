@@ -31,6 +31,16 @@ Before any scientific number is interpreted, the released OpenPI / LIBERO stack 
 
 The protocol follows the official OpenPI LIBERO evaluator: `set_init_state`, ten dummy settling actions, 224x224 preprocessed agent/wrist images, five executed actions per replan, and the official LIBERO success termination.
 
+**Every rollout is run in a freshly constructed environment.** Reusing one environment
+across episodes does not fully restore the settled state: after enough episodes in the
+same env, `reset` + `set_init_state` + settling stops reproducing the settled MuJoCo state,
+while a freshly built env reproduces it exactly. Measured on `libero_10` task 3,
+`init_idx` 4 — bit-identical across 30 fresh environments, and divergent once the env had
+already run 32 episodes. This is fatal for the design rather than merely untidy, because
+the checkpoints being compared have *different* episode histories, so "the same physical
+state" would silently stop being the same. Rebuilding costs about 4.7s per rollout and
+makes state identity structural.
+
 The important extra check is physical-state identity. `task_id + init_idx` is not accepted on faith. After settling, hash the flattened MuJoCo simulator state. The hash must be identical across checkpoint processes and repeats. A mismatch is a technical failure, not a scientific sample.
 
 Policy stochasticity is also explicit. Every inference receives a deterministic Gaussian noise seed. Reusing a base `policy_seed` creates the same sequence of inference-noise seeds for every checkpoint on the same physical state (common random numbers).

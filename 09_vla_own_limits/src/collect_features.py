@@ -44,35 +44,39 @@ def main() -> None:
     for task_id in task_ids:
         task = suite.get_task(task_id)
         init_states = suite.get_task_init_states(task_id)
-        env = make_env(task, resolution=LIBERO_ENV_RESOLUTION, env_seed=args.env_seed)
-        try:
-            for init_idx in init_indices:
+        for init_idx in init_indices:
+            # Fresh environment per state, mirroring collect_behavior exactly. The
+            # settled state must be reached the same way in both panels, because
+            # run_g1 requires the behavior and feature sim_state_hashes to match.
+            env = make_env(task, resolution=LIBERO_ENV_RESOLUTION, env_seed=args.env_seed)
+            try:
                 obs, sim_hash = settle_initial_state(
                     env, init_states[init_idx], env_seed=args.env_seed, wait_steps=args.wait_steps
                 )
-                base = policy_element(obs, task.language, resize_size=args.resize_size)
-                sid = f"{args.suite}|t={task_id}|i={init_idx}|e={args.env_seed}"
-                for fs in feature_seeds:
-                    req = dict(base)
-                    req["__topic09_noise_seed"] = deterministic_noise_seed(
-                        fs,
-                        suite=args.suite,
-                        task_id=task_id,
-                        init_idx=init_idx,
-                        replan_idx=0,
-                    )
-                    req["__topic09_capture_feature"] = True
-                    out = client.infer(req)
-                    feat = np.asarray(out["topic09_feature"], dtype=np.float32)
-                    if feat.ndim != 1 or not np.isfinite(feat).all():
-                        raise RuntimeError(f"bad feature shape/value: {feat.shape}")
-                    state_id.append(sid)
-                    checkpoint.append(str(args.checkpoint))
-                    hashes.append(sim_hash)
-                    fseed.append(int(fs))
-                    feats.append(feat)
-        finally:
-            env.close()
+            finally:
+                env.close()
+
+            base = policy_element(obs, task.language, resize_size=args.resize_size)
+            sid = f"{args.suite}|t={task_id}|i={init_idx}|e={args.env_seed}"
+            for fs in feature_seeds:
+                req = dict(base)
+                req["__topic09_noise_seed"] = deterministic_noise_seed(
+                    fs,
+                    suite=args.suite,
+                    task_id=task_id,
+                    init_idx=init_idx,
+                    replan_idx=0,
+                )
+                req["__topic09_capture_feature"] = True
+                out = client.infer(req)
+                feat = np.asarray(out["topic09_feature"], dtype=np.float32)
+                if feat.ndim != 1 or not np.isfinite(feat).all():
+                    raise RuntimeError(f"bad feature shape/value: {feat.shape}")
+                state_id.append(sid)
+                checkpoint.append(str(args.checkpoint))
+                hashes.append(sim_hash)
+                fseed.append(int(fs))
+                feats.append(feat)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(

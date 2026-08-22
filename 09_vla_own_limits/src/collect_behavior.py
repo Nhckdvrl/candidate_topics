@@ -69,13 +69,23 @@ def main() -> None:
         init_states = suite.get_task_init_states(task_id)
         if max(init_indices) >= len(init_states):
             raise IndexError(f"task {task_id} has only {len(init_states)} init states")
-        env = make_env(task, resolution=LIBERO_ENV_RESOLUTION, env_seed=args.env_seed)
         expected_hash = {}
-        try:
-            for init_idx in init_indices:
-                for policy_seed in policy_seeds:
-                    if (task_id, init_idx, policy_seed) in done_keys:
-                        continue
+        for init_idx in init_indices:
+            for policy_seed in policy_seeds:
+                if (task_id, init_idx, policy_seed) in done_keys:
+                    continue
+
+                # One environment per rollout. Reusing an environment across episodes
+                # does not fully restore the settled state: after enough episodes in the
+                # same env, `reset` + `set_init_state` + settling stops reproducing the
+                # earlier settled MuJoCo state, even though a freshly built env
+                # reproduces it exactly. That dependence on episode history is fatal
+                # here, because the two checkpoints being compared have *different*
+                # histories, so "the same physical state" would quietly stop being the
+                # same. Rebuilding costs a few seconds per rollout and turns state
+                # identity into a structural guarantee rather than a hope.
+                env = make_env(task, resolution=LIBERO_ENV_RESOLUTION, env_seed=args.env_seed)
+                try:
                     obs, sim_hash = settle_initial_state(
                         env, init_states[init_idx], env_seed=args.env_seed, wait_steps=args.wait_steps
                     )
@@ -110,24 +120,24 @@ def main() -> None:
                         steps += 1
                         if done:
                             break
+                finally:
+                    env.close()
 
-                    rows.append({
-                        "suite": args.suite,
-                        "task_id": int(task_id),
-                        "init_idx": int(init_idx),
-                        "env_seed": int(args.env_seed),
-                        "sim_state_hash": sim_hash,
-                        "checkpoint": str(args.checkpoint),
-                        "policy_seed": int(policy_seed),
-                        "success": int(bool(done)),
-                        "status": "ok",
-                        "steps": int(steps),
-                        "replans": int(replan_idx),
-                    })
-                    args.out.parent.mkdir(parents=True, exist_ok=True)
-                    pd.DataFrame(rows).to_csv(args.out, index=False)
-        finally:
-            env.close()
+                rows.append({
+                    "suite": args.suite,
+                    "task_id": int(task_id),
+                    "init_idx": int(init_idx),
+                    "env_seed": int(args.env_seed),
+                    "sim_state_hash": sim_hash,
+                    "checkpoint": str(args.checkpoint),
+                    "policy_seed": int(policy_seed),
+                    "success": int(bool(done)),
+                    "status": "ok",
+                    "steps": int(steps),
+                    "replans": int(replan_idx),
+                })
+                args.out.parent.mkdir(parents=True, exist_ok=True)
+                pd.DataFrame(rows).to_csv(args.out, index=False)
 
     print(f"wrote {len(rows)} rows to {args.out}")
 

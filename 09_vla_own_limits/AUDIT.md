@@ -205,3 +205,46 @@ One thing to watch rather than fix: 9k succeeded on all eight pilot rollouts. If
 near ceiling on LIBERO-10 it will win most states outright, and a one-directional
 advantage is not a crossover. That would surface as weak bidirectional support in G0 and
 should be read as `STOP_NO_NATURAL_CROSSOVER`, not as something to engineer around.
+
+
+## Environment reuse silently breaks state identity — found during G0, 2026-08-22
+
+The state-identity guard fired 2074 rollouts into the discovery panel:
+
+```text
+RuntimeError: settled state changed across repeats: task=3 init=4
+```
+
+All three checkpoints failed at the *same* physical state despite having completely
+different preceding trajectories, which ruled out a flaky per-trajectory effect.
+
+What the measurements showed:
+
+```text
+fresh env, same init settled 5x back to back      max|diff| = 0.0
+fresh env, 3 short random episodes in between     max|diff| = 0.0
+fresh env, all 8 policy seeds at init 4           max|diff| = 0.0, hashes identical
+30 successive fresh envs                          all hashes identical, RSS flat
+inside the collector, init 4 after inits 0-3      settled state differs
+```
+
+So the settled state depends on **how many episodes the environment has already run**, not
+on which trajectory it ran. `reset()` + `set_init_state()` does not fully restore whatever
+accumulates.
+
+This is fatal rather than untidy. The entire design rests on two checkpoints meeting the
+identical physical state, and the two checkpoints have *different* episode histories by
+construction. Left alone it would not have produced an error — it would have produced two
+subtly different states presented as one.
+
+Fix: build one environment per rollout, in both `collect_behavior.py` and
+`collect_features.py`, so the two panels reach the settled state the same way. Cost is
+about 4.7s per rollout with flat memory. A regression test pins `make_env` inside the
+per-rollout loop.
+
+The discovery data collected before the fix was archived rather than reused, because it
+was produced under a different protocol.
+
+Worth noting: the guard that caught this was added in the pre-data audit precisely because
+`task_id + init_idx` was not to be trusted as proof of state identity. Without it, this
+would have been an invisible confound in the primary result.
