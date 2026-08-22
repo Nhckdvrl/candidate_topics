@@ -29,6 +29,8 @@ The prompt follows the paper's Appendix A.6.1 wording: provide a zero-filled 9×
 
 `src/eval_g1_v4.py` scores only exact 9×9 array equality against the locked solution. It uses `ast.literal_eval`, never executes model text, rejects malformed arrays, and requires prediction IDs to match the frozen test set exactly.
 
+`src/jsonl_to_parquet.py` converts the locked JSONL records to the two-column `prompt`/`response` parquet schema consumed by Dream's official `SFTDataset`.
+
 ## Model and cache
 
 The target is `Dream-org/Dream-v0-Instruct-7B`. It is downloaded to the shared public Hugging Face cache at `/home/xiang/.cache/huggingface/hub`, never into this repository. The exact snapshot path and file hashes are recorded in the run log when download completes.
