@@ -78,7 +78,12 @@ def main() -> None:
     p.add_argument("--rate-gap", type=float, default=0.50)
     p.add_argument("--min-feature-seeds", type=int, default=4)
     p.add_argument("--min-bidirectional", type=int, default=15)
-    p.add_argument("--ridge-alpha", type=float, default=1.0)
+    p.add_argument(
+        "--ridge-alpha",
+        default="cv",
+        help="'cv' selects the penalty by state-grouped CV on discovery only; "
+             "a float pins it (tests / diagnostics)",
+    )
     p.add_argument("--bootstrap", type=int, default=2000)
     p.add_argument("--auc-min", type=float, default=0.70)
     p.add_argument("--auc-ci-lower-min", type=float, default=0.60)
@@ -101,7 +106,8 @@ def main() -> None:
     if set(tr[0]) & set(te[0]):
         raise ValueError("train/test physical states overlap")
 
-    probe = SharedLinearProbe(alpha=args.ridge_alpha).fit(tr[4], tr[2])
+    alpha_spec = args.ridge_alpha if args.ridge_alpha == "cv" else float(args.ridge_alpha)
+    probe = SharedLinearProbe(alpha=alpha_spec).fit(tr[4], tr[2], groups=tr[0])
     test_scores = probe.score(te[4])
     a_wins, b_wins = _unique_winner_counts(te[0], te[3])
 
@@ -120,7 +126,14 @@ def main() -> None:
         "rate_gap": float(args.rate_gap),
         "min_trials": int(args.min_trials),
         "min_feature_seeds": int(args.min_feature_seeds),
-        "probe": {"type": "shared_standardized_ridge", "alpha": float(args.ridge_alpha)},
+        "probe": {
+            "type": "shared_standardized_ridge",
+            "alpha_spec": str(args.ridge_alpha),
+            "alpha_selected": float(probe.alpha_),
+            "alpha_cv": probe.alpha_cv_,
+            "feature_dim": int(tr[4].shape[1]),
+            "train_rows": int(len(tr[0])),
+        },
         "absolute_success_control": absolute,
         "min_absolute_spearman": float(args.min_absolute_spearman),
         "has_absolute_success_signal": bool(has_absolute_signal),

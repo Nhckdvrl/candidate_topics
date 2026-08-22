@@ -91,21 +91,21 @@ def _paired_features(n=200, kind="specific", seed=1):
 
 def test_shared_probe_detects_state_dependent_policy_specific_signal():
     x, target, sid, cp, winners = _paired_features(kind="specific")
-    p = SharedLinearProbe().fit(x, target)
+    p = SharedLinearProbe(alpha=1.0).fit(x, target)
     m = paired_relative_metrics(sid, cp, winners, p.score(x), "A", "B")
     assert m["relative_auc"] > 0.95
 
 
 def test_state_only_signal_cancels_in_pair():
     x, target, sid, cp, winners = _paired_features(kind="state_only")
-    p = SharedLinearProbe().fit(x, target)
+    p = SharedLinearProbe(alpha=1.0).fit(x, target)
     m = paired_relative_metrics(sid, cp, winners, p.score(x), "A", "B")
     assert m["relative_auc"] == 0.5
 
 
 def test_checkpoint_identity_only_cannot_solve_bidirectional_crossover():
     x, target, sid, cp, winners = _paired_features(kind="checkpoint_only")
-    p = SharedLinearProbe().fit(x, target)
+    p = SharedLinearProbe(alpha=1.0).fit(x, target)
     m = paired_relative_metrics(sid, cp, winners, p.score(x), "A", "B")
     assert m["relative_auc"] == 0.5
 
@@ -183,3 +183,28 @@ def test_controlled_policy_noise_is_reproducible():
     r3 = p.infer({"__topic09_noise_seed": 124})["actions"]
     assert np.array_equal(r1, r2)
     assert not np.array_equal(r1, r3)
+
+
+def test_grouped_alpha_selection_uses_state_groups_and_regularizes_wide_features():
+    """With D >> N the selected penalty must be far above the old fixed alpha=1."""
+    rng = np.random.default_rng(0)
+    n_states, d = 150, 1024
+    sid, cp, x, y = [], [], [], []
+    for i in range(n_states):
+        state = rng.normal(size=d)
+        for c, shift in [("A", 0.4), ("B", -0.4)]:
+            sid.append(f"s{i}")
+            cp.append(c)
+            x.append(state + shift * rng.normal(size=d) * 0.1)
+            y.append(float(np.clip(0.5 + 0.05 * state[0] + 0.02 * rng.normal(), 0, 1)))
+    probe = SharedLinearProbe(alpha="cv").fit(np.asarray(x), np.asarray(y), groups=np.asarray(sid))
+    assert probe.alpha_ > 1.0
+    assert probe.alpha_ in {r["alpha"] for r in probe.alpha_cv_}
+    assert len(probe.score(np.asarray(x))) == 2 * n_states
+
+
+def test_grouped_alpha_selection_requires_groups():
+    x = np.random.default_rng(0).normal(size=(20, 5))
+    y = np.random.default_rng(1).random(20)
+    with pytest.raises(ValueError, match="requires state_id groups"):
+        SharedLinearProbe(alpha="cv").fit(x, y)

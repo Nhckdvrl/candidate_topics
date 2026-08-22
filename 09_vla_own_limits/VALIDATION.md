@@ -4,7 +4,9 @@
 > behavior or feature data existed**. Three changes: (1) G0 must now beat an explicit
 > sampling-noise null; (2) G1 reports a pre-declared power control that can only downgrade
 > a negative to *inconclusive*, never manufacture a pass; (3) the feature decision point is
-> stated explicitly. Everything else, including all thresholds, is unchanged.
+> stated explicitly. A fourth change was made later the same day, still pre-data: the
+> shared ridge penalty is selected by state-grouped CV on discovery rather than pinned at
+> `alpha=1.0`. All decision thresholds are unchanged.
 
 ## Scientific object
 
@@ -186,7 +188,19 @@ Fit one decoder across both frozen checkpoints on discovery states:
 q = w^T standardized(h) + b
 ```
 
-Implementation: one fixed ridge-linear readout (`alpha=1.0`). Target is the eight-rollout Monte-Carlo success rate `p_hat(pi,s)`.
+Implementation: one ridge-linear readout. Target is the eight-rollout Monte-Carlo success
+rate `p_hat(pi,s)`.
+
+The penalty is **not** a free constant. The action expert is 1024-wide while discovery
+supplies only `150 states x 2 checkpoints = 300` rows, so a fixed `alpha=1.0` would leave
+the fit essentially interpolating and dominated by noise directions. It is selected from a
+frozen grid by 5-fold cross-validation **within the discovery split only**, grouped by
+physical `state_id`.
+
+Grouping is essential rather than cosmetic: `h_A(s)` and `h_B(s)` are two views of the same
+scene, so an ungrouped K-fold would place one view in train and the other in validation,
+report an optimistic error, and select too little regularization. Confirmation states enter
+neither the fit nor the selection.
 
 There is only one scaler and one `(w,b)` for both checkpoints. Separate probes are forbidden in the primary test because they make cross-checkpoint scores incomparable.
 

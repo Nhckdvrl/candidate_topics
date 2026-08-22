@@ -4,21 +4,54 @@ from __future__ import annotations
 import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.metrics import balanced_accuracy_score, roc_auc_score
+from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import StandardScaler
+
+# Frozen ridge grid. The action expert is 1024-wide while discovery supplies only
+# 150 states x 2 checkpoints = 300 rows, so the fit is strongly overparameterized and the
+# penalty cannot be left at an arbitrary constant.
+RIDGE_ALPHA_GRID = (1.0, 10.0, 100.0, 1e3, 1e4, 1e5, 1e6)
 
 
 class SharedLinearProbe:
     """One fixed linear map shared by both checkpoints.
 
-    Targets are Monte-Carlo success rates, not one stochastic success/failure draw. Ridge
-    strength is fixed a priori and is never tuned on confirmation data.
+    Targets are Monte-Carlo success rates, not one stochastic success/failure draw.
+
+    The ridge penalty is chosen by grouped cross-validation **inside the discovery split
+    only**; confirmation states are never touched by the fit or the selection. Grouping is
+    by physical `state_id`, which is not optional: `h_A(s)` and `h_B(s)` describe the same
+    scene, so a plain K-fold would put two views of one state on both sides of the split,
+    report an optimistic score, and select an alpha that is too small.
+
+    Passing an explicit float disables selection and is used only by tests.
     """
 
-    def __init__(self, alpha: float = 1.0) -> None:
+    def __init__(self, alpha: float | str = "cv", n_splits: int = 5) -> None:
         self.scaler = StandardScaler()
-        self.model = Ridge(alpha=float(alpha))
+        self.alpha_spec = alpha
+        self.n_splits = int(n_splits)
+        self.alpha_: float | None = None
+        self.alpha_cv_: list[dict] | None = None
+        self.model: Ridge | None = None
 
-    def fit(self, x: np.ndarray, y: np.ndarray) -> "SharedLinearProbe":
+    def _select_alpha(self, x: np.ndarray, y: np.ndarray, groups: np.ndarray) -> float:
+        n_groups = len(np.unique(groups))
+        splits = min(self.n_splits, n_groups)
+        if splits < 2:
+            raise ValueError("need at least two state groups to select a ridge penalty")
+        cv = GroupKFold(n_splits=splits)
+        self.alpha_cv_ = []
+        for a in RIDGE_ALPHA_GRID:
+            errs = []
+            for tr, va in cv.split(x, y, groups=groups):
+                sc = StandardScaler().fit(x[tr])
+                m = Ridge(alpha=float(a)).fit(sc.transform(x[tr]), y[tr])
+                errs.append(float(np.mean((m.predict(sc.transform(x[va])) - y[va]) ** 2)))
+            self.alpha_cv_.append({"alpha": float(a), "cv_mse": float(np.mean(errs))})
+        return min(self.alpha_cv_, key=lambda r: r["cv_mse"])["alpha"]
+
+    def fit(self, x: np.ndarray, y: np.ndarray, groups: np.ndarray | None = None) -> "SharedLinearProbe":
         x = np.asarray(x, float)
         y = np.asarray(y, float)
         if x.ndim != 2 or len(x) != len(y):
@@ -29,10 +62,20 @@ class SharedLinearProbe:
             raise ValueError("success-rate target must lie in [0,1]")
         if np.std(y) == 0:
             raise ValueError("training targets are constant")
+
+        if self.alpha_spec == "cv":
+            if groups is None:
+                raise ValueError("grouped alpha selection requires state_id groups")
+            self.alpha_ = self._select_alpha(x, y, np.asarray(groups).astype(str))
+        else:
+            self.alpha_ = float(self.alpha_spec)
+        self.model = Ridge(alpha=self.alpha_)
         self.model.fit(self.scaler.fit_transform(x), y)
         return self
 
     def score(self, x: np.ndarray) -> np.ndarray:
+        if self.model is None:
+            raise RuntimeError("probe is not fitted")
         return np.asarray(self.model.predict(self.scaler.transform(np.asarray(x, float))), float)
 
 

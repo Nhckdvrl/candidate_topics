@@ -26,11 +26,22 @@
     "source": "pi0.5_action_expert",
     "layer": 11,
     "pool": "mean_action_tokens_then_mean_10_denoise_steps",
-    "decision_point": "settled_initial_state_replan_idx_0"
+    "decision_point": "settled_initial_state_replan_idx_0",
+    "dim": 1024
   },
   "probe": {
     "type": "shared_standardized_ridge",
-    "alpha": 1.0
+    "alpha": "selected by state-grouped 5-fold CV on discovery only",
+    "alpha_grid": [
+      1.0,
+      10.0,
+      100.0,
+      1000.0,
+      10000.0,
+      100000.0,
+      1000000.0
+    ],
+    "cv": "GroupKFold(5) grouped by physical state_id"
   },
   "confirmation_gate": {
     "relative_auc_min": 0.7,
@@ -45,7 +56,8 @@
     "changes": [
       "G0 now additionally requires the bidirectional crossover to beat an exact within-state relabeling null (sampling-noise control)",
       "G1 now reports a pre-declared within-checkpoint absolute-signal power control; it can only downgrade a negative to INCONCLUSIVE, never create a PASS",
-      "feature decision point stated explicitly: settled initial state, replan_idx 0"
+      "feature decision point stated explicitly: settled initial state, replan_idx 0",
+      "shared ridge penalty is now selected by state-grouped CV on discovery instead of a fixed alpha=1.0, which was badly under-regularized at D=1024 vs N=300 train rows"
     ]
   },
   "sampling_noise_null": {

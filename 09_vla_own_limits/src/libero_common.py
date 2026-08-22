@@ -58,8 +58,17 @@ def get_task_suite(suite: str):
 
 
 def make_env(task, *, resolution: int, env_seed: int):
+    """Build the environment exactly as OpenPI's official LIBERO evaluator does.
+
+    The official script also sets the global numpy seed once before evaluating, and its
+    comment notes that `env.seed` affects object positions even with a fixed initial
+    state. Both are reproduced here so nothing about scene construction is left to
+    whatever RNG state the process happened to be in.
+    """
     from libero.libero import get_libero_path
     from libero.libero.envs import OffScreenRenderEnv
+
+    np.random.seed(int(env_seed))
 
     bddl = pathlib.Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file
     env = OffScreenRenderEnv(
@@ -72,7 +81,14 @@ def make_env(task, *, resolution: int, env_seed: int):
 
 
 def settle_initial_state(env, initial_state, *, env_seed: int, wait_steps: int = 10):
-    """Reproduce OpenPI's reset -> set_init_state -> dummy settling sequence."""
+    """Reproduce OpenPI's reset -> set_init_state -> dummy settling sequence.
+
+    Deliberate deviation from the official script: it seeds the env once at construction
+    and then resets repeatedly, so each episode inherits a different RNG state. Topic 09
+    re-seeds before every reset instead, because the entire design depends on one
+    `init_idx` producing *the same physical state* in every checkpoint process and every
+    repeat. The returned `sim_state_hash` is what actually proves that held.
+    """
     env.seed(int(env_seed))
     env.reset()
     obs = env.set_init_state(initial_state)
