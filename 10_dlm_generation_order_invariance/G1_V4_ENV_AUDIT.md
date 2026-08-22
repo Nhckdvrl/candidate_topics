@@ -33,6 +33,15 @@ The first two-epoch formal start exposed a validation-only `0/0` edge case in up
 
 `tools/flash_attn_compat` is a deliberately explicit, pure-PyTorch import shim for `flash_attn.bert_padding`. It is only prepended to `PYTHONPATH` for the environment audit. With the official trainer configuration's sequence-parallel size fixed to 1, the Ulysses branch containing these helpers is not executed; the normal path uses the trainer's ordinary PyTorch loss. The shim is not a FlashAttention implementation and is not valid for sequence-parallel training.
 
+## Formal-run memory audit
+
+The first guarded epoch-0-to-2 formal attempt failed at the first `AdamW.step()`
+while lazily allocating optimizer state: GPU 2 had 107 MiB free and the allocation
+requested 224 MiB. This is an engineering capacity failure, not a competence result;
+it produced no scientific checkpoint or test prediction. The next attempt must use a
+memory-safe FSDP/optimizer configuration while keeping the model, data, loss,
+learning rate, and evaluation protocol fixed.
+
 ## Next safe action
 
 Run the official trainer import and a one-step dataloader/config smoke with the explicit shim, then inspect the actual branch and loss mask. Do not launch 10-epoch training until those checks pass.
