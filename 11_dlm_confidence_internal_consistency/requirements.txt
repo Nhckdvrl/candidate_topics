@@ -1,5 +1,6 @@
-# Reuse the same LLaDA environment/cache as Topic 10 when available.
-# The official LLaDA repository documents transformers==4.38.2.
-torch>=2.1
-transformers==4.38.2
+# Topic 11 is intentionally compatible with Topic 10's LLaDA environment.
+# Reuse that environment/cache; do not create a second env just for Topic 11.
+torch>=2.4
+transformers>=4.49,<5
 numpy>=1.24
+pytest>=8.0
