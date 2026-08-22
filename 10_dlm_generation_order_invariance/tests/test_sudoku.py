@@ -6,6 +6,7 @@ from sudoku import (
     canonical_solution,
     is_valid_solution,
     make_unique_puzzle,
+    random_solution,
     random_spatial_transform,
     solve,
 )
@@ -13,6 +14,15 @@ from sudoku import (
 
 def test_canonical_solution_is_valid():
     assert is_valid_solution(canonical_solution())
+
+
+def test_random_solution_is_valid_deterministic_and_seed_sensitive():
+    a = random_solution(random.Random(123))
+    b = random_solution(random.Random(123))
+    c = random_solution(random.Random(124))
+    assert a == b
+    assert a != c
+    assert is_valid_solution(a) and is_valid_solution(c)
 
 
 def test_generated_puzzle_unique():
