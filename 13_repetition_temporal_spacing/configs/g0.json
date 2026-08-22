@@ -1,4 +1,6 @@
 {
+  "experiment_schema_version": 2,
+  "corpus_schema_version": 2,
   "model_total_params": 34061856,
   "overtrain_multiplier": 0.25,
   "tokens_per_parameter_at_ot1": 20.0,
@@ -9,8 +11,8 @@
   "tokenizer": "Qwen/Qwen3-0.6B-Base",
   "dataset": "HuggingFaceTB/smollm-corpus",
   "subset": "fineweb-edu-dedup",
-  "micro_batch": 4,
-  "grad_accum": 16,
+  "micro_batch": 8,
+  "grad_accum": 1,
   "base_lr": 1e-06,
   "warmup_ratio": 0.2,
   "weight_decay": 0.01,
@@ -18,14 +20,7 @@
   "beta2": 0.95,
   "clip_grad": 1.0,
   "attn_implementation": "flash_attention_2",
-  "pilot_seeds": [
-    20260822
-  ],
-  "confirmation_seeds": [
-    20260822,
-    20260823,
-    20260824
-  ],
-  "seed_reproduction_min_relative_loss": 0.005,
-  "spacing_min_fraction_of_random_damage": 0.25
+  "pilot_seeds": [20260822],
+  "confirmation_seeds": [20260822, 20260823, 20260824, 20260825],
+  "paired_ci_z": 1.96
 }
