@@ -34,12 +34,39 @@
 3. [Round 3：二阶矛盾、action chunking timing 与 RL emergent behavior](./2026-08-22_vla_wam_mechanism_search_round3.md)
 4. [Round 4：data producer、temporal support、memory 与 autonomous self-consuming data](./2026-08-22_vla_wam_mechanism_search_round4.md)
 5. [Round 5：顶会问题尺度校准与继续 collision audit](./2026-08-22_vla_wam_mechanism_search_round5.md)
+6. [Round 6：广泛大问题搜索与 action-generalization mechanism](./2026-08-22_vla_wam_mechanism_search_round6.md)
 
 ## 单独摘出的未注册候选
 
 这里不是正式 Topic 表，只是把搜索日志中已经值得进一步审计的问题单独拿出来，方便继续碰撞。候选一旦后续被撞死，直接保留失败记录，不移动到根目录包装。
 
-- [What Does History Actually Model in Robot Policies?](./candidates/what_does_history_actually_model.md)  
-  来源：Round 3 的 action-chunking temporal anomaly → Round 4 的 producer-mixture reinterpretation → Round 5 的 scope / collision audit。当前仍是 provisional candidate；NeurIPS 2025 已经明确给出 mixture-of-Markov-policies 可形成 non-Markovian mixture 的理论近邻，因此不能靠 producer-mixture 本身作为 novelty。
+### A. [What Does History Actually Model in Robot Policies?](./candidates/what_does_history_actually_model.md)
 
-`Does Autonomous Robot Data Narrow Behavioral Support?` 当前**没有**单独摘出：题目尺度合格，但 batch-online RL / PLD 已经覆盖 diversity、failure-region probing、recovery coverage 等一级问题；目前还缺独立的 multi-generation support-contraction anomaly，不满足 phenomenon-first。
+来源：Round 3 的 action-chunking temporal anomaly → Round 4 的 producer-mixture reinterpretation → Round 5 的 scope / collision audit。
+
+当前仍是 provisional candidate。NeurIPS 2025 已经明确给出 mixture-of-Markov-policies 可形成 non-Markovian mixture 的理论近邻，因此不能靠 producer-mixture 本身作为 novelty。真正需要回答的是现代 history-aware robot policy 的 memory 到底在利用 task/world information 还是 training-data behavior structure，以及这种 dependence 是否有 causal behavioral consequence。
+
+### B. [How Do Robot Foundation Policies Generalize Actions?](./candidates/how_do_robot_foundation_policies_generalize_actions.md)
+
+来源：Round 6。主要从 ICLR 2026 `Demystifying Robot Diffusion Policies` 的 action-memorization / interpolation audit，与 2026 foundation-VLA 对 zero-shot、recovery、composition、cross-embodiment generalization 的强 claim 之间的张力长出来。
+
+核心不是再做 OOD benchmark，而是区分 foundation policy 的 action-side generalization mechanism：
+
+```text
+retrieval
+vs interpolation
+vs composition
+vs extrapolation / synthesis
+```
+
+当前仍是 provisional candidate，继续做 exact collision。若最终只能缩成某个 benchmark 的 trajectory-similarity analysis，则直接砍。
+
+## 仍留在搜索日志、但未摘出的方向
+
+### Does Autonomous Robot Data Narrow Behavioral Support?
+
+题目尺度合格，但 batch-online RL / PLD 已经覆盖 diversity、failure-region probing、recovery coverage 等一级问题；目前还缺独立的 multi-generation support-contraction anomaly，不满足 phenomenon-first。
+
+### Does Fine-Tuning Collapse the Behavioral Repertoire of Robot Foundation Policies?
+
+有真实旁证，但与 2026 robot-policy memorization / generalization / task-vector / SAE 研究线过近。当前不单独摘出，除非后续出现一个明显不同于 generic memorization / VLM catastrophic forgetting 的大机制。
