@@ -21,7 +21,15 @@ huggingface-cli download brandonyang/openpi-libero-3000 --local-dir $CKPT_ROOT/p
 huggingface-cli download brandonyang/openpi-libero-9000 --local-dir $CKPT_ROOT/pi05_jax_9k
 ```
 
-Feature capture needs PyTorch forward hooks, so convert each one:
+Feature capture needs PyTorch forward hooks, so convert each one. First make sure the
+server venv has openpi's patched transformers (`uv sync` does not install them):
+
+```bash
+cp -r $OPENPI/src/openpi/models_pytorch/transformers_replace/* \
+      $OPENPI/.venv/lib/python3.11/site-packages/transformers/
+```
+
+Then:
 
 ```bash
 $OPENPI/.venv/bin/python examples/convert_jax_model_to_pytorch.py \

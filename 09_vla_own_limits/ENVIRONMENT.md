@@ -71,6 +71,22 @@ VIRTUAL_ENV=/home/xiang/venvs/t09_client uv pip install --no-deps -e /home/xiang
    `get_task_init_states` raises `WeightsUnpickler error` — which would look like a
    missing-data problem rather than a serialization default.
 
+### The server venv needs openpi's patched transformers
+
+`uv sync` alone is not enough. openpi ships modified `transformers` model files and both
+conversion and inference refuse to run without them:
+
+```bash
+cd /home/xiang/projects/openpi_t09
+cp -r ./src/openpi/models_pytorch/transformers_replace/* \
+      .venv/lib/python3.11/site-packages/transformers/
+```
+
+Without this, `convert_jax_model_to_pytorch.py` fails with
+`ValueError: transformers_replace is not installed correctly`. It fails loudly, which is
+the good case — but it fails *after* loading a 12 GB orbax checkpoint, so it costs several
+minutes per attempt.
+
 ## Rendering
 
 Use EGL. OSMesa is not usable on these nodes (`libOSMesa` missing; PyOpenGL raises

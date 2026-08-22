@@ -97,3 +97,19 @@ def test_absolute_control_detects_a_readout_that_tracks_success():
     scores = target + 0.05 * rng.normal(size=2 * n)
     m = absolute_success_metrics(np.arange(2 * n).astype(str), cp, target, scores)
     assert m["mean_within_checkpoint_spearman"] > 0.9
+
+
+def test_noise_alone_can_clear_the_frozen_bidirectional_bar():
+    """The regression this control exists for.
+
+    With enough states, pure sampling noise clears `min(n_a_wins, n_b_wins) >= 15` in both
+    directions even though the two checkpoints have *identical* competence everywhere. The
+    frozen count rule alone would call that a pass and send the topic on to spend GPU-days
+    on hidden states. The null must refuse it.
+    """
+    p = np.full(500, 0.5)
+    df = _panel(p, p, seed=1)
+    r = permutation_noise_null(df, "A", "B", n_permutations=400, seed=0)
+    assert r.observed_bidirectional >= 15, "precondition: the count rule alone would pass"
+    assert r.p_bidirectional > 0.05, "the null must not be beaten by noise"
+    assert r.observed_bidirectional <= r.null_bidirectional_p95
