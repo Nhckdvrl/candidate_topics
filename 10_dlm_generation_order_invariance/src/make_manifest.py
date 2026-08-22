@@ -13,7 +13,14 @@ def encode_grid(grid: tuple[int, ...]) -> str:
     return "".join(str(v) for v in grid)
 
 
-def build_manifest(seed: int, n_discovery: int, n_confirmation: int, blanks: int, transforms_per_puzzle: int) -> list[PuzzleSpec]:
+def build_manifest(
+    seed: int,
+    n_discovery: int,
+    n_confirmation: int,
+    blanks: int,
+    transforms_per_puzzle: int,
+    protocol_version: str = "g0-v2",
+) -> list[PuzzleSpec]:
     rng = random.Random(seed)
     records: list[PuzzleSpec] = []
     total = n_discovery + n_confirmation
@@ -22,6 +29,7 @@ def build_manifest(seed: int, n_discovery: int, n_confirmation: int, blanks: int
         transforms = [random_spatial_transform(rng).as_dict() for _ in range(transforms_per_puzzle)]
         records.append(
             PuzzleSpec(
+                protocol_version=protocol_version,
                 puzzle_id=f"sudoku-{k:04d}",
                 puzzle=encode_grid(puzzle),
                 solution=encode_grid(solution),
@@ -46,9 +54,10 @@ def main() -> None:
         n_confirmation=cfg["n_confirmation_puzzles"],
         blanks=cfg["blanks_per_puzzle"],
         transforms_per_puzzle=cfg["transforms_per_puzzle"],
+        protocol_version=cfg["protocol_version"],
     )
     write_jsonl(args.out, records)
-    print(f"wrote {len(records)} puzzles to {args.out}")
+    print(f"wrote {len(records)} puzzles to {args.out} protocol={cfg['protocol_version']}")
 
 
 if __name__ == "__main__":
