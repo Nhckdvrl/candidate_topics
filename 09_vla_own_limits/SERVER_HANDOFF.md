@@ -99,6 +99,18 @@ stream is an independent process pair. `collect_behavior --resume` makes a resta
 Discovery uses init indices `0-14` and behavior seeds `110000-110007`.
 **Never give different policy-seed sets to different checkpoints.**
 
+While it runs, `src/interim_status.py` reports per-checkpoint success and crossover counts
+on the subset of states that are already complete:
+
+```bash
+$CLIENT_PY -m src.interim_status --csv results/g0_discovery_*.csv
+```
+
+This is a progress diagnostic, not the gate. It restricts itself to states where every
+checkpoint has the full seed set, because a partially collected state has a biased success
+rate — the slow rollouts are exactly the failing ones, which run to the step limit instead
+of terminating early. It can only ever motivate stopping a doomed run early, never a pass.
+
 Analyze only after all three panels are complete:
 
 ```bash

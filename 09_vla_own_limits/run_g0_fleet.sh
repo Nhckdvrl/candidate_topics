@@ -14,6 +14,8 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPENPI="${OPENPI:-/home/xiang/projects/openpi_t09}"
+# Prefer this node's local NVMe stage; fall back to the NFS copy.
+if [ -z "${CKPT_ROOT:-}" ] && [ -d /tmp/t09_ckpts ]; then CKPT_ROOT=/tmp/t09_ckpts; fi
 CKPT_ROOT="${CKPT_ROOT:-/home/xiang/projects/t09_ckpts}"
 CLIENT_PY="${CLIENT_PY:-/home/xiang/venvs/t09_client/bin/python}"
 SERVER_PY="${SERVER_PY:-$OPENPI/.venv/bin/python}"
