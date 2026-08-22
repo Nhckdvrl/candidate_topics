@@ -1,0 +1,36 @@
+{
+  "suite": "libero_10",
+  "task_id": 0,
+  "init_idx": 0,
+  "sim_state_hash": "246eaa105abcbc57940630003566c9abaac4a525b4ee9d3f1eb174da0412f611",
+  "shared_noise_seed": 1487045553,
+  "checkpoints": [
+    "2k",
+    "3k",
+    "9k"
+  ],
+  "pairs": [
+    {
+      "a": "2k",
+      "b": "3k",
+      "action_rms": 0.022418561399510643,
+      "feature_rms": 0.7657947291309534,
+      "differ": true
+    },
+    {
+      "a": "2k",
+      "b": "9k",
+      "action_rms": 0.09595672178157662,
+      "feature_rms": 3.3238567593267683,
+      "differ": true
+    },
+    {
+      "a": "3k",
+      "b": "9k",
+      "action_rms": 0.07800856742063061,
+      "feature_rms": 2.727526848513992,
+      "differ": true
+    }
+  ],
+  "pass": true
+}
