@@ -58,9 +58,9 @@ for ckpt in "${CKPTS[@]}"; do
     port=$((BASE_PORT + srv))
     gpu=$((srv % N_GPUS))
     SERVER_PORT[$srv]=$port
-    CUDA_VISIBLE_DEVICES="$gpu" "$SERVER_PY" -m src.openpi_instrumented_server \
+    ( cd "$HERE" && CUDA_VISIBLE_DEVICES="$gpu" "$SERVER_PY" -m src.openpi_instrumented_server \
       --config pi05_libero --checkpoint-dir "$CKPT_ROOT/pi05_pt_${ckpt}" \
-      --port "$port" --device cuda:0 \
+      --port "$port" --device cuda:0 ) \
       >"$LOGS/server_${PHASE}_${ckpt}_r${r}.log" 2>&1 &
     echo "server ${ckpt} r${r} -> gpu ${gpu} port ${port}"
     srv=$((srv + 1))
@@ -69,7 +69,7 @@ done
 
 echo "waiting for ${srv} servers to load their checkpoints..."
 for ((i = 0; i < srv; i++)); do
-  "$CLIENT_PY" -m src.wait_for_server --port "${SERVER_PORT[$i]}"
+  ( cd "$HERE" && "$CLIENT_PY" -m src.wait_for_server --port "${SERVER_PORT[$i]}" )
 done
 
 # ---- collectors ----------------------------------------------------------------------

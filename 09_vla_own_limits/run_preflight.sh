@@ -26,13 +26,13 @@ for i in "${!CKPTS[@]}"; do
   ckpt="${CKPTS[$i]}"
   port=$((BASE_PORT + i))
   PORTS+=("$port")
-  CUDA_VISIBLE_DEVICES=$((i % N_GPUS)) "$SERVER_PY" -m src.openpi_instrumented_server \
+  ( cd "$HERE" && CUDA_VISIBLE_DEVICES=$((i % N_GPUS)) "$SERVER_PY" -m src.openpi_instrumented_server \
     --config pi05_libero --checkpoint-dir "$CKPT_ROOT/pi05_pt_${ckpt}" \
-    --port "$port" --device cuda:0 >"$LOGS/preflight_server_${ckpt}.log" 2>&1 &
+    --port "$port" --device cuda:0 ) >"$LOGS/preflight_server_${ckpt}.log" 2>&1 &
   echo "server ${ckpt} -> port ${port}"
 done
 
-for p in "${PORTS[@]}"; do "$CLIENT_PY" -m src.wait_for_server --port "$p"; done
+for p in "${PORTS[@]}"; do ( cd "$HERE" && "$CLIENT_PY" -m src.wait_for_server --port "$p" ); done
 
 # 1. per-checkpoint identity: state hash, RNG control, feature capture
 for i in "${!CKPTS[@]}"; do
