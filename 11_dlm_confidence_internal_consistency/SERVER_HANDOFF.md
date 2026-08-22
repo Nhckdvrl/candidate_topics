@@ -1,34 +1,36 @@
-# Topic 11 — local/server agent handoff
+# Topic 11 — archived server handoff
 
-You are taking over `candidate_topics/11_dlm_confidence_internal_consistency/`.
+**Do not run G-1 or rerun G-0 to search for a positive result. Topic 11 is archived.**
 
-Read `README.md` and `AUDIT.md` before running anything. The scientific goal is to test whether LLaDA's native final-forward confidence contains a **retroactive global consistency signal**: can a semantic contradiction that appears only *after* a fixed reasoning trajectory change confidence assigned to earlier, unchanged reasoning-result tokens?
+The frozen v3 G-0 completed with valid prerequisites and the final verdict:
 
-The v3 design is frozen. External correctness is manipulated only in the prompt; internal consistency only in a future suffix check. Prompt/check anchors are semantic arithmetic aliases rather than literal copies. The primary metric is `confidence_result_middle` (Step 2/3 results before the suffix). Do not replace it with a nicer-looking diagnostic after seeing results.
-
-Run:
-
-```bash
-cd 11_dlm_confidence_internal_consistency
-python -m unittest discover -s tests -v
-NUM_GPUS=4 BATCH_SIZE=8 bash run_g0.sh
+```text
+KILL_NO_MEANINGFUL_RETROACTIVE_SIGNAL
 ```
 
-Reuse the LLaDA/Transformers environment and HF cache already used by Topic 10 if possible; there is no need for a separate environment. Lowering batch size or changing GPU IDs is infrastructure-only and safe.
+Key result:
 
-Two prerequisites must pass before interpreting G-0:
-1. seed-paper-like arithmetic result discrimination;
-2. semantic-alias comprehension.
+```text
+Arithmetic prerequisite gap = 0.426361
+Semantic-alias gap          = 0.214693
+Eligible mirrored pairs     = 140
 
-If either fails, treat it as an environment/scoring/protocol problem and debug it. Do not kill the research question.
+Primary confidence_result_middle:
+Delta_consistency = -0.000003
+95% CI            = [-0.000055, 0.000025]
+locked floor      = 0.010
+```
 
-Main output is `runs/g0/summary.md`.
+The protocol worked; the project-level retroactive/global-consistency hypothesis did not.
 
-Interpret the frozen verdict literally:
-- `GO_RETROACTIVE_CONSISTENCY_SIGNAL`: the topic stands;
-- `GO_STRONG_COHERENCE_OVER_CORRECTNESS`: stronger result;
-- `INCONCLUSIVE_FROZEN_DESIGN`: keep design fixed; more pairs may be justified;
-- `KILL_NO_MEANINGFUL_RETROACTIVE_SIGNAL`: archive if protocol prerequisites passed;
-- `INVALID_PROTOCOL_DO_NOT_INTERPRET`: fix engineering/protocol, not science.
+Read:
 
-You may fix engineering or obvious logic bugs, but preserve the intended factorial identities, one-token tokenizer audit, primary metric, thresholds, and verdict rules. If you find a genuine conceptual flaw in the frozen design, stop and explain it rather than silently changing the hypothesis.
+- `G0_RESULT.md` for the full frozen table;
+- `ARCHIVE_SUMMARY.md` for the scientific conclusion and lessons;
+- `AUDIT.md` for the pre-run identification logic.
+
+The large `confidence_full` consistency effect is not a rescue: that metric includes the manipulated suffix. The frozen primary deliberately scored unchanged Step-2/Step-3 result tokens before the future consistency intervention, and that effect was essentially zero.
+
+Only engineering archaeology or reproduction should use the preserved code. Do not change metrics, thresholds, pooling, token regions, model, prompt, or dataset to preserve the same scientific claim.
+
+A future agent should reopen Topic 11 only if a genuinely new external result motivates a **new separately registered question** with a distinct identification strategy.
