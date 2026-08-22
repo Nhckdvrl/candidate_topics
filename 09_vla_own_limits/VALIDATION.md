@@ -121,6 +121,8 @@ A generic state-only feature shared by A and B contributes equally inside the pa
 
 A material positive result therefore means the representation changes in a state-dependent way that tracks **which policy will succeed from that same state**.
 
+A null result has a narrower interpretation. Checkpoints can undergo representational drift, so failure of one shared linear decoder does **not** prove that no policy-specific information exists anywhere or under any nonlinear/aligned readout. For this project, however, that is still a stop: rescuing the claim would require representation alignment, layer sweeps, nonlinear probes, or additional definitions, which violates the one-clean-contrast criterion that motivated the topic.
+
 ### G1 bar
 
 Do not continue to mechanism work for a tiny above-chance effect. The intended bar is:
@@ -135,10 +137,10 @@ on independent confirmation crossover states.
 If the result is near chance or weak:
 
 ```text
-KILL_SELF_KNOWLEDGE_INTERPRETATION
+KILL_NO_CLEAN_POLICY_SPECIFIC_SIGNAL
 ```
 
-Do not sweep layers, probe classes, or confidence definitions to rescue it.
+This is a resource-allocation / identification stop, not a universal claim that VLAs contain no self-knowledge. Do not sweep layers, probe classes, representation alignments, or confidence definitions to rescue it.
 
 If it is strong:
 
