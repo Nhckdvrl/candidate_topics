@@ -30,8 +30,8 @@ def _dedupe_or_fail(records: list[dict]) -> list[dict]:
     return out
 
 
-def _native_fraction(rec: dict) -> float | None:
-    value = rec.get("metadata", {}).get("native_digit_argmax_fraction")
+def _metadata_float(rec: dict, name: str) -> float | None:
+    value = rec.get("metadata", {}).get(name)
     return None if value is None else float(value)
 
 
@@ -67,10 +67,19 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
     repeat_taus: list[float] = []
     repeat_exact_agreement: list[float] = []
     random_taus: list[float] = []
-    native_fractions: list[float] = []
+    native_digit_fractions: list[float] = []
+    native_scheduler_agreements: list[float] = []
 
     n_exact_pairs = 0
     exact_pair_puzzles: set[str] = set()
+
+    def collect_fidelity(rec: dict) -> None:
+        digit_fraction = _metadata_float(rec, "native_digit_argmax_fraction")
+        scheduler_agreement = _metadata_float(rec, "native_scheduler_pick_same_fraction")
+        if digit_fraction is not None and digit_fraction == digit_fraction:
+            native_digit_fractions.append(digit_fraction)
+        if scheduler_agreement is not None and scheduler_agreement == scheduler_agreement:
+            native_scheduler_agreements.append(scheduler_agreement)
 
     for pid, variants in low_conf.items():
         base = variants.get("identity")
@@ -78,9 +87,7 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
             continue
         base_ok = bool(base["exact_solution"])
         identity_exact.append(float(base_ok))
-        nf = _native_fraction(base)
-        if nf is not None:
-            native_fractions.append(nf)
+        collect_fidelity(base)
 
         bsteps = _steps(base)
         repeat = variants.get("identity-repeat")
@@ -90,13 +97,8 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
             if len(common) >= 2:
                 repeat_taus.append(kendall_tau_b([bsteps[i] for i in common], [rsteps[i] for i in common]))
             repeat_exact_agreement.append(float(bool(repeat["exact_solution"]) == base_ok))
-            nf_repeat = _native_fraction(repeat)
-            if nf_repeat is not None:
-                native_fractions.append(nf_repeat)
+            collect_fidelity(repeat)
 
-        # Secondary only: static candidate count is a crude Sudoku difficulty
-        # proxy. Compute within puzzle so between-puzzle variation cannot create
-        # the correlation.
         if base_ok and pid in manifest_by_id:
             m = manifest_by_id[pid]
             ex, ey = [], []
@@ -120,12 +122,10 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
         for variant_id, iso in variants.items():
             if not variant_id.startswith("iso-"):
                 continue
+            collect_fidelity(iso)
             iso_ok = bool(iso["exact_solution"])
             iso_exact_all.append(float(iso_ok))
             solve_pair_total += 1
-            nf_iso = _native_fraction(iso)
-            if nf_iso is not None:
-                native_fractions.append(nf_iso)
 
             if base_ok != iso_ok:
                 solve_flips += 1
@@ -182,9 +182,11 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
     min_order_pairs = int(cfg.get("min_both_exact_pairs_for_order_analysis", 30))
     min_order_puzzles = int(cfg.get("min_both_exact_puzzles_for_order_analysis", 12))
     repeat_floor = float(cfg.get("same_serialization_tau_floor", 0.95))
+    scheduler_floor = float(cfg.get("native_scheduler_agreement_floor", 0.80))
 
     n_identity_exact = int(sum(identity_exact))
     repeat_mean = summarize(repeat_taus)["mean"]
+    scheduler_mean = summarize(native_scheduler_agreements)["mean"]
 
     return {
         "split": split,
@@ -216,15 +218,17 @@ def analyze(records: list[dict], manifest: list[dict], split: str, cfg: dict | N
         "same_serialization_repeat_tau": summarize(repeat_taus),
         "same_serialization_exact_outcome_agreement": summarize(repeat_exact_agreement),
         "random_remasking_tau_vs_identity": summarize(random_taus),
-        "native_digit_argmax_fraction": summarize(native_fractions),
+        "native_digit_argmax_fraction": summarize(native_digit_fractions),
+        "native_scheduler_pick_same_fraction": summarize(native_scheduler_agreements),
         "decision_flags": {
             "enough_identity_successes": n_identity_exact >= min_identity,
             "same_serialization_order_stable": None if repeat_mean is None else repeat_mean >= repeat_floor,
+            "native_scheduler_fidelity_adequate": None if scheduler_mean is None else scheduler_mean >= scheduler_floor,
             "enough_both_exact_for_order_tau": n_exact_pairs >= min_order_pairs and len(exact_pair_puzzles) >= min_order_puzzles,
         },
         "interpretation_note": (
-            "Outcome flips under exact isomorphism are themselves evidence of non-equivariance; "
-            "they must not be discarded merely because they cannot enter conditional order-tau analysis."
+            "Outcome flips under exact isomorphism are themselves evidence of non-equivariance. "
+            "Conditional tau is interpreted only after measurement stability and scheduler-fidelity checks."
         ),
     }
 
