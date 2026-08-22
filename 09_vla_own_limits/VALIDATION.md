@@ -43,6 +43,14 @@ Preflight requires:
 4. changing the noise seed changes the sampled action;
 5. layer-11 capture yields exactly ten denoising-step activations.
 
+A separate check covers a failure mode that would otherwise masquerade as a result. Every
+downstream conclusion assumes the servers hold *different* checkpoints; if a conversion
+wrote the same weights twice, or two servers were pointed at one directory, the pipeline
+would run cleanly and return no crossover and a relative score of exactly zero — a perfect
+null that means nothing. `src/check_checkpoints_differ.py` gives every checkpoint the same
+settled observation and the same policy-noise seed and requires the actions and layer-11
+features to differ.
+
 If these fail: `TECHNICAL_BLOCKED`.
 
 ## G0 — does natural bidirectional competence crossover exist?

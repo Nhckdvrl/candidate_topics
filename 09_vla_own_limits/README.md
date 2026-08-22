@@ -162,6 +162,8 @@ src/state_contract.py           simulator-state hash + deterministic noise strea
 src/libero_common.py            frozen official LIBERO preprocessing/reset protocol
 src/openpi_instrumented_server.py controlled-noise inference + observational layer-11 hook
 src/preflight.py                state/RNG/feature identity checks
+src/check_checkpoints_differ.py verifies the checkpoints are not the same model
+src/wait_for_server.py          blocks until a policy server finishes loading
 src/collect_behavior.py         repeated same-state rollouts
 src/panel.py                    robust Monte-Carlo crossover statistics
 src/noise_null.py               within-state relabeling null for the crossover claim

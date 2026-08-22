@@ -53,6 +53,17 @@ reproducible settled sim-state hash, bit-identical actions and features under a 
 noise seed, different actions under a different noise seed, and exactly ten captured
 denoising activations.
 
+With all three servers up, also confirm the checkpoints are genuinely different models:
+
+```bash
+MUJOCO_GL=egl $CLIENT_PY -m src.check_checkpoints_differ \
+  --ports 8100 8101 8102 --names 2k 3k 9k \
+  --out results/checkpoints_differ.json
+```
+
+Same observation, same noise seed, different actions and features. Without this, two
+servers accidentally sharing one checkpoint would produce a flawless null result.
+
 Then check that each checkpoint's LIBERO success is in a sane range. A broken
 normalization or action stack shows up here, not in the analysis.
 
