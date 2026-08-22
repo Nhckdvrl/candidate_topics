@@ -1,0 +1,106 @@
+{
+  "n_rollouts": 8,
+  "success_rate": 1.0,
+  "mean_wall_s": 16.188686839304864,
+  "mean_infer_s": 9.82597065041773,
+  "mean_sim_s": 3.602425088174641,
+  "mean_infers_per_rollout": 49.75,
+  "mean_ms_per_infer": 197.50694774709007,
+  "projection": {
+    "parallel_streams": 12,
+    "discovery_rollouts": 3600,
+    "confirmation_rollouts": 2400,
+    "discovery_hours": 1.3490572366087388,
+    "confirmation_hours": 0.8993714910724925
+  },
+  "rollouts": [
+    {
+      "task_id": 0,
+      "init_idx": 0,
+      "policy_seed": 110000,
+      "success": 1,
+      "steps": 417,
+      "n_infer": 84,
+      "wall_s": 33.56678292900324,
+      "infer_s": 21.508546778932214,
+      "sim_s": 8.053626703098416
+    },
+    {
+      "task_id": 0,
+      "init_idx": 0,
+      "policy_seed": 110001,
+      "success": 1,
+      "steps": 345,
+      "n_infer": 69,
+      "wall_s": 21.259580383077264,
+      "infer_s": 12.492213586345315,
+      "sim_s": 5.89995764195919
+    },
+    {
+      "task_id": 0,
+      "init_idx": 1,
+      "policy_seed": 110000,
+      "success": 1,
+      "steps": 253,
+      "n_infer": 51,
+      "wall_s": 15.3310886323452,
+      "infer_s": 8.695600973442197,
+      "sim_s": 3.4438432827591896
+    },
+    {
+      "task_id": 0,
+      "init_idx": 1,
+      "policy_seed": 110001,
+      "success": 1,
+      "steps": 252,
+      "n_infer": 51,
+      "wall_s": 15.79211275279522,
+      "infer_s": 8.62992681376636,
+      "sim_s": 4.146362176164985
+    },
+    {
+      "task_id": 5,
+      "init_idx": 0,
+      "policy_seed": 110000,
+      "success": 1,
+      "steps": 167,
+      "n_infer": 34,
+      "wall_s": 11.982171414420009,
+      "infer_s": 7.181573543697596,
+      "sim_s": 2.070428293198347
+    },
+    {
+      "task_id": 5,
+      "init_idx": 0,
+      "policy_seed": 110001,
+      "success": 1,
+      "steps": 160,
+      "n_infer": 32,
+      "wall_s": 9.163129987195134,
+      "infer_s": 5.5194730050861835,
+      "sim_s": 1.5221642013639212
+    },
+    {
+      "task_id": 5,
+      "init_idx": 1,
+      "policy_seed": 110000,
+      "success": 1,
+      "steps": 170,
+      "n_infer": 34,
+      "wall_s": 9.77208580635488,
+      "infer_s": 6.189483003690839,
+      "sim_s": 1.7146487403661013
+    },
+    {
+      "task_id": 5,
+      "init_idx": 1,
+      "policy_seed": 110001,
+      "success": 1,
+      "steps": 211,
+      "n_infer": 43,
+      "wall_s": 12.64254280924797,
+      "infer_s": 8.390947498381138,
+      "sim_s": 1.9683696664869785
+    }
+  ]
+}
