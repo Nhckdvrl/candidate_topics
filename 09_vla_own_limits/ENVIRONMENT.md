@@ -179,4 +179,17 @@ brandonyang/openpi-libero-9000
 ```
 
 Feature capture uses PyTorch forward hooks, so each must be converted with OpenPI's
-official `examples/convert_jax_model_to_pytorch.py`.
+official `examples/convert_jax_model_to_pytorch.py`. Converted checkpoints are 6.8 GB
+(bfloat16).
+
+`$HOME` is NFS, and a server spends most of its startup reading `model.safetensors`. With
+several servers coming up at once that read is the bottleneck, so the converted checkpoints
+are staged on this node's local NVMe and the runners point at the copy:
+
+```bash
+mkdir -p /tmp/t09_ckpts
+cp -r /home/xiang/projects/t09_ckpts/pi05_pt_{2k,3k,9k} /tmp/t09_ckpts/
+export CKPT_ROOT=/tmp/t09_ckpts
+```
+
+The copy is per node and disposable; `$CKPT_ROOT` falls back to the NFS path.
