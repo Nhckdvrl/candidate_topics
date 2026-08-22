@@ -1,0 +1,10 @@
+--- a/src/trainer/fsdp_sft_trainer.py
++++ b/src/trainer/fsdp_sft_trainer.py
+@@
+-                valid_token_this_rank = torch.sum(loss_mask)
+-                loss = torch.sum(loss) / valid_token_this_rank
++                valid_token_this_rank = torch.sum(loss_mask)
++                if valid_token_this_rank.item() == 0:
++                    loss = torch.sum(loss) * 0.0
++                else:
++                    loss = torch.sum(loss) / valid_token_this_rank

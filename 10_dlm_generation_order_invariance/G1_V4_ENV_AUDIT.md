@@ -27,6 +27,8 @@ The first distributed step attempt then showed that Dream's released trainer exp
 
 With that isolated patch, a four-GPU one-step run completed forward/backward, validation, and save: `train/loss=1.408`, `val/loss=0.349`. The saved `global_step_1` checkpoint was reloaded successfully with Dream's tokenizer and SDPA model loader after supplying the upstream remote-code files that the trainer stores at the run root. The smoke output is outside the repository under `/tmp/candidate_topics/dream_sft_smoke` and is not a scientific result.
 
+The first two-epoch formal start exposed a validation-only `0/0` edge case in upstream `q_sample`: a random validation batch can contain no masked response token. The isolated trainer copy now applies `tools/verl_compat/dream_zero_mask_guard.patch`, returning a finite zero diagnostic for that batch while leaving all nonempty training/validation losses unchanged. This guard does not affect exact-grid evaluation or the scientific protocol.
+
 ## Import shim audit
 
 `tools/flash_attn_compat` is a deliberately explicit, pure-PyTorch import shim for `flash_attn.bert_padding`. It is only prepended to `PYTHONPATH` for the environment audit. With the official trainer configuration's sequence-parallel size fixed to 1, the Ulysses branch containing these helpers is not executed; the normal path uses the trainer's ordinary PyTorch loss. The shim is not a FlashAttention implementation and is not valid for sequence-parallel training.
