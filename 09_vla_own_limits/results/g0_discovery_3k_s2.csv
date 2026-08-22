@@ -1,4 +1,0 @@
-suite,task_id,init_idx,env_seed,sim_state_hash,checkpoint,policy_seed,success,status,steps,replans
-libero_10,2,0,7,898747a843f4d59a4ec849c637bd3d582c2ad65a6dab27dbc928735e1810fcc9,3k,110000,1,ok,231,47
-libero_10,2,0,7,898747a843f4d59a4ec849c637bd3d582c2ad65a6dab27dbc928735e1810fcc9,3k,110001,1,ok,243,49
-libero_10,2,0,7,898747a843f4d59a4ec849c637bd3d582c2ad65a6dab27dbc928735e1810fcc9,3k,110002,1,ok,223,45

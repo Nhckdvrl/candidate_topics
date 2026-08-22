@@ -11,3 +11,5 @@
 **/results/**/collect.log
 **/results/**/*.log
 **/results/_superseded_*/
+# in-progress G0 shards churn on every write; the completed panel is force-added once
+09_vla_own_limits/results/g0_*.csv
