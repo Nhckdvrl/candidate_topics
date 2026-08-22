@@ -158,3 +158,50 @@ on first import and raises `EOFError` under a non-interactive shell; and `torch>
 read its pickled initial states under the new `weights_only=True` default, which surfaces as
 an unpickling error rather than as a missing-data error. OSMesa is unavailable on these
 nodes, so rendering uses EGL.
+
+## Preflight outcome — 2026-08-22
+
+P0 passed on all three checkpoints. Every number below is measured, not assumed.
+
+```text
+                                 2k       3k       9k
+settled sim-state hash stable    yes      yes      yes
+same noise -> action max|diff|   0.0      0.0      0.0
+same noise -> feature max|diff|  0.0      0.0      0.0
+diff noise -> action rms       0.0047   0.0046   0.0207
+layer-11 denoise activations     10       10       10
+feature dim                     1024     1024     1024
+```
+
+Bit-identical actions and features under a repeated noise seed is the strongest form of
+the RNG-control claim: policy stochasticity is fully accounted for by the declared seed,
+with nothing else varying between calls.
+
+Checkpoint distinctness, same observation and same noise seed:
+
+```text
+pair      action rms   feature rms
+2k / 3k     0.0224        0.766
+2k / 9k     0.0960        3.324
+3k / 9k     0.0780        2.728
+```
+
+The ordering is the one a single fine-tuning trajectory should produce — 2k and 3k are
+adjacent and differ least, 2k and 9k are furthest apart. A conversion that had written the
+same weights twice, or mixed up a branch, would not reproduce that structure.
+
+Rollout cost, measured on 9k over eight full rollouts:
+
+```text
+mean wall clock      16.2 s / rollout
+mean inference       197 ms, ~50 inferences / rollout
+time split           61% inference, 22% simulator
+```
+
+Inference dominates, so the GPU is the bottleneck and the useful parallelism is
+independent server/collector pairs rather than more collectors per server.
+
+One thing to watch rather than fix: 9k succeeded on all eight pilot rollouts. If it sits
+near ceiling on LIBERO-10 it will win most states outright, and a one-directional
+advantage is not a crossover. That would surface as weak bidirectional support in G0 and
+should be read as `STOP_NO_NATURAL_CROSSOVER`, not as something to engineer around.
