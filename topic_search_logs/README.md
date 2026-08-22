@@ -42,6 +42,10 @@ Round 8 又补充了一条校准：
 7. [Round 7：foundation scaling、WAM controllability 与 heterogeneous-data collision audit](./2026-08-22_vla_wam_mechanism_search_round7.md)
 8. [Round 8：重新广搜大问题、hidden dynamics、physical feasibility、active perception 与 hierarchy mechanism](./2026-08-22_vla_wam_mechanism_search_round8.md)
 9. [Round 9：whole-body motor equivalence、physical prompting、padding missingness 与新模型异常](./2026-08-22_vla_wam_mechanism_search_round9.md)
+10. [Round 10：capability asymmetry、event transition、camera-role、MoE 与 human-video transfer audit](./2026-08-22_vla_wam_mechanism_search_round10.md)
+11. [Round 11：feedback law / task-space correction 搜索启动与今晚收尾](./2026-08-23_vla_wam_mechanism_search_round11.md)
+
+> **2026-08-23 今晚收尾状态：Round 11 只完成搜索框架切换，尚未完成系统 collision audit，因此没有为了数量新增 E。当前 active provisional shortlist 保持 B / C / D。**
 
 ## 当前 active provisional shortlist
 
@@ -171,6 +175,30 @@ GEN-1.5 的最新 company-reported physical prompting 现象，以及 BPP / ICRT
 但 BPP 已经明确把 behavior prompt 定义成同时携带 task identity 与 spatial / temporal / strategy information，并对 prompt modality、frequency、trajectory following、grasp / folding strategy 等做了分析。因此“demo 是 goal 还是 trajectory”本身已经太近。
 
 仍值得以后审的是更强的 factorized binding question：goal / strategy / object / effector / timing 在 counterfactual swap 时哪些被 transfer、哪些被忽略；本轮不升 E。
+
+### Do Continuous Action Heads Miss Sparse Mode-Switch Events?
+
+Round 10 从多个公开 issue 里看到相似的 `reach / align works, grasp event never fires` 失败，且至少部分案例已经排除了简单 gripper-label 缺失。这个现象值得继续盯。
+
+但 DAM-VLA 已经拆 arm / gripper experts，Libra-VLA / PI-VLA 等也已从 hybrid action-space 角度处理 discrete / continuous action semantics。因此当前不能把“拆 gripper head”或“robot action is hybrid”包装成新贡献。只有未来能证明它跨 architecture、跨 event 类型形成一个更基本的 generative-control mechanism，才值得重新升格。
+
+### Do Robot Foundation Policies Learn Reusable Task-Space Feedback Laws?
+
+Round 11 新启动的搜索线。
+
+核心不是问 perturbation 后 success 会不会掉，而是问：
+
+> **policy 是否对 task-relevant error 产生跨状态一致的 correction，同时对 goal-equivalent / motor-null variation 保持宽容？**
+
+这可能区分：
+
+```text
+trajectory restoration
+vs
+task-structured feedback control
+```
+
+但本轮只完成问题框架，还没有系统完成 2025–2026 foundation-VLA、optimal feedback control、task-space imitation、uncontrolled-manifold 等 collision audit，也没有冻结公开模型/实验平台，因此**不摘成 E**。详见 Round 11 收尾日志。
 
 ### Do World Action Models Actually Use Their Predicted Futures?
 
