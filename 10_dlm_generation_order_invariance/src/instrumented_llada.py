@@ -51,11 +51,7 @@ def make_prompt(tokenizer, puzzle_text: str) -> list[int]:
 
 
 def build_sequence(tokenizer, prompt_ids: Sequence[int], puzzle: Sequence[int], mask_id: int):
-    """Build a readable fixed grid template and return exact cell token positions.
-
-    Only the 81 cell-token positions are mutable. Separators are fixed tokens, so a
-    cell can never drift relative to the row-major grid during diffusion.
-    """
+    """Build a readable fixed grid template and return exact cell token positions."""
     if len(puzzle) != 81:
         raise ValueError("puzzle must contain 81 cells")
     digit_ids = _exact_digit_token_ids(tokenizer)
@@ -107,20 +103,11 @@ def decode_fixed_slots(
 ) -> DecodeResult:
     """Instrumented LLaDA-style irreversible masked decoding for Sudoku cells.
 
-    The *content* grammar is constrained to digits 1..9 because each mutable slot
-    is semantically a Sudoku digit. Crucially, the scheduler confidence is NOT
-    renormalized over those nine digits. For each slot we select the best valid
-    digit but score it by its probability under the model's full vocabulary:
-
-        p(best valid digit | current masked sequence).
-
-    Therefore a slot whose best digit has only 1% full-vocabulary probability is
-    not turned into a spuriously high-confidence slot merely because the other
-    eight digits are even less likely. When the model's native full-vocabulary
-    argmax is itself a digit, this exactly matches the standard confidence score
-    for that slot. The fraction of such steps is logged as a fidelity diagnostic.
-
-    Exactly one blank is finalized per step, making finalization rank unambiguous.
+    Content is constrained to digits 1..9 because every mutable slot is a Sudoku
+    cell. Scheduling confidence is *not* renormalized over those digits: the
+    selected valid digit is scored by its probability under the full vocabulary.
+    When the native full-vocabulary argmax is already a digit, this is exactly the
+    ordinary LLaDA confidence for that position. That fidelity rate is logged.
     """
     torch = _load_torch()
     if temperature < 0:
@@ -147,8 +134,12 @@ def decode_fixed_slots(
 
     with torch.no_grad():
         for step in range(1, len(blank_positions) + 1):
-            active_local = [j for j, pos in enumerate(blank_positions) if int(x[0, pos].item()) == mask_id]
-            if not active_local:
+            active = torch.tensor(
+                [int(x[0, pos].item()) == mask_id for pos in blank_positions],
+                dtype=torch.bool,
+                device=model.device,
+            )
+            if not bool(active.any().item()):
                 break
 
             logits = model(x).logits
@@ -163,9 +154,6 @@ def decode_fixed_slots(
                 local_choice = digit_logits.argmax(dim=-1)
             proposed_ids = allowed[local_choice]
 
-            # Full-vocabulary probability of the selected valid digit. This is the
-            # key correction over the v1 implementation, which renormalized over
-            # digits and could create artificial confidence.
             chosen_logits = slot_logits.gather(-1, proposed_ids.unsqueeze(-1)).squeeze(-1).to(torch.float32)
             log_z = torch.logsumexp(slot_logits.to(torch.float32), dim=-1)
             conf = torch.exp(chosen_logits - log_z)
@@ -174,11 +162,12 @@ def decode_fixed_slots(
             native_is_digit = (native_ids.unsqueeze(-1) == allowed.view(1, 1, -1)).any(dim=-1)
 
             if remasking == "random":
-                pick_j = active_local[int(torch.randint(len(active_local), (1,), generator=generator, device=model.device).item())]
+                active_indices = torch.nonzero(active, as_tuple=False).flatten()
+                pick = torch.randint(active_indices.numel(), (1,), generator=generator, device=model.device)
+                pick_j = int(active_indices[pick].item())
             else:
-                # Mirrors confidence-based top-k selection with k=1. max() also
-                # gives deterministic tie handling under the locked temperature=0.
-                pick_j = max(active_local, key=lambda j: float(conf[0, j]))
+                scores = conf[0].masked_fill(~active, float("-inf"))
+                pick_j = int(scores.argmax().item())
 
             abs_pos = blank_positions[pick_j]
             cell_i = blank_cells[pick_j]
