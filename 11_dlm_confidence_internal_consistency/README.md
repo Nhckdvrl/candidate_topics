@@ -1,39 +1,41 @@
 # 11 — What Does Diffusion Confidence Actually Know?
 
-**Status:** VALIDATION CODE READY — run locked G-0 before any extension
+**Status:** VALIDATION CODE HARDENED — run the locked G-0 before any extension
 
 ## Scientific question
 
-> Does native diffusion-LM confidence track the **internal consistency of a reasoning trajectory** independently of whether the final answer is externally correct?
+> Does native diffusion-LM confidence track the **internal consistency of a reasoning trajectory** independently of whether its conclusion is externally correct?
 
-This is deliberately narrower than “DLLM confidence is not calibrated.” The seed paper, [The Confidence Paradox](https://aclanthology.org/2026.findings-acl.2142/), reports that LLaDA-8B is badly calibrated on GSM8K yet strongly discriminative, and interprets the signal as structural consistency. It also shows a large confidence drop for forced arithmetic contradictions. What remains unidentified is whether **trajectory-internal consistency itself** can be separated from final-answer correctness.
+This is deliberately narrower than “DLLM confidence is not calibrated.” The seed paper, [The Confidence Paradox](https://aclanthology.org/2026.findings-acl.2142/), reports that LLaDA-8B is badly calibrated on mathematical reasoning but has strong discriminative power. Its interpretation is that the final-forward diffusion confidence behaves more like a signal of structural consistency than an ordinary probability of correctness.
 
-The goal here is to answer that with one minimal factorial experiment, not with hidden states, probes, learned judges, threshold search, or many hand-built controls.
+The paper also shows a strong arithmetic intervention: changing a correct arithmetic result to a wrong one causes a much larger confidence drop than a factual answer swap. What it does **not** identify is whether internal trajectory consistency itself can be separated from external correctness.
+
+Topic 11 tests exactly that claim with one programmatic factorial experiment.
 
 ---
 
-## Why the old 2×2 was still not clean enough
+## Why the naive 2×2 is invalid
 
-The earlier README proposed making a wrong intermediate arithmetic result and then propagating it. That is better than merely changing the final token, but the “consistent-but-wrong” trajectory still contains an arithmetic statement that is false relative to its own operands. A critic can therefore say that the supposedly coherent condition already contains a local contradiction.
+A construction such as:
 
-The implemented design removes this problem entirely.
+- correct reasoning + correct answer;
+- correct reasoning + wrong final token;
+- wrong reasoning + correct answer;
+- wrong reasoning + wrong answer;
 
-We separate:
+is not a clean factorial. If the chain derives `42` and the final line says `37`, the supposedly “valid reasoning + wrong answer” condition is internally contradictory by construction.
 
-1. **trajectory-internal consistency** — whether the state announced by the trajectory matches the state actually used by all downstream arithmetic;
-2. **external correctness** — whether the state used by the trajectory matches the state specified by the problem prompt.
+Likewise, creating an arithmetic error and then “propagating it consistently” still leaves one locally false equation at the point where the error is introduced.
 
-Every arithmetic equation in every cell is valid.
+The implemented design avoids both problems: **every arithmetic equation in every cell is valid**.
 
 ---
 
 ## Locked 2×2 design
 
-Choose two nearby integer anchors `X != Y` and one deterministic three-step arithmetic program `f`.
+For an anchor pair `X != Y`, choose a deterministic three-step arithmetic program `f`. In one orientation, the downstream trajectory always computes from branch anchor `X`.
 
-For one orientation, the downstream trajectory always computes `f(X)` and is **text-identical after the first line** in all four cells.
-
-| Cell | Prompt says | Trajectory announces | Downstream uses | Internal consistency | Final correctness |
+| Cell | Prompt anchor | Announced anchor | Downstream branch | Internal consistency | External correctness |
 |---|---:|---:|---:|---|---|
 | `CC` | X | X | X | consistent | correct |
 | `IC` | X | Y | X | inconsistent | correct |
@@ -45,14 +47,14 @@ Example:
 ```text
 Prompt: A calculator starts from 23. Add 5, multiply by 3, subtract 4.
 
-CC:
+CC output:
 Initial state: 23
 Step 1: 23 + 5 = 28
 Step 2: 28 * 3 = 84
 Step 3: 84 - 4 = 80
 Final answer: 80
 
-IC:
+IC output:
 Initial state: 29
 Step 1: 23 + 5 = 28
 Step 2: 28 * 3 = 84
@@ -60,155 +62,248 @@ Step 3: 84 - 4 = 80
 Final answer: 80
 ```
 
-`CC` vs `IC` changes only the announced initial state while prompt, downstream reasoning, and final answer stay fixed.
+Within one orientation:
 
-For the external-correctness manipulation, the complete output is held fixed and only the prompt anchor changes:
+- the downstream continuation is **byte-identical in all four cells**;
+- `CC` vs `IC` changes only the announced anchor;
+- `CW` vs `IW` changes only the announced anchor;
+- `CC` vs `CW` holds the complete output fixed and changes only the prompt anchor;
+- `IC` vs `IW` does the same.
 
-- `CC` and `CW` use the exact same output;
-- `IC` and `IW` use the exact same output.
+The same anchor pair is then mirrored with `Y` as the downstream branch. Effects are averaged across the two orientations before any bootstrap. This cancels stable preferences for one number token.
 
-This yields a genuine factorial rather than four loosely matched error types.
+### Tokenizer-level minimality
 
-### Important interaction that the design also identifies
+Text-space matching is not enough. The scorer rejects an orientation unless:
 
-A trivial prompt-copy heuristic predicts a different pattern:
+- prompt manipulation changes at most one token (default: exactly one under `max_intervention_tokens=1`);
+- announcement manipulation changes at most one token;
+- total token length is identical across the four cells;
+- downstream token IDs are identical across all four cells;
+- all scored arithmetic-result token positions are identical.
 
-- `CC` and `IW` have prompt/announcement agreement;
-- `IC` and `CW` do not.
+Both orientations must pass or the entire anchor pair is dropped.
 
-Therefore a simple “does the announced number match the prompt?” effect appears as the **factorial interaction**, not as the internal-consistency main effect. The design can distinguish:
+---
+
+## Why we score late result tokens
+
+A remaining shallow explanation is locality: the inconsistent announcement is adjacent to Step 1, so a drop on the first equation could just be local numeric compatibility.
+
+The v2 scorer therefore records four nested views of the **same forward pass**:
+
+1. `confidence_result_first` — Step-1 result only; a local-sensitivity diagnostic.
+2. `confidence_result_late` — arithmetic result tokens from Step 2 onward; **primary identification metric**.
+3. `confidence_tail` — every token in the unchanged downstream continuation; breadth diagnostic.
+4. `confidence_full` — every output token; the seed-paper-compatible sequence score.
+
+It also saves `confidence_result`, `confidence_final`, and `confidence_announcement` as diagnostics.
+
+The primary claim is deliberately tied to `confidence_result_late`: if changing only the announced initial state changes confidence on later, text-identical arithmetic results several reasoning steps away, the signal is harder to explain as a one-token local mismatch.
+
+No extra model calls are required for these metrics.
+
+---
+
+## Scoring protocol: match the seed paper first
+
+The seed paper defines LLaDA sequence confidence using a **final teacher-forced forward pass on the fully specified sequence**:
+
+1. format the user prompt with the LLaDA chat template;
+2. append the prescribed response;
+3. run one final forward pass;
+4. at every scored output position, read the softmax probability assigned to the token already occupying that position;
+5. average the selected token probabilities.
+
+We do **not** average confidence over the 128 denoising steps, and G-0 does not need to generate a response.
+
+### Positive-control protocol audit
+
+Before the factorial is interpreted, shard 0 also runs 100 synthetic arithmetic pairs matching the seed paper's intervention idea:
 
 ```text
-trajectory consistency:       CC ≈ CW > IC ≈ IW
-final-answer correctness:     CC ≈ IC > CW ≈ IW
-prompt/announcement matching: CC ≈ IW > IC ≈ CW
+23 + 45 = 68   # correct
+23 + 45 = 72   # one-token wrong result
 ```
 
-This is the main reason for using the full 2×2 instead of a single correct/wrong pair.
+Only one-token result substitutions are kept. The same final-forward scorer reads probability on the result token.
 
----
+If the paired 95% CI for:
 
-## Mirrored anchors: cancelling number-token preference
+```text
+confidence(correct result) - confidence(wrong result)
+```
 
-Each anchor pair is evaluated twice:
+does not lie above zero, the run is labelled:
 
-1. downstream branch uses `X`, with `Y` as the alternative;
-2. downstream branch uses `Y`, with `X` as the alternative.
+```text
+INVALID_PROTOCOL_DO_NOT_INTERPRET
+```
 
-Effects are averaged at the anchor-pair level before bootstrap resampling.
+A failed positive control is a broken/changed scoring protocol, model revision, or environment until proven otherwise. It must **not** be used to kill the research question.
 
-This prevents a model-level preference for one particular number token from masquerading as a consistency effect.
-
-The scorer additionally rejects any orientation where tokenization breaks the minimal intervention. By default both the prompt change and announcement change must be **exactly one token position** after tokenization.
-
----
-
-## Confidence protocol
-
-The implementation follows the seed paper’s primary LLaDA score:
-
-1. concatenate the chat-formatted prompt and the prescribed trajectory;
-2. run **one teacher-forced forward pass** on the fully specified sequence;
-3. at every output position, read the softmax probability assigned to the token already occupying that position;
-4. average probabilities over output tokens.
-
-No diffusion generation is needed for this intervention experiment. This makes G-0 cheap: the expensive 128-step denoising loop is not part of the validation.
-
-### Primary paper-compatible score
-
-`confidence_full`
-
-Mean same-position probability over every output token.
-
-### Identification guardrail
-
-`confidence_tail`
-
-Mean probability over the **unchanged downstream continuation only**, excluding the manipulated announcement line.
-
-This is not an alternative metric to rescue a weak result. It is a stricter guardrail:
-
-> if full-sequence confidence changes but confidence on the text-identical downstream tokens does not, we do **not** claim trajectory-level structural consistency.
-
-A local penalty on the changed announcement token is insufficient.
-
-`confidence_announcement` is saved only as a diagnostic.
+This is a prerequisite check, not a control added to rescue the hypothesis.
 
 ---
 
 ## Locked effects
 
-For each orientation:
+For one orientation and any confidence metric `c`:
 
 ```text
 consistency_when_correct = CC - IC
 consistency_when_wrong   = CW - IW
-
 Delta_consistency = 0.5 * [(CC - IC) + (CW - IW)]
 
 correctness_when_consistent   = CC - CW
 correctness_when_inconsistent = IC - IW
-
 Delta_correctness = 0.5 * [(CC - CW) + (IC - IW)]
+
+coherent_wrong_minus_incoherent_correct = CW - IC
+interaction = (CC - IC) - (CW - IW)
 ```
 
-The strongest direct contrast is:
+The two mirrored orientations are averaged first. The statistical unit is the **anchor pair**, never the individual row or orientation.
 
-```text
-CW - IC
-```
+Uncertainty is reported with:
 
-because it asks whether a **coherent-but-wrong** trajectory receives higher confidence than an **incoherent-but-correct** trajectory.
+- pair-level bootstrap 95% confidence intervals;
+- a one-sided pair-level sign-flip randomization p-value as a diagnostic;
+- fraction of pairs with positive effect.
 
-Algebraically, `CW - IC = Delta_consistency - Delta_correctness`, so it is one contrast, not two pieces of evidence.
-
-We also report the factorial interaction:
-
-```text
-(CC - IC) - (CW - IW)
-```
-
-which captures prompt/announcement agreement effects.
-
-All uncertainty intervals are pair-level bootstrap intervals over mirrored anchor pairs; the two orientations from one pair are never treated as independent observations.
+The bootstrap CI remains the locked decision criterion; the permutation p-value is not an alternate rescue gate.
 
 ---
 
 ## G-0 decision rule
 
-The verdict is deliberately locked before seeing model scores.
+The decision hierarchy is frozen before model scores are seen.
 
-### `GO_STRONG_STRUCTURAL_SIGNAL`
+### 0. `INVALID_PROTOCOL_DO_NOT_INTERPRET`
+
+The arithmetic positive-control CI includes zero.
+
+Stop. Fix the scorer/model/environment. Do not interpret the factorial.
+
+### 1. `KILL_NO_INTERNAL_CONSISTENCY_SIGNAL`
+
+Protocol audit passes, but the 95% CI for `Delta_consistency` on **late downstream result tokens** is entirely non-positive.
+
+Archive the topic.
+
+### 2. `INCONCLUSIVE_DO_NOT_TUNE`
+
+The late-result consistency effect is positive on average but its CI crosses zero.
+
+Do not prompt-shop, change metrics, or add error taxonomies. Increase sample size only if many preregistered pairs were lost to tokenizer filtering for a purely mechanical reason.
+
+### 3. `MIXED_LOCAL_RESULT_SIGNAL_ONLY`
+
+Late-result consistency is stable, but the seed-paper-compatible `confidence_full` consistency effect is not stable.
+
+There is an interesting local/structured score effect, but not enough evidence for the intended broad confidence interpretation.
+
+### 4. `MIXED_INTERNAL_SIGNAL_ONLY`
+
+Late-result and full-output consistency effects are stable, but `CW - IC` on late result tokens does not stably exceed zero.
+
+Interpretation: native confidence contains a real internal-consistency signal independent of correctness, but the stronger story that consistency dominates correctness is not established.
+
+### 5. `GO_STRONG_STRUCTURAL_SIGNAL`
 
 Required:
 
-1. the 95% bootstrap CI for `Delta_consistency` on **unchanged continuation tokens** is entirely above zero;
-2. the paper-default full-output consistency effect is also stably positive;
-3. the 95% CI for `CW - IC` on continuation tokens is entirely above zero.
+1. arithmetic protocol audit passes;
+2. late-result `Delta_consistency` CI is entirely above zero;
+3. full-output `Delta_consistency` CI is entirely above zero;
+4. late-result `CW - IC` CI is entirely above zero.
 
-Interpretation:
+The all-tail score is reported as breadth evidence but is deliberately **not** another gate; averaging punctuation and boilerplate should not decide whether the scientific signal exists.
 
-> internal trajectory coherence predicts native diffusion confidence strongly enough to beat final correctness in the decisive coherent-wrong vs incoherent-correct contrast.
+---
 
-### `MIXED_INTERNAL_SIGNAL_ONLY`
+## Efficiency
 
-A stable continuation-token consistency effect exists, but `CW - IC` does not reliably exceed zero.
+This experiment is intentionally cheap.
 
-Interpretation: confidence contains a real internal-consistency signal, but the stronger “structural consistency over correctness” story is not established.
+With the default `256` mirrored anchor pairs:
 
-Do not tune prompts or invent error categories to rescue this state.
+- 8 factorial rows per pair = 2,048 short sequences;
+- 100 arithmetic protocol-control pairs = 200 very short sequences;
+- each sequence requires exactly **one** model forward pass;
+- no diffusion generation;
+- no training;
+- no hidden-state extraction;
+- no LLM judge;
+- no DDP/NCCL.
 
-### `INCONCLUSIVE_DO_NOT_TUNE`
+Multi-GPU mode launches independent model replicas and shards by **complete anchor pair**. There is no inter-GPU communication. That makes it suitable for the same infrastructure style as Topic 10 and insensitive to slow cross-node links.
 
-Continuation-token consistency is positive on average but its CI crosses zero.
+The scorer batches only sequences of **exactly equal token length**. It therefore needs no padding and no attention-mask behavior, avoiding a subtle compatibility/confounding issue across LLaDA remote-code revisions.
 
-Stop. Increase sample size only if the preregistered G-0 run accidentally loses too many pairs to tokenizer filtering; otherwise do not method-shop.
+---
 
-### `KILL_NO_INTERNAL_CONSISTENCY_SIGNAL`
+## Environment: reuse Topic 10
 
-The continuation-token consistency CI is non-positive.
+Do **not** create a separate Topic-11 environment if Topic 10 already has a working LLaDA environment/cache.
 
-Archive the topic.
+Topic 11 now deliberately uses the same compatible range:
+
+```text
+torch>=2.4
+transformers>=4.49,<5
+pytest>=8
+```
+
+and only adds an explicit NumPy dependency (normally already present through Transformers).
+
+The old Topic-11 pin `transformers==4.38.2` was removed because it would force a second environment. The scorer uses `AutoModel`/`AutoTokenizer` with `trust_remote_code=True` and avoids the padding path that caused the main compatibility concern.
+
+Before loading 8B weights, `run_g0.sh` checks the installed versions and performs a tokenizer-only design audit.
+
+---
+
+## Run
+
+### Cheap static tests
+
+```bash
+cd 11_dlm_confidence_internal_consistency
+python -m unittest discover -s tests -v
+```
+
+### Single GPU
+
+```bash
+bash run_g0.sh
+```
+
+### Four GPUs
+
+```bash
+NUM_GPUS=4 BATCH_SIZE=8 bash run_g0.sh
+```
+
+If the machine's desired physical GPU ids are not `0,1,2,3`:
+
+```bash
+NUM_GPUS=4 GPU_IDS=2,3,6,7 bash run_g0.sh
+```
+
+Infrastructure-only overrides are allowed, e.g. batch size/GPU ids/run directory. Scientific design changes should be made in a new config rather than silently overriding the frozen G-0.
+
+### Outputs
+
+```text
+runs/g0/design.jsonl
+runs/g0/scores.jsonl
+runs/g0/protocol_probe.jsonl
+runs/g0/runtime.json
+runs/g0/summary.json
+runs/g0/summary.md
+```
+
+`runtime.json` records the requested model revision, resolved model commit when exposed by Transformers, library versions, dtype, and tokenization-audit counts.
 
 ---
 
@@ -217,108 +312,53 @@ Archive the topic.
 ```text
 11_dlm_confidence_internal_consistency/
 ├── README.md
+├── AUDIT.md
 ├── requirements.txt
-├── build_design.py       # deterministic mirrored 2×2 dataset
-├── score_llada.py        # final-forward token probability scorer
-├── analyze.py            # paired effects, bootstrap CIs, locked verdict
-├── run_g0.sh             # one-command single-/multi-GPU run
+├── build_design.py
+├── score_llada.py
+├── analyze.py
+├── run_g0.sh
 ├── configs/
-│   └── g0.json           # frozen default settings
+│   └── g0.json
 └── tests/
     ├── test_design.py
-    └── test_analysis.py
+    ├── test_analysis.py
+    └── test_scoring_utils.py
 ```
 
-Generated runs go under `runs/` and are ignored by git.
+Generated runs are ignored by git.
 
 ---
 
-## Environment
+## What must not be tuned after seeing scores
 
-Do **not** create another isolated environment if Topic 10 has already prepared a working LLaDA environment. Reuse the same Python environment and Hugging Face cache; Topic 11 introduces no separate training stack.
+Do not rescue a weak/null G-0 by changing:
 
-Minimum imports are only:
+- which cell comparison is primary;
+- which result step is called primary;
+- templates selected after the fact;
+- anchor ranges because some numbers “look better”;
+- confidence aggregation after looking at model outputs;
+- arithmetic operation families;
+- model prompt wording;
+- bootstrap seed;
+- error categories;
+- an LLM judge or learned verifier.
 
-- PyTorch
-- Transformers
-- NumPy
-
-The official LLaDA repository documents `transformers==4.38.2`, which is recorded in `requirements.txt` for reproducibility. If the existing shared environment already loads `GSAI-ML/LLaDA-8B-Instruct` correctly, do not reinstall it just to satisfy the text file.
-
-Model weights are roughly 16 GB in BF16; the scoring script uses one GPU by default and has no inter-GPU communication.
-
----
-
-## Run
-
-First verify the symbolic construction without loading a model:
-
-```bash
-cd 11_dlm_confidence_internal_consistency
-python -m unittest discover -s tests -v
-```
-
-Single GPU:
-
-```bash
-bash run_g0.sh
-```
-
-Four independent GPUs on one node:
-
-```bash
-NUM_GPUS=4 BATCH_SIZE=8 bash run_g0.sh
-```
-
-This launches one LLaDA replica per GPU and shards by **anchor pair**, so mirrored orientations are never split statistically. Workers communicate only through output files; there is no DDP/NCCL requirement and no sensitivity to slow cross-node links.
-
-Useful overrides:
-
-```bash
-MODEL=GSAI-ML/LLaDA-8B-Instruct \
-NUM_PAIRS=256 \
-MIN_PAIRS=128 \
-NUM_GPUS=4 \
-BATCH_SIZE=8 \
-bash run_g0.sh
-```
-
-Outputs:
-
-```text
-runs/g0/design.jsonl
-runs/g0/scores.jsonl
-runs/g0/summary.json
-runs/g0/summary.md
-```
-
-The last file contains the locked verdict and the four-cell means/effects.
+A clean null should kill the topic, not start a measurement search.
 
 ---
 
-## What must not be changed after the first real run
+## Why a positive result matters
 
-Do not respond to an unfavorable result by:
+The interesting result is not “LLaDA notices arithmetic errors”; the seed paper already established that.
 
-- changing the confidence definition;
-- changing the four-cell semantics;
-- selecting only templates or arithmetic programs with a larger effect;
-- adding an LLM judge;
-- changing the anchor range based on scores;
-- searching for a special layer or denoising step;
-- replacing continuation-token confidence with announcement-token confidence;
-- trying many prompt phrasings and reporting the best one.
+The stronger result would be:
 
-The tokenizer audit may reject examples **before scoring** because a one-token intervention did not survive tokenization. That filtering is structural and score-blind.
+> With external correctness factorially separated, changing only whether a trajectory agrees with its own announced state systematically changes native diffusion confidence on **later, text-identical downstream result tokens**.
 
----
+And in the strongest case:
 
-## If G-0 passes
+> A coherent-but-externally-wrong trajectory receives higher late-result confidence than an externally-correct but internally-broken trajectory.
 
-Only then is a confirmation run justified. The same frozen factorial can be rerun with more anchor pairs or another compatible LLaDA checkpoint (for example `GSAI-ML/LLaDA-1.5`) by changing only `MODEL`; no new construct is required.
-
-A successful replication would support a compact scientific claim:
-
-> Native diffusion confidence responds to whether the generated reasoning state is internally self-consistent, even when the downstream token sequence is held fixed and final-answer correctness is manipulated independently.
-
-If G-0 fails, do not proceed to this stage.
+That would make the “structural consistency” interpretation substantially more identified than a correct-vs-wrong AUROC correlation, without introducing probes, hidden representations, training, or a complicated stack of controls.
