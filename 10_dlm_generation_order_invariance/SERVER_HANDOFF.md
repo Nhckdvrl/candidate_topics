@@ -12,15 +12,18 @@ python src/preflight.py --config LOCKED_CONFIG.json
 pytest -q tests
 ```
 
-Use a recent CUDA PyTorch build and enough VRAM for `GSAI-ML/LLaDA-8B-Instruct` in BF16. Do not proceed past a failed preflight: a tokenizer/template/isomorphism failure means the measurement itself is invalid.
+Use a recent CUDA PyTorch build and enough VRAM for `GSAI-ML/LLaDA-8B-Instruct` in BF16. Do not proceed past a failed preflight: tokenizer/template/isomorphism failures are measurement failures, not scientific results.
 
-## 2. Freeze the manifest once
+## 2. Regenerate the v2 frozen manifest
+
+G0 v2 changed both the controlled decoder and base Sudoku generator. **Do not reuse any old g0-v1 manifest or result file.** Protocol versions are now stamped and mismatches fail loudly.
 
 ```bash
+rm -f data/manifest.jsonl
 python src/make_manifest.py --config LOCKED_CONFIG.json --out data/manifest.jsonl
 ```
 
-This materializes both discovery and reserved confirmation puzzles. Do not regenerate with another seed after looking at results.
+This materializes both discovery and reserved confirmation puzzles. Do not regenerate with another seed after looking at discovery results.
 
 ## 3. Plumbing smoke
 
@@ -41,59 +44,43 @@ python src/analyze_g0.py \
   --out results/smoke_summary.json
 ```
 
-Smoke is only for engineering. Because it is tiny, ignore scientific decision flags.
+Smoke is engineering-only. Check that Sudoku outputs are plausible, `native_scheduler_pick_same_fraction` is not catastrophically low, and no protocol/template assertion fires. Do not tune scientific thresholds on four puzzles.
 
 ## 4. Frozen discovery
 
-```bash
-python src/run_g0.py \
-  --config LOCKED_CONFIG.json \
-  --manifest data/manifest.jsonl \
-  --split discovery \
-  --overwrite \
-  --out results/g0_discovery_traces.jsonl
+Single GPU:
 
+```bash
+python src/run_g0.py --split discovery --overwrite --out results/g0_discovery_traces.jsonl
+python src/analyze_g0.py --config LOCKED_CONFIG.json --traces results/g0_discovery_traces.jsonl --manifest data/manifest.jsonl --split discovery --out results/g0_discovery_summary.json
+```
+
+For four GPUs, run one process per GPU with deterministic puzzle sharding, e.g. shard `i` uses `--num-shards 4 --shard-index i --device cuda:i` and a distinct `results/g0_discovery_shard{i}.jsonl`. The analyzer accepts all shard files directly:
+
+```bash
 python src/analyze_g0.py \
   --config LOCKED_CONFIG.json \
-  --traces results/g0_discovery_traces.jsonl \
+  --traces results/g0_discovery_shard0.jsonl results/g0_discovery_shard1.jsonl results/g0_discovery_shard2.jsonl results/g0_discovery_shard3.jsonl \
   --manifest data/manifest.jsonl \
   --split discovery \
   --out results/g0_discovery_summary.json
 ```
 
-If interrupted, rerun the first command with `--resume` instead of `--overwrite`. Never concatenate partial files manually; duplicate trace keys are deliberately rejected by analysis.
+If a runner is interrupted, rerun that same shard with `--resume`; completed trace keys are skipped **before** GPU inference. Do not concatenate files manually. Duplicate keys and stale protocol versions are rejected by analysis.
 
-## 5. Read the result in the correct order
+## 5. Read the result in this order
 
-1. `n_identity_exact` / `identity_exact_accuracy`: is the controlled Sudoku protocol usable at all?
-2. `same_serialization_repeat_tau`: is generation order stable when serialization is literally unchanged?
-3. `solve_flip_rate` and `solve_flip_directions`: does a mathematical isomorphism change solve/fail outcome?
-4. If enough both-correct pairs remain, inspect `tau_iso_per_puzzle` and its puzzle-cluster bootstrap CI.
-5. Compare observed tau with `surface_order_positional_null_per_puzzle` and `boundary_first_positional_null_per_puzzle`, plus the corresponding excess-tau summaries.
-6. Treat `easy_first_candidate_count_spearman_per_puzzle`, random-remasking tau, and `native_digit_argmax_fraction` as diagnostics/characterization, not the headline gate.
+1. `n_identity_exact` / `identity_exact_accuracy`: does the controlled Sudoku protocol have enough competence?
+2. `same_serialization_repeat_tau`: is order measurable and stable when serialization is unchanged?
+3. `native_scheduler_pick_same_fraction`: does the digit grammar preserve the position choices of native full-vocabulary confidence scheduling well enough for a native-DLM interpretation?
+4. `solve_flip_rate`, its puzzle-cluster CI, and flip directions: does exact isomorphism change solve/fail outcome?
+5. If enough both-correct pairs remain, inspect `tau_iso_per_puzzle`, its puzzle-cluster CI, and observed-minus-positional-null CIs.
+6. Treat candidate-count/easy-first and random-remasking summaries as diagnostics, not headline gates.
 
-A low number of both-correct pairs caused by many `identity correct -> iso wrong` flips is **not** an unusable run; it is direct outcome non-equivariance. Only low identity competence or unstable same-serialization order prevents interpretation.
+Many `identity correct -> iso wrong` flips are already a scientific non-equivariance result, not missing data. Conversely, a strong positive claim needs high outcome retention and order preservation clearly above the row-major / boundary positional nulls.
 
-Do not change prompt, blank count, transform subset, model, or metric after discovery to rescue a preferred story.
+Do not change prompt, blank count, transform subset, model, or primary metric after seeing discovery merely to rescue a preferred story. Engineering bugs may be fixed, but if they alter the scientific protocol, bump the protocol version and regenerate the frozen manifest.
 
 ## 6. Confirmation
 
-Only after writing down the discovery interpretation, run the untouched confirmation half:
-
-```bash
-python src/run_g0.py \
-  --config LOCKED_CONFIG.json \
-  --manifest data/manifest.jsonl \
-  --split confirmation \
-  --overwrite \
-  --out results/g0_confirmation_traces.jsonl
-
-python src/analyze_g0.py \
-  --config LOCKED_CONFIG.json \
-  --traces results/g0_confirmation_traces.jsonl \
-  --manifest data/manifest.jsonl \
-  --split confirmation \
-  --out results/g0_confirmation_summary.json
-```
-
-Confirmation intentionally does not repeat the discovery-only controls. Interpret it against the already frozen discovery claim.
+Only after writing down the discovery interpretation, run the untouched confirmation half with the same protocol. Confirmation intentionally omits discovery-only repeat/random controls and must be interpreted against the already frozen claim.
