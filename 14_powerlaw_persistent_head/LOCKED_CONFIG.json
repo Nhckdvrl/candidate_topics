@@ -1,11 +1,15 @@
 {
-  "scientific_question": "Does temporal persistence of a power-law head matter when the finite training-batch multiset is exactly matched?",
+  "protocol_version": "topic14-v3-2026-08-22",
+  "scientific_question": "Does temporal persistence of a power-law head matter when Slow and Fast receive the exact same finite training-batch multiset?",
   "task": {"group": "S5", "n_skills": 120, "hops": 4, "alpha": 1.5},
   "model": {"layers": 4, "d_model": 256, "heads": 8, "ff_mult": 4, "dropout": 0.0},
   "optimizer": {"name": "AdamW", "lr": 0.0002, "betas": [0.9, 0.999], "eps": 1e-8, "weight_decay": 0.000001},
-  "warmup": {"distribution": "uniform", "steps": 1000, "schedule": "linear_to_peak", "shared_checkpoint_per_seed": true},
-  "primary_core": {"lr_schedule": "constant", "pilot_steps": 80000, "full_steps": 160000, "full_phase_steps": 80000, "full_seeds": [0, 1, 2, 3, 4]},
+  "clean_core_branch": {"distribution": "uniform", "steps": 1000, "lr_schedule": "linear_to_peak", "shared_checkpoint_per_seed": true},
+  "clean_core": {"lr_schedule": "constant", "pilot_steps": 80000, "pilot_phase_steps": 40000, "full_steps": 160000, "full_phase_steps": 80000, "full_seeds": [0, 1, 2, 3, 4]},
+  "mapping_randomization": {"base_seed": 1729, "effective_seed_rule": "base_seed + 1009 * replication_seed", "map_B_relation": "half-cycle shift of map_A", "top20_head_overlap": 0},
+  "paper_anchor": {"purpose": "technical reproduction diagnostic only", "seeds": [0, 1, 2], "steps": 200000, "data_from_step0": true, "shared_data_warmup": false, "lr_warmup_steps": 1000, "lr_schedule": "cosine_to_0.1x", "precision_on_cuda": "fp16"},
   "primary_metric": "normalized AUC of exact 5-token sequence accuracy on a fixed uniform evaluation panel",
-  "engineering_decision_margins": {"anchor_median": 0.03, "anchor_positive_fraction": 0.8, "persistence_abs_median": 0.10, "persistence_sign_fraction": 0.8, "near_zero_median": 0.03, "near_zero_per_seed": 0.06, "near_zero_fraction": 0.8},
-  "no_posthoc_tuning": ["alpha", "mapping_pair", "head_definition", "architecture", "primary_metric", "decision_margins"]
+  "clean_core_decision_margins": {"anchor_median": 0.03, "anchor_positive_fraction": 0.8, "persistence_abs_median": 0.10, "persistence_sign_fraction": 0.8, "near_zero_median": 0.03, "near_zero_per_seed": 0.06, "near_zero_fraction": 0.8},
+  "paper_anchor_diagnostic_margins": {"anchor_median_auc": 0.10, "anchor_positive_fraction": 0.6666666667, "median_static_final_exact": 0.50},
+  "no_posthoc_tuning": ["alpha", "map_B_relation", "head_definition", "architecture", "primary_metric", "decision_margins", "full_seed_set"]
 }
