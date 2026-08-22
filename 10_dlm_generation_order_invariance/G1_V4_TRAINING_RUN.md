@@ -8,7 +8,9 @@ Fixed choices:
 - data: the committed 50-row train parquet and untouched 100-row test parquet;
 - prompt+gold coverage: `max_length=512` (455 observed tokens plus margin);
 - official collator: `perbatch_cutoff=True`, `random_with_input_pad`;
-- four GPUs, micro-batch 1 per GPU, global train batch 4 (the tested memory-safe configuration);
+- four GPUs, micro-batch 1 per GPU, global train batch 4; formal execution uses
+  FSDP `cpu_offload=true` and `offload_params=true` after the GPU-only Adam state
+  initialization exceeded device memory (engineering-only change);
 - official Dream SFT learning rate `2e-6`, no LoRA, gradient checkpointing enabled;
 - no evaluation-driven changes to prompt, data, loss, decoding length, or exact metric.
 

@@ -42,6 +42,12 @@ it produced no scientific checkpoint or test prediction. The next attempt must u
 memory-safe FSDP/optimizer configuration while keeping the model, data, loss,
 learning rate, and evaluation protocol fixed.
 
+An isolated retry with the official trainer's `model.fsdp_config.cpu_offload=true`
+and `offload_params=true` reached `AdamW.step()` without the GPU allocation failure;
+it was stopped after about 90 seconds at the first step because this path is
+substantially slower, not because of an error. CPU offload is therefore the current
+memory-safe formal-run configuration.
+
 ## Next safe action
 
 Run the official trainer import and a one-step dataloader/config smoke with the explicit shim, then inspect the actual branch and loss mask. Do not launch 10-epoch training until those checks pass.
