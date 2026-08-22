@@ -27,6 +27,10 @@
 
 如果 broad question 已经被做掉，只能靠限定某个 dataset / operator / delay / statistic 才显得新，则优先砍掉，而不是继续包装。
 
+Round 8 又补充了一条校准：
+
+> **顶会级问题不要求“零邻近工作”。真正要求的是：问题尺度够大、叙事角度相对新、第一枪实验相对新且干净，并且正反结果都有解释价值。**
+
 ## 当前日志
 
 1. [Round 1：VLA / WAM 机制选题搜索](./2026-08-22_vla_wam_mechanism_search.md)
@@ -36,22 +40,15 @@
 5. [Round 5：顶会问题尺度校准与继续 collision audit](./2026-08-22_vla_wam_mechanism_search_round5.md)
 6. [Round 6：广泛大问题搜索与 action-generalization mechanism](./2026-08-22_vla_wam_mechanism_search_round6.md)
 7. [Round 7：foundation scaling、WAM controllability 与 heterogeneous-data collision audit](./2026-08-22_vla_wam_mechanism_search_round7.md)
+8. [Round 8：重新广搜大问题、hidden dynamics、physical feasibility、active perception 与 hierarchy mechanism](./2026-08-22_vla_wam_mechanism_search_round8.md)
 
-## 单独摘出的未注册候选
+## 当前 active provisional shortlist
 
 这里不是正式 Topic 表，只是把搜索日志中已经值得进一步审计的问题单独拿出来，方便继续碰撞。候选一旦后续被撞死，直接保留失败记录，不移动到根目录包装。
 
-### A. [What Does History Actually Model in Robot Policies?](./candidates/what_does_history_actually_model.md)
-
-来源：Round 3 的 action-chunking temporal anomaly → Round 4 的 producer-mixture reinterpretation → Round 5 的 scope / collision audit。
-
-**当前状态：保留，但 collision risk 已升高。** Round 7 找到 `IntentVLA: Short-Horizon Intent Modeling for Aliased Robot Manipulation`，已经直接把“相似当前观测对应不同 short-horizon intent，history 用来维持 episode 内行为模式”做成现代 VLA 问题。因此 A 不能再把 `history -> latent intent / behavior mode inference` 本身作为 novelty。
-
-A 若继续，必须回答更强的问题：现代 history-aware robot policy 的 memory 到底在利用 task/world state，还是 training-data behavior source / strategy structure；并且必须证明这种 dependence 有 causal rollout consequence。若再找到直接做这层 decomposition 的工作，应立即移出 shortlist。
-
 ### B. [How Do Robot Foundation Policies Generalize Actions?](./candidates/how_do_robot_foundation_policies_generalize_actions.md)
 
-来源：Round 6。主要从 ICLR 2026 `Demystifying Robot Diffusion Policies` 的 action-memorization / interpolation audit，与 2026 foundation-VLA 对 zero-shot、recovery、composition、cross-embodiment generalization 的强 claim 之间的张力长出来。
+来源：Round 6，并在 Round 7 被 foundation scaling / compositional-generalization 新证据进一步加强。
 
 核心不是再做 OOD benchmark，而是区分 foundation policy 的 action-side generalization mechanism：
 
@@ -62,15 +59,51 @@ vs composition
 vs extrapolation / synthesis
 ```
 
-**Round 7 后 B 明显加强，当前优先级高于 A。** Dyna-2 已经把 human-video pretraining 推到 1M 小时并报告 cross-embodiment scaling law；π0.7 报告 compositional generalization；Qwen-RobotManip 报告大规模 aligned pretraining 后的 OOD / recovery / cross-embodiment 能力。但这些工作仍没有系统回答：success 随 scale 上升时，motor generation 到底发生了什么 qualitative change。
-
-Round 7 后 B 更准确的机制表述是：
+当前更准确的母问题是：
 
 > **What qualitative transition, if any, does robot foundation pretraining induce in action generation?**
 
-但标题仍保留更自然的 `How Do Robot Foundation Policies Generalize Actions?`。
+邻近工作已经覆盖 retrieval、motion primitives、action composition、mechanistic features 等局部结构，但仍没有系统回答：**随着 foundation pretraining 的 scale / diversity 增长，successful OOD behavior 的默认生成机制是否发生系统性转变。**
 
-第一枪后续应尽量加入 pretraining scale / diversity 轴，而不只是 model-family 对比。如果最后仍只能缩成某个 benchmark 的 trajectory-similarity analysis，则直接砍。
+因此 B 保留。后续实验应尽量加入 pretraining scale / diversity 轴，而不只是 model-family 对比；如果最终只能缩成某 benchmark 的 trajectory-similarity statistic，则降级。
+
+### C. [Why Does Task Decomposition Help Robot Foundation Policies?](./candidates/why_does_task_decomposition_help_robot_foundation_policies.md)
+
+来源：Round 8。
+
+核心问题：
+
+> **When a hierarchical VLA greatly outperforms a flat VLA, how much of the gain comes from genuine high-level planning/reasoning, and how much comes from repeatedly translating the global task back into atomic instructions that the low-level policy already knows how to execute?**
+
+更尖锐地说：
+
+> **Does the planner reason better, or does it keep the controller on-support?**
+
+RoboHiMan 中同一个 π0.5 加 rule-based atomic sub-instruction switching 就能得到很大长任务提升；Hi-VLA systematic study 又显示 low-level language steerability 对 hierarchy 成败关键；compositional-generalization diagnosis 进一步说明不少失败是已有低层能力无法被 instruction 正确 steer 出来，而不是 skill 本身不存在。
+
+因此第一枪可以非常干净：固定 low-level VLA 和 task states，比较 flat global instruction、oracle atomic decomposition、learned planner、wording-support control 与 boundary-only reset，从而拆分：
+
+```text
+planning / sequencing
+vs
+controller-support matching
+vs
+temporal handoff / reset
+```
+
+这条当前作为 provisional C 保留，不注册为正式 Topic。
+
+## 已移出 active shortlist
+
+### A. [What Does History Actually Model in Robot Policies?](./candidates/what_does_history_actually_model.md)
+
+来源：Round 3–5。
+
+**Round 8 后移出 active shortlist。** 原问题围绕 history 到底建模 world/task state，还是 producer / strategy / latent behavior structure。
+
+后续 collision 已经明显升高：IntentVLA 直接做 history → short-horizon intent；BPP 研究 history 中 spurious correlation；RoboMME / μVLA / memory-VLA 系列持续扩张；`Present but Not Remembered: Auditing How Frozen VLAs Encode, Deploy, and Steer Visual History` 又已经对 frozen VLA 做 layer-wise probing + causal interchange，直接审计 history 是否被编码、是否被 action readout 使用、是否可 steering。
+
+A 剩余 novelty 越来越依赖 `world-state memory vs producer/strategy memory` 这一窄 decomposition。按“不能靠不断缩 scope 躲 collision”的规则，当前不再占 active candidate 位，但保留文件和失败/降级记录。
 
 ## 仍留在搜索日志、但未摘出的方向
 
@@ -84,7 +117,11 @@ Round 7 后 B 更准确的机制表述是：
 
 ### What Makes Heterogeneous Robot Experience Compatible?
 
-Round 7 重新认真审过。Qwen-RobotManip、Rethinking VLA Scaling、π0.7、VLAFlow、JoyAI-RA 都证明这是一个真实大问题：naive pooling 可以 negative transfer，而 alignment / richer context / future-latent constraints 能让 heterogeneous experience 共存。但 broad question 本身已经被 2026 scaling/alignment literature 正面占据，再做很容易被迫缩成 normalization / coordinate frame / mixture ratio，因此不摘成候选。
+Qwen-RobotManip、Rethinking VLA Scaling、π0.7、VLAFlow、JoyAI-RA 都证明这是一个真实大问题：naive pooling 可以 negative transfer，而 alignment / richer context / future-latent constraints 能让 heterogeneous experience 共存。但 broad question 本身已经被 2026 scaling/alignment literature 正面占据，再做很容易被迫缩成 normalization / coordinate frame / mixture ratio，因此不摘成候选。
+
+### Can Robot Foundation Policies Adapt to Hidden Physical Dynamics from Their Own Consequences?
+
+Round 8 仍认为问题自然：视觉几乎不变但 mass / friction / damping / compliance / controller response 改变后，policy 是否能通过自己动作造成的后果进行 online system identification 并更新后续控制。但目前还缺一个足够强、足够现代的 anomaly 作为 phenomenon-first 起点，因此继续作为搜索线，不摘候选。
 
 ### Do World Action Models Actually Use Their Predicted Futures?
 
