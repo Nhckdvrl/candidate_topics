@@ -15,10 +15,9 @@ python g0_pair_locality.py \
 python - <<'PY'
 import json
 from pathlib import Path
-p=Path('artifacts/g0_pair_locality/summary.json')
-s=json.loads(p.read_text())
+s=json.loads(Path('artifacts/g0_pair_locality/summary.json').read_text())
 if s['verdict']!='PAIR_STRUCTURE_OK':
-    raise SystemExit('STOP: pair locality gate failed; do not proceed to mechanism screening')
+    raise SystemExit('STOP: pair locality gate failed; aligned intervention route is not clean enough')
 PY
 
 python g0_bias_trap_screen.py \
@@ -46,3 +45,12 @@ python g0_bias_trap_screen.py \
   --seed "$SEED" \
   --mode direct \
   --outdir artifacts/g0_behavior_direct
+
+python - <<'PY'
+import json
+from pathlib import Path
+s=json.loads(Path('artifacts/g0_behavior_direct/summary.json').read_text())
+if s['verdict']!='DIRECT_MODE_MECHANISM_OBJECT_READY':
+    raise SystemExit('STOP: published phenomenon may be real, but the fixed-position direct mechanism object is too weak')
+print('ALL TOPIC22 G0 GATES PASSED')
+PY
