@@ -4,7 +4,7 @@
 >
 > Source search candidate: [`embodied_topic_search/candidates/do_robot_foundation_policies_learn_motor_equivalence_classes.md`](../embodied_topic_search/candidates/do_robot_foundation_policies_learn_motor_equivalence_classes.md)
 >
-> First target: **Psi0 + SIMPLE**, using a task-effect outcome metric rather than a joint-space proxy.
+> First target: **Psi0 + SIMPLE**, using task/outcome-space measurements rather than a joint-space proxy.
 
 ## Natural question
 
@@ -31,14 +31,14 @@ Among the current embodied search candidates, this one has the cleanest first id
 
 The important open-source asymmetry is already present in SIMPLE:
 
-- `G1WholebodyCloseDoorTeleop`: success is an **object-state effect** (`articulate_joint_1 < -0.16`);
-- `G1WholebodyOpenFaucetTeleop`: success is an **object-state effect** (`|articulate_joint_0| > 0.7`);
+- `G1WholebodyCloseDoorTeleop`: the reward/success logic is grounded in an **object-state predicate** (`articulate_joint_1 < -0.16`), which must remain satisfied long enough for the reward accumulator to reach the official success criterion;
+- `G1WholebodyOpenFaucetTeleop`: likewise, its task effect is grounded in `|articulate_joint_0| > 0.7`, again with persistence through the official reward/success logic;
 - yet both automated demonstration decompositions explicitly use `hand_uid="dex3_right"` and `lock_links=["left_hand_palm_link"]`.
 
 Thus the benchmark itself separates:
 
 ```text
-what counts as task success
+what environmental effect defines the task
 from
 which motor realization generated the demonstrations
 ```
@@ -51,13 +51,14 @@ Topic 19 was archived because a joint-axis projection did **not** identify task-
 
 Topic 23 starts from that lesson:
 
-> **The primary dependent variable is the environment effect itself.**
+> **The primary dependent variable lives in task/outcome space.**
 
-We do not infer task abstraction from whether an action points along a particular joint-space vector. If the claim is that the policy preserves the task while changing the body solution, we directly measure:
+We do not infer task abstraction from whether an action points along a particular joint-space vector. If the claim is that the policy preserves the task while changing the body solution, we directly record:
 
-1. did the door/faucet reach its task-defined success state?
-2. was the canonical right-side route physically unavailable?
-3. did a non-canonical route actually occur?
+1. the unmodified upstream SIMPLE episode success;
+2. the raw task-defining door/faucet object coordinate and predicate;
+3. whether the canonical right-side route was physically unavailable;
+4. whether a non-canonical route actually occurred.
 
 This is a new registered topic, not a post-hoc repair of Topic 19.
 
@@ -132,10 +133,17 @@ Purpose: estimate accidental/environment-only success and catch broken intervent
 For each matched configuration:
 
 ```text
-Y = task-defined environment success
+Y = official unmodified SIMPLE episode success
 ```
 
-No trajectory-similarity threshold is needed.
+Alongside it, always log:
+
+```text
+effect_qpos
+raw object-state predicate reached or not
+```
+
+Do **not** infer official episode success from one terminal qpos sample: in these tasks the object predicate must persist while the upstream reward accumulator reaches `success_criteria`.
 
 The first aggregate contrast is:
 
