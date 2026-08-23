@@ -30,12 +30,12 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 | --- | --- | --- | --- |
 | 1 | [15 — Does Training-Time World Modeling Act Through a Predictive Policy State?](./15_predictive_policy_state/) | When future prediction helps during training, does the deployed policy actually act through information about the future that remains in its native internal state? | On released Light-WAM, run a normal action pass and a full WAM-adapter-bypass pass on episode-disjoint samples; require the adapters to add held-out future predictability in the checkpoint's actual future-training latent space **and** to causally improve action readout. A positive result only advances to matched future-on/future-off training; it is not called mediation yet. |
 | 2 | [13 — Does Repetition Hurt Because It Repeats, or Because It Repeats Too Soon?](./13_repetition_temporal_spacing/) | With exactly the same repeated training multiset, does temporal spacing between identical exposures change pretraining damage? | Reproduce one strong repetition regime, then compare clustered/random/even spacing while fixing unique positions and repeated slots. |
-| 3 | [14 — Does Power-Law Learning Need a Persistent Head?](./14_powerlaw_persistent_head/) | Does a power-law curriculum work because some skills remain frequent long enough to scaffold others, or is momentary frequency asymmetry sufficient? | Reproduce static power-law > uniform, then compare count-matched slow- vs fast-rotation schedules with the same per-block spectrum. |
 
 ## Archived topics
 
 | Topic | Final decision | Why it was stopped | Summary |
 | --- | --- | --- | --- |
+| [14 — Does Power-Law Learning Need a Persistent Head?](./14_powerlaw_persistent_head/) | **ARCHIVED / KILL_NO_MEANINGFUL_TEMPORAL_PERSISTENCE_EFFECT** | The clean power-law prerequisite was extremely strong (`median Static−Uniform exact-AUC=+0.9300`, `5/5` positive), so the experimental object was unquestionably alive. But the exact same-data Slow−Fast intervention had median `+0.0095`, with `4/5` independently locked mapping/seed replications inside `|gap|<=0.06`. One seed showed a large `+0.7106` Slow advantage, but it did not replicate and cannot support a general persistence law without post-hoc mapping search. G1 was not run. | [Archive summary](./14_powerlaw_persistent_head/ARCHIVE_SUMMARY.md) |
 | [12 — Does Functional Necessity Predict Causal RL Adaptation Leverage?](./12_reasoning_necessity_vs_rl_leverage/) | **ARCHIVED / VALID G0, INCONCLUSIVE_DO_NOT_TUNE** | The functional-necessity profile was highly stable across MATH500/GSM8K (`rho=0.878`), and raw necessity-vs-RL-leverage correlation was moderately positive (`rho=0.355`, 90% bootstrap CI `[0.300,0.402]`). But the preregistered fine-grained relation vanished after removing broad quadratic depth structure (`rho=-0.238`), top-5 overlap was `1` versus random expectation `0.89`, and specific layer peaks did not align. The result supports shared coarse depth organization, not a strong layer-level law. | [Archive summary](./12_reasoning_necessity_vs_rl_leverage/ARCHIVE_SUMMARY.md) |
 | [11 — What Does Diffusion Confidence Actually Know?](./11_dlm_confidence_internal_consistency/) | **ARCHIVED / FALSIFIED AT FROZEN G0** | Both protocol prerequisites passed strongly (`arithmetic gap=0.426`, `semantic-alias gap=0.215`), but the preregistered retroactive consistency effect on unchanged middle reasoning-result tokens was `-0.000003`, 95% CI `[-0.000055, 0.000025]`, versus a locked `0.010` minimum-worthy floor. Full-sequence confidence remained strongly consistency-sensitive, but that metric includes the manipulated suffix and therefore does not rescue the global/distributed interpretation. | [Archive summary](./11_dlm_confidence_internal_consistency/ARCHIVE_SUMMARY.md) |
 | [10 — Is DLM Generation Order Invariant to Problem Isomorphisms?](./10_dlm_generation_order_invariance/) | **ARCHIVED / POSITIVE 4×4 G0, FAILED NON-TOY QUALIFICATION** | The published UPO 4×4 setting produced a real and independently confirmed effect: exact Sudoku isomorphisms caused roughly 40–45% solve/fail flips. But 9×9 LLaDA-8B had `0/8` exact solves, and a seed-aligned Dream-7B reconstruction reached only `6/100` exact at epoch 2 and `3/100` at epoch 5 while training loss collapsed. The phenomenon exists, but a scientifically meaningful 9×9 object could not be established without unresolved model/data/configuration fishing or substantially larger infrastructure. | [Archive summary](./10_dlm_generation_order_invariance/ARCHIVE_SUMMARY.md) |
@@ -67,6 +67,7 @@ The archive reason should be interpreted precisely:
 - **Topic 10** passed a clean 4×4 phenomenon-existence gate but failed the meaningful-regime gate: two 9×9 qualification routes did not produce a competent object, and further rescue would require unresolved experimental-object search.
 - **Topic 11** passed both protocol prerequisites but falsified its substantive project-level hypothesis: aggregate/full confidence was consistency-sensitive, while the preregistered retroactive signal on earlier unchanged reasoning-result tokens was effectively zero and far below the frozen minimum-worthy effect.
 - **Topic 12** produced a valid, reproducible necessity profile but failed to establish the proposed fine-grained mapping to causal RL adaptation leverage. The moderate raw correlation was explained by shared broad depth structure; local layer correspondence vanished after the frozen depth control.
+- **Topic 14** is a clean substantive null: the motivating power-law advantage was extremely strong, but exact same-data temporal reordering produced no stable persistence effect across four of five independently locked mapping/seed replications. The one large seed-1 effect is preserved as an anomaly, not used as a post-hoc rescue.
 
 Several lessons recur strongly across the archive:
 
@@ -101,5 +102,13 @@ Topic 12 adds three more:
 > **For layer-wise/checkpoint-wise profile comparisons, remove or explicitly model the obvious global geometry before interpreting raw correlation as a mechanistic law.**
 
 > **Use a second model to replicate a strong discovery, not to search for a model where a gray-zone result becomes positive.**
+
+Topic 14 adds three more:
+
+> **A strong prerequisite can make a negative mechanistic result especially informative. If the base phenomenon is huge but the explanatory intervention is near zero, accept the null instead of blaming the testbed.**
+
+> **Randomize arbitrary identities when the intended claim is general. Replication across model seeds is not enough if all runs reuse the same arbitrary mapping, subset, or assignment.**
+
+> **Do not let one spectacular seed create a project. Robust aggregation and per-seed consistency requirements protect against promoting a mapping-specific outlier into a general law.**
 
 A failed or inconclusive topic should not be revived by post-hoc metric/layer/model/control sweeps unless a genuinely new external observation changes the scientific premise and motivates a newly registered question or identification strategy.
