@@ -1,0 +1,466 @@
+{
+  "schema_version": 2,
+  "semantic_scope": "silent_divergence means an undeclared conflict between documents; it does not prove the procedure physically performed",
+  "unit_rows": 105,
+  "paper_nodes": 21,
+  "lineages": [
+    {
+      "lineage_id": "PMC7054421-cit8",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7058069-cit4",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7060108-cit11",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7060108-cit9",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7060125-cit13",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7064337-cit12",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7065909-cit11",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7065974-cit8",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7075693-cit10",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7075693-cit17",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7080823-cit3",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7082075-cit1",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7090383-cit14",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7093963-cit9",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7104492-cit22",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7105381-cit14",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7108862-cit4",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7136023-cit45",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7141835-cit2",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7184881-cit8",
+      "method_families": [
+        "immunostaining"
+      ],
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7196238-cit6",
+      "method_families": [
+        "western_blot"
+      ],
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_unrecoverable_unit": true
+    }
+  ],
+  "n_lineages": 21,
+  "n_failed_lineages": 14,
+  "failed_lineage_fraction": 0.6666666666666666,
+  "failed_lineage_wilson_95ci": [
+    0.4537345197425524,
+    0.8280524739491653
+  ],
+  "method_families": [
+    "immunostaining",
+    "western_blot"
+  ],
+  "evidence_coverage": 1.0,
+  "n_nonaccess_failure_lineages": 14,
+  "unit_status_counts": {
+    "present_in_current": 59,
+    "lost_or_unrecoverable": 24,
+    "omitted_but_recoverable": 22
+  },
+  "inheritance_kind_counts": {
+    "procedural": 105
+  },
+  "audit": null,
+  "papers": [
+    {
+      "lineage_id": "PMC7054421-cit8",
+      "paper_id": "PMC7054421",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7058069-cit4",
+      "paper_id": "PMC7058069",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7060108-cit11",
+      "paper_id": "PMC7060108",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7060108-cit9",
+      "paper_id": "PMC7060108",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7060125-cit13",
+      "paper_id": "PMC7060125",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7064337-cit12",
+      "paper_id": "PMC7064337",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7065909-cit11",
+      "paper_id": "PMC7065909",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7065974-cit8",
+      "paper_id": "PMC7065974",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7075693-cit10",
+      "paper_id": "PMC7075693",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7075693-cit17",
+      "paper_id": "PMC7075693",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7080823-cit3",
+      "paper_id": "PMC7080823",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7082075-cit1",
+      "paper_id": "PMC7082075",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7090383-cit14",
+      "paper_id": "PMC7090383",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7093963-cit9",
+      "paper_id": "PMC7093963",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7104492-cit22",
+      "paper_id": "PMC7104492",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7105381-cit14",
+      "paper_id": "PMC7105381",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7108862-cit4",
+      "paper_id": "PMC7108862",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7136023-cit45",
+      "paper_id": "PMC7136023",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7141835-cit2",
+      "paper_id": "PMC7141835",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    },
+    {
+      "lineage_id": "PMC7184881-cit8",
+      "paper_id": "PMC7184881",
+      "hop": 1,
+      "method_family": "immunostaining",
+      "n_critical_units": 5,
+      "reconstructible": true,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": false
+    },
+    {
+      "lineage_id": "PMC7196238-cit6",
+      "paper_id": "PMC7196238",
+      "hop": 1,
+      "method_family": "western_blot",
+      "n_critical_units": 5,
+      "reconstructible": false,
+      "has_undeclared_documentary_conflict": false,
+      "has_silent_divergence": false,
+      "has_unrecoverable_unit": true
+    }
+  ],
+  "decision": {
+    "verdict": "INVALID",
+    "reasons": [
+      "independent double-annotation audit is missing"
+    ]
+  },
+  "frozen_thresholds": {
+    "min_lineages": 20,
+    "min_method_families": 2,
+    "min_audited_units": 100,
+    "min_audited_failure_units": 20,
+    "substantial_failed_lineage_rate": 0.25,
+    "survive_wilson_lower": 0.1
+  }
+}

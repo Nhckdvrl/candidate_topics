@@ -662,6 +662,48 @@ harness. A cheap null result is only worth having if it cannot be blamed on the 
 
 ---
 
+## Topic 17 — Shortcut Method Fidelity
+
+### What happened
+
+Topic 17 used the Standvoss et al. shortcut-citation workbook to select two
+frozen method families, resolved parent and cited PMC full text, and emitted 105
+critical-unit candidates across 21 inspectable lineages. The first screen
+incorrectly ignored protocol detail already supplied by the current paper. After
+that bug and an overly restrictive JATS section-title filter were repaired, the
+machine preflight still flagged 14/21 lineages.
+
+Direct evidence review killed the signal. Seven flags were definite false
+positives: universal units such as `sectioning` were applied to cultured cells,
+generic protein extraction was applied to a purified-substrate assay, explicit
+phrasing such as “membranes were probed” escaped the regex, and one mitochondrial
+isolation shortcut was assigned to the western-blot family. The other seven
+flags required unresolved multiple citations, recursive references, or
+supplementary methods. None was a confirmed documentary failure on the retrieved
+evidence.
+
+### Failure / stop type
+
+**Layer B — measurement identification failure / complexity-smell stop.**
+
+### Main lessons
+
+1. **Applicability is part of the measurement.** A method-family ontology cannot
+   declare every generic unit critical for every specimen and assay subtype.
+2. **The documentary object is the full citation graph, not the first open-PMC
+   target.** Multiple references, recursive delegation and supplements cannot be
+   converted into observed loss.
+3. **Current-paper detail belongs in reconstructibility.** Searching only the
+   cited target systematically creates false missing-unit calls.
+4. **Missing retrieval is not missing science.** Absence from PMC, a main-text
+   XML search, or a regex is a pipeline limitation unless the complete declared
+   lineage was actually exhausted.
+5. **Stop when expert reconstruction becomes the assay.** If every candidate
+   needs bespoke applicability and citation-graph decisions, scaling annotation
+   does not create the promised clean one-shot test.
+
+---
+
 ## Topic 18 — Negative Behavioral Adaptation
 
 ### What happened
@@ -711,7 +753,7 @@ only valid decision was `INCONCLUSIVE_DO_NOT_TUNE`, followed by archive.
 
 # 4. Cross-topic lessons
 
-The eight archived projects now cover distinct ways a research candidate can stop:
+The archived projects cover distinct ways a research candidate can stop:
 
 | Topic | Failure / stop layer | What failed or remained unresolved |
 |---|---|---|
@@ -723,6 +765,8 @@ The eight archived projects now cover distinct ways a research candidate can sto
 | 06 | Prerequisite phenomenon / acquisition | the chosen LLM agent did not robustly acquire the controllability-dependent state required for the higher-order question |
 | 07 | Frozen discovery / explanatory-axis strength | the seed PI>RI phenomenon replicated, but the preregistered memory-architecture contrast was not large, robust, or qualitative enough to justify confirmation |
 | 08 | Unfalsifiable design, then insufficient importance | the original gate was an algebraic identity that any action distribution satisfies; the rebuilt version confirmed the phenomenon but showed the deployed entropy monitor is weak-but-informative rather than systematically wrong |
+| 17 | Measurement identification / complexity | the apparent missing-method signal was inseparable from inapplicable ontology units and incomplete citation/supplement recovery |
+| 18 | Valid G0 / model heterogeneity | the pooled inhibition gap did not satisfy the frozen cross-family consistency gate |
 
 The ordering matters. Future projects should try to fail **as early as possible**:
 
