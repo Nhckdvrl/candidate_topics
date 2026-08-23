@@ -211,7 +211,11 @@ def classify_rows(edges: list[Edge]) -> dict[str, list[Edge]]:
         e for e in edges if e.same_core_proposition and e.directly_supported_by_source
     ]
     complete = [e for e in same_supported if e.evidence_audit_complete]
-    primary = [e for e in complete if e.evidence_status == "NONE"]
+    primary = [
+        e
+        for e in complete
+        if e.evidence_status == "NONE" and e.certainty_shift != "UNKNOWN"
+    ]
     with_new_support = [
         e
         for e in complete
@@ -243,6 +247,12 @@ def main() -> None:
         "complete_evidence_audit_rows": len(groups["complete_evidence_audit"]),
         "excluded_incomplete_or_unknown_evidence": sum(
             (not e.evidence_audit_complete) or e.evidence_status == "UNKNOWN"
+            for e in groups["same_core_supported"]
+        ),
+        "excluded_unknown_certainty_no_new_support": sum(
+            e.evidence_audit_complete
+            and e.evidence_status == "NONE"
+            and e.certainty_shift == "UNKNOWN"
             for e in groups["same_core_supported"]
         ),
         "primary_no_new_support": summarize_group(
