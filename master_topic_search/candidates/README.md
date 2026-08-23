@@ -1,6 +1,6 @@
 # Master Topic Search — Current Candidate Status
 
-**Authoritative status after Round 04 re-screen (2026-08-23).**
+**Authoritative status after Round 04 re-screen and registration (2026-08-23).**
 
 The individual candidate files preserve the audit state at the round when each idea was first promoted. This README records the **current** status after applying the stronger [`Selection Bar V2`](../SELECTION_BAR_V2.md):
 
@@ -12,7 +12,7 @@ external support for the phenomenon
 + meaningful regime
 ```
 
-The five provisional files are **not** all active survivors anymore.
+Three ideas have now graduated from the search folder into numbered root-level topics. The other two remain removed / on hold.
 
 ---
 
@@ -20,15 +20,15 @@ The five provisional files are **not** all active survivors anymore.
 
 | Rank | Candidate | Current status | Excitement if positive | Method opening | Main concern |
 | --- | --- | --- | --- | --- | --- |
-| **1** | [Do Scientific Claims Become More Certain as They Are Cited?](./do_scientific_claims_become_more_certain_as_they_are_cited.md) | **STRONG_KEEP** | Very high | Very clear: evidence-conditioned citation/transmutation verifier; certainty-preserving scholarly writing guard | claim equivalence + evidence-status labels must remain reliable and simple enough |
-| **2** | [Does Methodological Information Decay Along Shortcut-Citation Chains?](./does_methodological_information_decay_along_shortcut_citation_chains.md) | **KEEP_REFRAME** | High if framed as unreconstructible / silently divergent methods, not merely monotonic decay | Very clear: protocol-lineage resolver / shortcut-citation linter / missing-detail repair | exact inheritance and critical-method-unit extraction can become annotation-heavy |
-| **3** | [Is Negative Behavioral Adaptation Intrinsically Harder?](./is_negative_behavioral_adaptation_intrinsically_harder.md) | **CHEAP_G0_ONLY** | Very high if matched inhibition gap survives | Clear: inhibition-aware implicit memory / negative-experience post-training | the causal axis is still inferred from a confounded benchmark comparison and may disappear when tasks are matched |
+| **1** | [Do Scientific Claims Become More Certain as They Are Cited?](./do_scientific_claims_become_more_certain_as_they_are_cited.md) | **REGISTERED → [Topic 16](../../16_citation_transmutation/)** | Very high | Very clear: evidence-conditioned citation/transmutation verifier; certainty-preserving scholarly writing guard | claim equivalence + evidence-status labels must remain reliable and simple enough |
+| **2** | [Does Methodological Information Decay Along Shortcut-Citation Chains?](./does_methodological_information_decay_along_shortcut_citation_chains.md) | **REGISTERED (REFRAMED) → [Topic 17](../../17_shortcut_method_fidelity/)** | High if framed as unreconstructible / silently divergent methods, not merely monotonic decay | Very clear: protocol-lineage resolver / shortcut-citation linter / missing-detail repair | exact inheritance and critical-method-unit extraction can become annotation-heavy |
+| **3** | [Is Negative Behavioral Adaptation Intrinsically Harder?](./is_negative_behavioral_adaptation_intrinsically_harder.md) | **REGISTERED CHEAP_G0_ONLY → [Topic 18](../../18_negative_behavioral_adaptation/)** | Very high if matched inhibition gap survives | Clear: inhibition-aware implicit memory / negative-experience post-training | the causal axis is still inferred from a confounded benchmark comparison and may disappear when tasks are matched |
 | — | [When Does a Fact Become Recallable?](./when_does_a_fact_become_recallable.md) | **KILL CURRENT FORMULATION** | Moderate | Weak in the current descriptive temporal-lag framing; nearest intervention is already being actively studied | new Jul-2026 continual fact-learning work directly studies recitation→use and shows diverse restatements reduce the gap 27.4→5.4 points |
 | — | [Do Language-Model Memories Consolidate With Age?](./do_language_model_memories_consolidate_with_age.md) | **HOLD_FOR_EXTERNAL_EVIDENCE** | High | Clear if true: age-aware replay/editing/consolidation | classic representation→behavior bridge: timestamp existence does not provide evidence that acquisition age controls overwriteability |
 
 ---
 
-# 1. STRONG_KEEP — Citation transmutation
+# 1. REGISTERED → Topic 16 — Citation transmutation
 
 ## Positive headline
 
@@ -82,9 +82,11 @@ same claim
 
 Before coding at scale, simplify the experimental object so that `no new primary evidence` is structurally obvious where possible, and validate high-precision claim identity on a small gold audit.
 
+The registered project and initial code now live at [`16_citation_transmutation/`](../../16_citation_transmutation/).
+
 ---
 
-# 2. KEEP_REFRAME — Method transmission through shortcut citations
+# 2. REGISTERED (REFRAMED) → Topic 17 — Method transmission through shortcut citations
 
 The original title asks whether information **decays with depth**. That monotonic law is still more speculative than we want.
 
@@ -120,9 +122,11 @@ Intern-Atlas (2026) shows that million-paper method-level evolution graphs are t
 
 If every method family requires new domain-expert definitions of “critical units,” the project violates the complexity / annotation bar. G0 must show that one structured domain supports reliable extraction with a modest gold audit.
 
+The registered reframed project and initial code now live at [`17_shortcut_method_fidelity/`](../../17_shortcut_method_fidelity/).
+
 ---
 
-# 3. CHEAP_G0_ONLY — Negative behavioral adaptation
+# 3. REGISTERED CHEAP_G0_ONLY → Topic 18 — Negative behavioral adaptation
 
 This has perhaps the most exciting possible positive result:
 
@@ -150,7 +154,7 @@ There is also already an ICLR 2025 method paper explicitly devoted to learning f
 
 ### Decision
 
-Keep only because the matched G0 is extremely cheap and decisive.
+Registered only because the matched G0 is extremely cheap and decisive.
 
 Do not build a project, mechanism analysis, benchmark expansion, or method until:
 
@@ -164,6 +168,8 @@ positive acquisition vs negative inhibition only
 shows a large cross-model gap.
 
 If the gap shrinks to a modest effect, archive immediately.
+
+The registered cheap-G0 project and matched generator/scorer live at [`18_negative_behavioral_adaptation/`](../../18_negative_behavioral_adaptation/).
 
 ---
 
@@ -219,21 +225,17 @@ Do not run the overwrite experiment simply because it is elegant. Promote again 
 
 ---
 
-# Operational shortlist after re-screen
+# Operational shortlist after re-screen and registration
 
 ```text
-STRONG_KEEP
-1. citation transmutation at scale
-
-KEEP_REFRAME
-2. shortcut-citation method reconstructability / silent divergence
-
-CHEAP_G0_ONLY
-3. matched positive acquisition vs negative inhibition
+REGISTERED
+16. citation transmutation at scale
+17. shortcut-citation method reconstructability / silent divergence
+18. matched positive acquisition vs negative inhibition  [CHEAP_G0_ONLY]
 
 OUT OF ACTIVE SHORTLIST
-4. fact encoding→recall training lag
-5. memory age→overwriteability
+- fact encoding→recall training lag
+- memory age→overwriteability
 ```
 
-The target is **not to maintain five candidates**. The target is to keep searching until we have several candidates that all survive this stronger bar.
+Registration does **not** mean the scientific claim is accepted. Topic 16 and 17 are now concrete projects with initial data contracts; Topic 18 is explicitly a one-shot falsification project. All three still live or die by their first clean G0.
