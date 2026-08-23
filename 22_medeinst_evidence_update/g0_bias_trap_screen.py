@@ -55,14 +55,9 @@ def resolve_diagnosis(candidate: str | None, labels: list[str]) -> str | None:
     ans = normalize(candidate or "")
     if not ans:
         return None
-
     exact = [label for label in labels if normalize(label) == ans]
     if len(exact) == 1:
         return exact[0]
-
-    # Canonical-label containment is intentionally conservative. Prefer the
-    # longest canonical label so e.g. a longer diagnosis is not shadowed by a
-    # shorter substring label.
     hits = [label for label in labels if normalize(label) and normalize(label) in ans]
     if hits:
         longest_len = max(len(normalize(label)) for label in hits)
@@ -73,40 +68,29 @@ def resolve_diagnosis(candidate: str | None, labels: list[str]) -> str | None:
 
 
 def extract_prediction(final_text: str, labels: list[str]) -> tuple[str | None, str | None, str]:
-    """Extract only from the post-thinking final answer, never from reasoning.
-
-    Returns (canonical_prediction, extracted_candidate, extraction_method).
-    No external judge and no semantic fuzzy matching are used.
-    """
+    """Extract only from post-thinking final-answer content; never inspect reasoning."""
     text = (final_text or "").strip()
     if not text:
         return None, None, "empty_final"
 
-    marker_matches = FINAL_RE.findall(text)
-    for candidate in reversed(marker_matches):
+    for candidate in reversed(FINAL_RE.findall(text)):
         candidate = _strip_answer_line(candidate.splitlines()[0])
         pred = resolve_diagnosis(candidate, labels)
         if pred is not None:
             return pred, candidate, "explicit_marker"
 
-    diag_matches = DIAGNOSIS_IS_RE.findall(text)
-    for candidate in reversed(diag_matches):
+    for candidate in reversed(DIAGNOSIS_IS_RE.findall(text)):
         candidate = _strip_answer_line(candidate.splitlines()[0])
         pred = resolve_diagnosis(candidate, labels)
         if pred is not None:
             return pred, candidate, "diagnosis_is"
 
-    # Prefer later lines because benchmark prompts ask for the final diagnosis
-    # after reasoning. This is applied only to post-</think> content.
     lines = [_strip_answer_line(x) for x in text.splitlines() if _strip_answer_line(x)]
     for line in reversed(lines):
         pred = resolve_diagnosis(line, labels)
         if pred is not None:
             return pred, line, "resolved_final_line"
 
-    # Last-resort canonical mention in final-answer content only. If several
-    # different canonical labels occur, use the last textual mention. This
-    # avoids reading diagnoses mentioned inside the hidden thinking block.
     norm_text = normalize(text)
     mentions: list[tuple[int, int, str]] = []
     for label in labels:
@@ -123,7 +107,6 @@ def extract_prediction(final_text: str, labels: list[str]) -> tuple[str | None, 
     if mentions:
         mentions.sort(key=lambda x: (x[0], x[1]))
         return mentions[-1][2], mentions[-1][2], "last_canonical_mention"
-
     return None, None, "unresolved_final"
 
 
@@ -209,8 +192,8 @@ def generate(model, tok, text: str, max_new_tokens: int, mode: str, generation_s
     enc = tok(text, return_tensors="pt", add_special_tokens=False)
     ids = enc["input_ids"].to(model.device)
     mask = enc["attention_mask"].to(model.device)
-
     set_generation_seed(generation_seed)
+
     kwargs = dict(
         input_ids=ids,
         attention_mask=mask,
@@ -219,12 +202,8 @@ def generate(model, tok, text: str, max_new_tokens: int, mode: str, generation_s
         eos_token_id=tok.eos_token_id,
     )
     if mode == "cot":
-        # Qwen3 official thinking-mode recommendation. Greedy decoding is
-        # explicitly discouraged by the model card.
         kwargs.update(do_sample=True, temperature=0.6, top_p=0.95, top_k=20)
     else:
-        # Direct mode is deliberately deterministic for later fixed-position
-        # mechanism experiments.
         kwargs.update(do_sample=False)
 
     out = model.generate(**kwargs)
@@ -238,7 +217,6 @@ def generate(model, tok, text: str, max_new_tokens: int, mode: str, generation_s
     if mode == "cot":
         think_end_id = tok.convert_tokens_to_ids("</think>")
         if isinstance(think_end_id, int) and think_end_id >= 0 and think_end_id in new_ids:
-            # Use the LAST close marker defensively and score only what follows.
             idx = len(new_ids) - 1 - new_ids[::-1].index(think_end_id)
             final_ids = new_ids[idx + 1:]
             thinking_closed = True
@@ -246,16 +224,25 @@ def generate(model, tok, text: str, max_new_tokens: int, mode: str, generation_s
             thinking_closed = False
             final_ids = [] if hit_max_tokens else new_ids
 
-    full_text = tok.decode(new_ids, skip_special_tokens=True).strip()
-    final_text = tok.decode(final_ids, skip_special_tokens=True).strip()
     return GenerationResult(
-        full_text=full_text,
-        final_text=final_text,
+        full_text=tok.decode(new_ids, skip_special_tokens=True).strip(),
+        final_text=tok.decode(final_ids, skip_special_tokens=True).strip(),
         new_token_count=len(new_ids),
         thinking_closed=thinking_closed,
         hit_max_tokens=hit_max_tokens,
         stopped_on_eos=stopped_on_eos,
     )
+
+
+def branch_invalid_reasons(branch: str, gen: GenerationResult, pred: str | None, mode: str) -> list[str]:
+    reasons = []
+    if gen.hit_max_tokens:
+        reasons.append(f"{branch}:hit_max_tokens")
+    if mode == "cot" and not gen.thinking_closed:
+        reasons.append(f"{branch}:thinking_not_closed")
+    if pred is None:
+        reasons.append(f"{branch}:unresolved_final")
+    return reasons
 
 
 def wilson_interval(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -291,8 +278,7 @@ def main() -> None:
     invalid_path.unlink(missing_ok=True)
 
     ds = load_dataset(args.dataset, split=args.split)
-    all_pairs = make_pairs(ds)
-    pairs = fixed_random_sample(all_pairs, args.n_pairs, args.seed)
+    pairs = fixed_random_sample(make_pairs(ds), args.n_pairs, args.seed)
     labels = sorted({row["ground_truth"] for row in ds})
 
     tok = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
@@ -310,29 +296,22 @@ def main() -> None:
     for control, trap in tqdm(pairs, desc=f"MedEinst G0 {args.mode}"):
         case_id = str(control["case_id"])
         pair_seed = stable_pair_seed(args.seed, case_id)
-
-        # Common-random-number sampling: control and trap receive the same
-        # deterministic sampling stream in thinking mode.
         control_gen = generate(model, tok, prompt(tok, control, args.mode), max_new_tokens, args.mode, pair_seed)
         trap_gen = generate(model, tok, prompt(tok, trap, args.mode), max_new_tokens, args.mode, pair_seed)
 
         control_pred, control_candidate, control_method = extract_prediction(control_gen.final_text, labels)
         trap_pred, trap_candidate, trap_method = extract_prediction(trap_gen.final_text, labels)
-
         control_gt = control["ground_truth"]
         trap_gt = trap["ground_truth"]
 
-        invalid_reasons = []
-        for branch, gen, pred in (
-            ("control", control_gen, control_pred),
-            ("trap", trap_gen, trap_pred),
-        ):
-            if gen.hit_max_tokens:
-                invalid_reasons.append(f"{branch}:hit_max_tokens")
-            if args.mode == "cot" and not gen.thinking_closed:
-                invalid_reasons.append(f"{branch}:thinking_not_closed")
-            if pred is None:
-                invalid_reasons.append(f"{branch}:unresolved_final")
+        control_invalid = branch_invalid_reasons("control", control_gen, control_pred, args.mode)
+        trap_invalid = branch_invalid_reasons("trap", trap_gen, trap_pred, args.mode)
+        invalid_reasons = control_invalid + trap_invalid
+        control_valid = not control_invalid
+        trap_valid = not trap_invalid
+        control_correct = bool(control_valid and control_pred == control_gt)
+        trap_correct = bool(trap_valid and trap_pred == trap_gt)
+        bias_trap = bool(control_correct and trap_valid and trap_gt != control_gt and trap_pred == control_gt)
 
         row = {
             "case_id": case_id,
@@ -356,9 +335,11 @@ def main() -> None:
             "trap_thinking_closed": trap_gen.thinking_closed,
             "control_hit_max_tokens": control_gen.hit_max_tokens,
             "trap_hit_max_tokens": trap_gen.hit_max_tokens,
-            "control_correct": control_pred == control_gt,
-            "trap_correct": trap_pred == trap_gt,
-            "bias_trap": bool(control_pred == control_gt and trap_gt != control_gt and trap_pred == control_gt),
+            "control_valid": control_valid,
+            "trap_valid": trap_valid,
+            "control_correct": control_correct,
+            "trap_correct": trap_correct,
+            "bias_trap": bias_trap,
             "invalid": bool(invalid_reasons),
             "invalid_reasons": invalid_reasons,
         }
@@ -370,13 +351,13 @@ def main() -> None:
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     n = len(recs)
-    control_correct = [row for row in recs if row["control_correct"]]
+    control_correct_rows = [row for row in recs if row["control_correct"]]
     bias_traps = [row for row in recs if row["bias_trap"]]
-    control_acc = len(control_correct) / max(1, n)
+    control_acc = len(control_correct_rows) / max(1, n)
     trap_acc = sum(row["trap_correct"] for row in recs) / max(1, n)
     invalid_rate = sum(row["invalid"] for row in recs) / max(1, n)
-    btr = len(bias_traps) / max(1, len(control_correct))
-    btr_lo, btr_hi = wilson_interval(len(bias_traps), len(control_correct))
+    btr = len(bias_traps) / max(1, len(control_correct_rows))
+    btr_lo, btr_hi = wilson_interval(len(bias_traps), len(control_correct_rows))
     transition_count = len({(row["control_gt"], row["trap_gt"]) for row in bias_traps})
 
     invalid_reason_counts = Counter(reason for row in recs for reason in row["invalid_reasons"])
@@ -385,15 +366,10 @@ def main() -> None:
         extraction_method_counts[f"control:{row['control_extract_method']}"] += 1
         extraction_method_counts[f"trap:{row['trap_extract_method']}"] += 1
 
-    control_hit_cap = sum(row["control_hit_max_tokens"] for row in recs)
-    trap_hit_cap = sum(row["trap_hit_max_tokens"] for row in recs)
-    control_closed = sum(row["control_thinking_closed"] for row in recs)
-    trap_closed = sum(row["trap_thinking_closed"] for row in recs)
-
     if args.mode == "cot":
         gate = {
             "control_accuracy_ge_0.35": control_acc >= 0.35,
-            "control_correct_count_ge_50": len(control_correct) >= 50,
+            "control_correct_count_ge_50": len(control_correct_rows) >= 50,
             "bias_trap_count_ge_20": len(bias_traps) >= 20,
             "bias_trap_rate_ge_0.30": btr >= 0.30,
             "bias_trap_wilson_lower_ge_0.20": btr_lo >= 0.20,
@@ -401,12 +377,13 @@ def main() -> None:
             "invalid_rate_le_0.10": invalid_rate <= 0.10,
         }
         go_verdict = "SEED_PHENOMENON_REPRODUCED"
-        stop_verdict = "SEED_PHENOMENON_NOT_REPRODUCED"
+        scientific_stop = "SEED_PHENOMENON_NOT_REPRODUCED"
+        measurement_stop = "MEASUREMENT_RUNTIME_FAILURE"
         decoding = {"do_sample": True, "temperature": 0.6, "top_p": 0.95, "top_k": 20}
     else:
         gate = {
             "control_accuracy_ge_0.30": control_acc >= 0.30,
-            "control_correct_count_ge_40": len(control_correct) >= 40,
+            "control_correct_count_ge_40": len(control_correct_rows) >= 40,
             "bias_trap_count_ge_16": len(bias_traps) >= 16,
             "bias_trap_rate_ge_0.20": btr >= 0.20,
             "bias_trap_wilson_lower_ge_0.10": btr_lo >= 0.10,
@@ -414,8 +391,16 @@ def main() -> None:
             "invalid_rate_le_0.10": invalid_rate <= 0.10,
         }
         go_verdict = "DIRECT_MODE_MECHANISM_OBJECT_READY"
-        stop_verdict = "DIRECT_MODE_MECHANISM_OBJECT_TOO_WEAK"
+        scientific_stop = "DIRECT_MODE_MECHANISM_OBJECT_TOO_WEAK"
+        measurement_stop = "DIRECT_MODE_MEASUREMENT_FAILURE"
         decoding = {"do_sample": False}
+
+    if invalid_rate > 0.10:
+        verdict = measurement_stop
+    elif all(gate.values()):
+        verdict = go_verdict
+    else:
+        verdict = scientific_stop
 
     summary = {
         "repair_version": "g0b_measurement_repair_v2",
@@ -428,7 +413,7 @@ def main() -> None:
         "sample_case_ids": [row["case_id"] for row in recs],
         "control_accuracy": control_acc,
         "trap_accuracy": trap_acc,
-        "control_correct_count": len(control_correct),
+        "control_correct_count": len(control_correct_rows),
         "bias_trap_count": len(bias_traps),
         "bias_trap_rate_among_control_correct": btr,
         "bias_trap_rate_wilson_95": [btr_lo, btr_hi],
@@ -437,14 +422,14 @@ def main() -> None:
         "invalid_reason_counts": dict(sorted(invalid_reason_counts.items())),
         "extraction_method_counts": dict(sorted(extraction_method_counts.items())),
         "thinking_diagnostics": {
-            "control_thinking_closed_count": control_closed,
-            "trap_thinking_closed_count": trap_closed,
-            "control_hit_max_tokens_count": control_hit_cap,
-            "trap_hit_max_tokens_count": trap_hit_cap,
+            "control_thinking_closed_count": sum(row["control_thinking_closed"] for row in recs),
+            "trap_thinking_closed_count": sum(row["trap_thinking_closed"] for row in recs),
+            "control_hit_max_tokens_count": sum(row["control_hit_max_tokens"] for row in recs),
+            "trap_hit_max_tokens_count": sum(row["trap_hit_max_tokens"] for row in recs),
         },
         "paper_reference_for_qwen3_14b": {"baseline_accuracy": 0.4412, "bias_trap_rate": 0.5419},
         "gate": gate,
-        "verdict": go_verdict if all(gate.values()) else stop_verdict,
+        "verdict": verdict,
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
