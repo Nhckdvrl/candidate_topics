@@ -2,18 +2,34 @@
 
 ## Verdict
 
-**NOT COMPLETED — official G0-0 prerequisite remained environment-blocked.** No paired G0 was run and no scientific verdict is assigned.
+**STOP_UPSTREAM_SEED_NOT_REPRODUCED**. The mandatory official prerequisite completed, but its frozen semantic gates failed. Per protocol, paired G0 was not run.
 
-## Checks completed
+## Frozen run
 
-- Repository prerequisite: `origin/main` contains `7fede5af018a9f6943385be9c70dcc70c843cb71`.
+- Candidate commit: `91ce7a32c3ecd25a8524a968bd8352050a136706`.
 - Official repository commit: `0f8b327097f2a34bbc8d1c603480982e65053384`.
-- Official parameters were kept unchanged: Qwen/Qwen2.5-Coder-7B-Instruct, 80 functions, 800 contexts, position step 8, seed 42.
-- Official CodeSearchNet Python archive was downloaded by parallel byte ranges, verified with `unzip -t`, unpacked, and decompressed.
-- Official example generation completed with 8,800 examples.
+- Host/GPU: `fvcrc10`, `CUDA_VISIBLE_DEVICES=0,1,2,3`, four A100 80 GB GPUs.
+- Torch: `2.6.0+cu124`; transformers: `4.51.3`; vLLM: `0.8.5`.
+- Model: `Qwen/Qwen2.5-Coder-7B-Instruct`, HF revision `c03e6d358207e414f1eca0bb1891e29f1db0e242`.
+- Exact command:
 
-## Blocking run issue
+  ```bash
+  python -m long_context_understanding.experiments.fsyn_output_prediction \
+    --model Qwen/Qwen2.5-Coder-7B-Instruct \
+    --num-functions 80 --num-contexts 800 --position-step 8 --seed 42
+  ```
 
-The official vLLM runner reached model initialization but remained in a CPU-bound initialization state for more than seven minutes with zero GPU memory allocated on `fvcrc10` A100s. The process was stopped as an environment/runtime issue. No summary.json was produced, so the official edge accuracy and edge-to-middle drop gates cannot be evaluated.
+- The official run completed 8,800 examples and wrote `results/fsyn_output_prediction/Qwen/Qwen2.5-Coder-7B-Instruct/80/42/summary.json`.
 
-Because the mandatory official prerequisite did not complete, the frozen protocol requires stopping before custom paired G0. No model, prompt, context, parser, or threshold rescue was attempted.
+## Official prerequisite metrics
+
+All 11 frozen positions were present: 0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80.
+
+- Position accuracies: `0: 0.000`, `8: 0.000`, `16: 0.000`, `24: 0.000`, `32: 0.000`, `40: 0.000`, `48: 0.000`, `56: 0.000`, `64: 0.000`, `72: 0.000`, `80: 0.00125`.
+- Edge mean: `0.000625` — required `>= 0.30`: **FAIL**.
+- Middle position: `40`, accuracy `0.000`.
+- Edge-to-middle drop: `0.000625` — required `>= 0.20`: **FAIL**.
+- At least three positions: **PASS**.
+- Contract verdict: `UPSTREAM_SEED_NOT_REPRODUCED`.
+
+The official contract artifact is `artifacts/g0_upstream_contract.json`. Because the prerequisite failed, no Topic 21 paired G0 artifact exists and no mechanism verdict is assigned. No model, prompt, context, parser, seed, or threshold rescue was attempted.
