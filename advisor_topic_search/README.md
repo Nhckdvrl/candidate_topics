@@ -1,6 +1,6 @@
 # 导师向选题搜索
 
-这个目录用于记录**面向导师审查标准、并以 ACL / NAACL / EMNLP / EACL / TACL 等 NLP 顶会为主要尺度的研究选题搜索**。
+这个目录用于记录**面向导师审查标准、并以 CCF A/B 的 AI / NLP 会议为搜索池，其中 ACL 为第一优先的研究选题搜索**。NLP 侧重点看 ACL / NAACL / EMNLP；必要时补充 NeurIPS / ICML / AAAI / IJCAI 中与语言模型直接相关的工作。EACL 不作为主 seed venue。
 
 这里不是一个“想到什么就记什么”的脑暴目录，而是一套候选题过滤系统。我们的目标不是积累最多的题，而是持续留下少数满足以下条件的问题：
 
@@ -9,11 +9,12 @@
 最重要的几条原则先写在最前面：
 
 1. **研究室同门的方向是“好题如何长出来”的参考样本，不是领域边界。**
-2. **题目的宽窄、novelty 和完整度要主动对齐 ACL / NAACL / EMNLP 主会与强 Findings 的论文尺度。**
+2. **题目的宽窄、novelty 和完整度要主动对齐 ACL / NAACL / EMNLP 主会与强 Findings 的论文尺度。** Seed 来源则优先限制在 CCF A/B AI/NLP 会议，尤其 ACL。
 3. **我们的资源不是“算力少”，而是“现金少、人工标注能力少、GPU 算力相对充足”。** 因此少用付费 API、少造人工标注数据，但可以积极利用本地开源模型做 hidden-state、probing、activation patching、steering、causal intervention、checkpoint trajectory 等机制实验。
 4. **导师不只关心最新 LLM phenomenon，也在意老的科学问题能否在 LLM 时代得到新的、以前做不了的处理方式。** 旧问题 + 新实验轴是高优先级来源。
 5. **机制分析不是为了显得深。** 必须先有真实、稳定、值得解释的 phenomenon；机制工具是解释这个 phenomenon 的手段，不是题目存在的理由。
 6. **实际可行性优先于题目看起来漂亮。** TOP_POOL 优先要求 seed 已在我们能访问的 open-weight model 上报告关键现象，并且 dataset、labels、prompt/scoring recipe、reproduction code 尽量齐全。我们的研究风险应该主要押在“新的科学问题是否成立”，而不是同时押在“现象能否复现、模型能不能跑、数据能不能重建、指标能不能定义”。
+7. **Venue 质量本身也是筛选条件。** EACL 等非当前目标 venue 的论文可以作为背景、collision 或方法参考，但不再因为其 gap 漂亮而直接成为主 seed；优先从 ACL、NAACL、EMNLP 以及 NeurIPS / ICML / AAAI / IJCAI 等 CCF A/B 会议中长题。
 
 ---
 
@@ -56,6 +57,29 @@
 # 2. Venue target：题目要像 ACL / NAACL / EMNLP 的题
 
 我们不只是要求“能写论文”，而是主动用 NLP 顶会的常见题目尺度校准候选。
+
+## 2.0 Seed venue policy
+
+主 seed 的默认来源按优先级：
+
+```text
+ACL
+>
+NAACL / EMNLP
+>
+NeurIPS / ICML / AAAI / IJCAI 中与 NLP / LLM 直接相关的工作
+```
+
+原则上只从 **CCF A/B 的 AI / NLP 会议**晋级主 seed。其他 venue 的论文可以用于：
+
+- 背景；
+- exact collision；
+- 方法参考；
+- 证明某现象已有先例；
+
+但不能单凭一个漂亮 gap 进入 TOP_POOL。
+
+其中 **ACL 是第一优先级**：如果能从 ACL main paper 的已知 anomaly、appendix、error analysis、limitations 自然长出一步新问题，优先于从低优先级 venue 生造空白。
 
 ## 2.1 合适的宽度
 
@@ -533,6 +557,7 @@ exact open model
 15. seed 的 anomaly 只在 inaccessible closed model 上出现，而 open model prerequisite 完全未知。
 16. dataset public，但 prompt/scoring/reproduction chain 缺失到需要我们先逆向重建整篇 seed。
 17. 关键 dissociation 只有 aggregate score，没有可用 instance-level density。
+18. seed venue 不符合当前 CCF A/B AI/NLP 主池，只能作为背景或方法参考，却被当成主故事来源。
 
 特别记住：
 
@@ -550,6 +575,7 @@ exact open model
 题目：
 Venue-scale headline：
 Seed paper / old scientific question：
+Seed venue（必须标明 CCF A/B 与否）：
 前人已经证明什么：
 哪一个结果自然逼出下一问：
 我们只移动哪一步：
@@ -655,6 +681,9 @@ layer / token / strength 等选择必须能通过 validation 冻结，不能靠 
 ### G19. Interpretable null
 如果 intervention 无效，应该能清楚回答 scientific question 的一部分，而不是永远归因于“可能没找到正确 layer/feature”。
 
+### G20. Venue eligibility
+主 seed 默认来自 CCF A/B AI/NLP 会议；ACL 第一优先。非目标 venue 只能作为背景、collision 或方法参考，不能直接支撑 TOP_POOL 主叙事。
+
 ---
 
 # 11. 标准搜索流程
@@ -663,11 +692,13 @@ layer / token / strength 等选择必须能通过 validation 冻结，不能靠 
 
 重点：
 
-- ACL / EMNLP / NAACL / EACL / TACL；
-- 2025–2026 主会和 Findings；
-- ICLR / ICML / NeurIPS 中与语言模型机制直接相关的工作；
+- **ACL 优先**，其次 EMNLP / NAACL；
+- NeurIPS / ICML / AAAI / IJCAI 中与语言模型、NLP、机制分析直接相关的工作；
+- 2025–2026 主会和强 Findings；
 - old cognitive / information / learning literature；
 - appendix / error analysis / limitations，而不是只看 future work。
+
+非 CCF A/B venue 的工作只作为背景 / collision / 方法参考，不作为主 seed 晋级来源。
 
 ## Stage 2：每篇只写“真正证明了什么”
 
@@ -781,7 +812,7 @@ Exact collision：
 
 结合我们的实际资源和前面大量失败经验，当前应当特别偏向：
 
-> **NLP 顶会尺度的问题 + 已经站住的 open-model phenomenon + 现成 data/code + automatic labels + GPU-heavy mechanism / causal analysis。**
+> **ACL 优先的 CCF A/B AI/NLP 题目 + 已经站住的 open-model phenomenon + 现成 data/code + automatic labels + GPU-heavy mechanism / causal analysis。**
 
 以后判断一个题，不再只问“这个方向热门吗”或者“这个标题酷不酷”，而要同时问：
 
