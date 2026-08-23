@@ -1,6 +1,6 @@
 # 22 — Does the Model Encode New Evidence but Fail to Update Its Diagnosis?
 
-**Status: CANDIDATE / FROZEN STRUCTURE + SEED-REPRO + DIRECT-MODE G0 READY**
+**Status: CANDIDATE / G0a PASSED / REPAIRED G0b v2 READY**
 
 ## Natural question
 
@@ -18,12 +18,16 @@ ACL 2026 long paper: **MedEinst: Benchmarking the Einstellung Effect in Medical 
 - Official repository: https://github.com/zhui711/MedEinst
 - Dataset: https://huggingface.co/datasets/zhui711/MedEinst
 
-The released test set has **5,383 counterfactual pairs**. Each control/trap pair shares a `case_id`; the trap changes key discriminative evidence so the ground-truth diagnosis flips. The paper defines the Bias Trap event exactly as:
+The released test set has **5,383 counterfactual pairs**. Each control/trap pair shares a `case_id`; the trap changes key discriminative evidence so the ground-truth diagnosis flips.
+
+The exact Bias Trap event used here is:
 
 ```text
 model(control) = control ground truth
 AND
 model(trap) = control ground truth
+AND
+trap ground truth != control ground truth
 ```
 
 The paper reports on `Qwen/Qwen3-14B`:
@@ -32,8 +36,6 @@ The paper reports on `Qwen/Qwen3-14B`:
 Baseline Accuracy = 44.12%
 Bias Trap Rate    = 54.19%
 ```
-
-All baseline models are evaluated under a **zero-shot Chain-of-Thought** setting. Therefore our first behavioral gate uses that same model family and reasoning mode rather than starting from an unverified 8B direct-answer setting.
 
 ## New mechanism distinction
 
@@ -51,9 +53,9 @@ These are mechanism claims. G0 does **not** prove either one. G0 only establishe
 
 - ACL main seed.
 - Released paired data and exact diagnosis labels.
-- Seed-supported open model `Qwen/Qwen3-14B`, easily within local GPU capacity.
+- Seed-supported open model `Qwen/Qwen3-14B`.
 - No paid API needed.
-- No new human annotation for the prerequisite gates.
+- No new human annotation for prerequisite gates.
 - Pair-level ground truth and Bias Trap definition are exact.
 - The dataset construction already provides medical validation of the counterfactual diagnosis flip.
 
@@ -69,64 +71,83 @@ For each `case_id` it checks:
 - token-level edit fraction;
 - changed block count;
 - largest changed span;
-- the actual aligned changed text spans, saved in `pair_diffs.jsonl`.
+- actual aligned changed text spans saved in `pair_diffs.jsonl`.
 
-### Important interpretation
+### G0a result
 
-This gate answers only:
-
-> **Are the released pairs local enough to support aligned causal intervention later?**
-
-It does **not** independently prove that every token diff is medically decisive evidence. The seed benchmark's construction and physician/LLM validation establish the medical counterfactual validity. We must not reinterpret a small text diff as a mechanism label by itself.
-
-### Frozen G0a gate
-
-Proceed only if all hold:
-
-- at least `5000` valid pairs;
-- `0` malformed pairs;
-- diagnosis flip rate `>= 0.99`;
-- age+sex match rate `>= 0.99`;
-- median changed-token fraction `<= 0.12`;
-- p90 changed-token fraction `<= 0.30`.
-
-If this fails, the **aligned-intervention route** is not clean enough. Do not cherry-pick visually clean pairs after seeing model behavior.
-
-## G0b — reproduce the published Bias Trap phenomenon
-
-Default model:
+The full released test set passed:
 
 ```text
-Qwen/Qwen3-14B
+valid pairs                  5383
+malformed pairs              0
+ground-truth flip rate       1.0000
+age/sex match rate           1.0000
+median changed-token frac    0.0726
+p90 changed-token frac       0.2516
 ```
 
-Default sample:
+G0a verdict: `PAIR_STRUCTURE_OK`.
+
+This means the pairs are sufficiently local for aligned analysis. It does **not** independently prove that every changed token is the medically decisive variable.
+
+## Why the first G0b run is invalid
+
+The first local Qwen3-14B CoT run reported 81.25% invalid pairs. That run is **not a scientific negative** and must not be used to archive the topic.
+
+The measurement implementation had three material problems:
+
+1. thinking mode used greedy decoding, although the official Qwen3 model card explicitly warns against greedy decoding for thinking mode and recommends `temperature=0.6`, `top_p=0.95`, `top_k=20`;
+2. thinking was capped at only 1,024 new tokens, while the official Qwen3 example allows up to 32,768 new tokens;
+3. scoring required our custom literal `FINAL_DIAGNOSIS:` marker, so a valid final diagnosis phrased naturally could be counted invalid.
+
+The old `STOP_SEED_PHENOMENON_NOT_REPRODUCED` verdict is therefore withdrawn. See `G0_RESULTS.md` and `VALIDATION_AUDIT.md`.
+
+## G0b v2 — repaired seed reproduction
+
+Frozen scientific choices are unchanged:
 
 ```text
-256 fixed random test pairs, seed 20260823
+model       Qwen/Qwen3-14B
+sample      256 fixed random test pairs
+seed        20260823
+split       test
 ```
 
-The sample is random rather than diagnosis-balanced so its prevalence is comparable to the benchmark distribution.
+The repaired measurement uses:
 
-The prompt uses zero-shot CoT and requires a machine-readable final marker:
+```text
+Qwen3 thinking enabled
+temperature = 0.6
+top_p       = 0.95
+top_k       = 20
+max_new_tokens = 32768
+```
+
+Control and trap use the same deterministic per-pair sampling seed (common random numbers).
+
+### Final-answer extraction
+
+The evaluator separates Qwen3 thinking from the final answer using the generated `</think>` token. **Only post-thinking final-answer content is scored.**
+
+The preferred format remains:
 
 ```text
 FINAL_DIAGNOSIS: <diagnosis>
 ```
 
-Only the final marker is scored. Diagnosis names mentioned inside the reasoning trace cannot accidentally count as predictions.
+but the literal marker is no longer mandatory. An unambiguous canonical dataset diagnosis in the post-thinking final answer can also be resolved conservatively.
 
-Primary event:
+No disease mention inside the reasoning trace can count as the prediction. No LLM judge or semantic fuzzy matcher is used.
 
-```text
-control prediction = control ground truth
-AND
-trap prediction = control ground truth
-AND
-trap ground truth != control ground truth
-```
+The evaluator now records:
 
-### Frozen G0b gate
+- extraction method;
+- generated token count;
+- whether `</think>` closed;
+- whether generation hit the token ceiling;
+- branch-level invalid reason (`hit_max_tokens`, `thinking_not_closed`, `unresolved_final`).
+
+### Frozen G0b gate — unchanged
 
 Proceed only if all hold:
 
@@ -138,21 +159,19 @@ Proceed only if all hold:
 - Bias Trap events cover at least `8` distinct control→trap diagnosis transitions;
 - invalid-output rate `<= 0.10`.
 
-These thresholds are deliberately below the published Qwen3-14B point estimates but still require a dense, statistically non-fragile event set.
+### Verdict semantics
 
-If G0b fails, stop. Do not switch models/prompts until one produces the desired effect.
+- `SEED_PHENOMENON_REPRODUCED`: measurement healthy and all substantive gates pass.
+- `SEED_PHENOMENON_NOT_REPRODUCED`: invalid rate is healthy (`<=0.10`) but substantive frozen gates fail. This is a real reproduction stop.
+- `MEASUREMENT_RUNTIME_FAILURE`: invalid rate remains `>0.10`. This is **not** evidence that the MedEinst phenomenon is false.
+
+No model, prompt, sample, threshold, or diagnosis subset may be searched to rescue a healthy scientific failure.
 
 ## G0c — direct-answer mechanism eligibility
 
-Variable-length CoT trajectories are a bad object for simple token-level causal analysis: different cases and outcomes can follow different reasoning paths, recreating the trajectory-alignment problem that killed prior topics.
+Variable-length CoT trajectories are a poor object for simple token-level causal analysis. Therefore, only after repaired G0b passes, rerun the **same exact 256 pair IDs** on the same Qwen3-14B with thinking disabled.
 
-Therefore, on **the exact same fixed random pairs and same Qwen3-14B model**, rerun a direct-answer condition with thinking disabled:
-
-```text
-FINAL_DIAGNOSIS: <diagnosis>
-```
-
-This is not used to reproduce the paper. It is a feasibility gate for our mechanism route.
+Direct mode remains deterministic and asks for one concise diagnosis.
 
 ### Frozen G0c gate
 
@@ -166,14 +185,18 @@ Proceed to simple hidden-state mechanism work only if all hold:
 - Bias Trap events cover at least `6` diagnosis transitions;
 - invalid-output rate `<= 0.10`.
 
-If CoT reproduces the seed but direct mode fails this gate, the Einstellung phenomenon remains real, but **our simple fixed-position mechanism design is not justified**. Do not silently move to open-ended CoT trajectory probing.
+If CoT reproduces the seed but direct mode fails this gate, the Einstellung phenomenon may remain real, but **our simple fixed-position mechanism design is not justified**. Do not silently move to open-ended CoT trajectory probing.
 
 ## Run
 
 ```bash
 cd 22_medeinst_evidence_update
 pip install -r requirements.txt
-CUDA_VISIBLE_DEVICES=0,1,2,3 bash run_g0.sh
+MODEL=Qwen/Qwen3-14B \
+N_PAIRS=256 \
+SEED=20260823 \
+CUDA_VISIBLE_DEVICES=0,1,2,3 \
+bash run_g0.sh
 ```
 
 The script runs in order and stops early if G0a or G0b fails.
@@ -186,8 +209,10 @@ artifacts/g0_pair_locality/pair_metrics.csv
 artifacts/g0_pair_locality/pair_diffs.jsonl
 artifacts/g0_pair_locality/most_diffuse_200.jsonl
 artifacts/g0_behavior_cot/records.jsonl
+artifacts/g0_behavior_cot/invalid_examples.jsonl
 artifacts/g0_behavior_cot/summary.json
 artifacts/g0_behavior_direct/records.jsonl
+artifacts/g0_behavior_direct/invalid_examples.jsonl
 artifacts/g0_behavior_direct/summary.json
 ```
 
@@ -195,7 +220,7 @@ artifacts/g0_behavior_direct/summary.json
 
 If G0a+b+c all pass, we may claim only:
 
-> The released counterfactual pairs are sufficiently local for aligned analysis; the published Bias Trap phenomenon reproduces on a seed-supported open model; and a dense subset of the same exact old-diagnosis persistence events also exists without variable-length CoT.
+> The released counterfactual pairs are sufficiently local for aligned analysis; the published Bias Trap phenomenon reproduces on a seed-supported open model under a valid Qwen3 thinking regime; and a dense subset of the same exact old-diagnosis persistence events also exists without variable-length CoT.
 
 This gives a tractable mechanism object. It still does **not** prove that the new evidence is internally encoded.
 
@@ -203,9 +228,9 @@ This gives a tractable mechanism object. It still does **not** prove that the ne
 
 Before training any generic probe, freeze an explicit evidence/update experiment.
 
-1. Use `pair_diffs.jsonl` to align the small changed spans within each control/trap pair.
+1. Use `pair_diffs.jsonl` to align the changed spans within each control/trap pair.
 2. Restrict mechanism analysis to direct-mode cases so answer sites are fixed.
-3. Use correctly updated trap cases as positive controls for what an evidence-sensitive internal transition looks like.
+3. Use correctly updated trap cases as positive controls for an evidence-sensitive internal transition.
 4. Compare them against exact Bias Trap cases at a **small predeclared site set**.
 5. Prefer same-pair or diagnosis-transition-matched causal patching/ablation over a global learned steering vector.
 
@@ -217,14 +242,15 @@ If identifying the decisive internal state requires broad matching, model/layer/
 
 Stop if:
 
-- pair locality fails;
-- seed-faithful Qwen3-14B Bias Trap fails to reproduce;
+- repaired G0b completes with healthy measurement but fails the frozen seed gate;
 - direct-mode exact Bias Trap events are sparse;
-- the intended changed spans cannot be aligned at useful density;
-- positive-control correctly updated traps do not show a recoverable evidence-sensitive state;
+- intended changed spans cannot be aligned at useful density;
+- correctly updated trap positive controls do not show a recoverable evidence-sensitive state;
 - matching donor/recipient cases requires many post-hoc covariates;
 - only broad layer/token/coefficient search finds rescue;
 - intervention works only by overwriting the final answer representation.
+
+Do **not** archive on `MEASUREMENT_RUNTIME_FAILURE`; fix only the demonstrated measurement/runtime defect first.
 
 ## Collision boundary
 
@@ -241,11 +267,13 @@ A genuine evidence-integration bottleneck gives a concrete target for counterfac
 ## Files
 
 - `g0_pair_locality.py` — full test-pair structure and aligned diff audit.
-- `g0_bias_trap_screen.py` — seed-faithful CoT and direct-answer Bias Trap screens.
+- `g0_bias_trap_screen.py` — repaired Qwen3 CoT and direct-answer Bias Trap screens.
 - `run_g0.sh`
 - `requirements.txt`
 - `tests/test_g0_helpers.py`
+- `G0_RESULTS.md` — provenance for the invalid first G0b and rerun instructions.
+- `VALIDATION_AUDIT.md` — identification and measurement audit.
 
 ## Scientific invariant
 
-> **same released patient pair; control is correct; trap ground truth flips; model persists on the old control diagnosis. First reproduce that exact event, then require it to exist in a mechanism-tractable direct regime before asking what the model encoded.**
+> **same released patient pair; control is correct; trap ground truth flips; model persists on the old control diagnosis. First reproduce that exact event with a valid Qwen3 inference/evaluation stack, then require it to exist in a mechanism-tractable direct regime before asking what the model encoded.**
