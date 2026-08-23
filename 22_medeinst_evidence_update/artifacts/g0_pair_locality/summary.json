@@ -1,0 +1,28 @@
+{
+  "dataset": "zhui711/MedEinst",
+  "split": "test",
+  "raw_rows": 10766,
+  "valid_pairs": 5383,
+  "malformed_pairs": 0,
+  "ground_truth_flip_rate": 1.0,
+  "age_sex_match_rate": 1.0,
+  "changed_token_fraction": {
+    "median": 0.07260726072607261,
+    "p90": 0.2515923566878981,
+    "p95": 0.28852459016393445
+  },
+  "largest_change_span_fraction": {
+    "median": 0.04807692307692308,
+    "p90": 0.21842105263157896
+  },
+  "interpretation": "This gate tests whether the released counterfactual pairs are local enough for aligned intervention. It does not independently prove that every changed span is the decisive medical evidence; that validity comes from the seed benchmark construction.",
+  "gate": {
+    "pair_count_ge_5000": true,
+    "malformed_pairs_eq_0": true,
+    "ground_truth_flip_rate_ge_0.99": true,
+    "age_sex_match_rate_ge_0.99": true,
+    "median_changed_fraction_le_0.12": true,
+    "p90_changed_fraction_le_0.30": true
+  },
+  "verdict": "PAIR_STRUCTURE_OK"
+}
