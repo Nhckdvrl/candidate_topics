@@ -1,0 +1,27 @@
+{
+  "protocol_version": "topic14-v3-2026-08-22",
+  "branch_config": {
+    "protocol_version": "topic14-v3-2026-08-22",
+    "profile": "full",
+    "seed": 2,
+    "branch_warmup_steps": 1000,
+    "branch_warmup_distribution": "uniform",
+    "batch_size": 256,
+    "stream_seed": 31415,
+    "d_model": 256,
+    "layers": 4,
+    "heads": 8,
+    "ff_mult": 4,
+    "peak_lr": 0.0002,
+    "weight_decay": 1e-06,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08,
+    "precision": "bf16"
+  },
+  "branch_signature": "d67f594e3956856430c7abdedbcf5bd366ec201997ccc857ef4ad8dba2b8ae7c",
+  "model_digest": "76320213bafe9b0e10cb9378111fa9b653172fde64bde590580d5c034044baa5",
+  "branch_digest": "b752b97cc1ee04654e47ac4e8ca5a790f09bc421155cbb217c9b9f8b3fc02380"
+}

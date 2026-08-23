@@ -1,0 +1,45 @@
+{
+  "protocol_version": "topic14-v3-2026-08-22",
+  "profile": "full",
+  "profile_resolved": {
+    "branch_warmup_steps": 1000,
+    "core_steps": 160000,
+    "eval_every": 4000,
+    "eval_examples": 16384,
+    "phase_steps": 80000,
+    "lr_schedule": "constant"
+  },
+  "seed": 0,
+  "condition": "slow",
+  "persistence_h": null,
+  "batch_size": 256,
+  "eval_batch_size": 2048,
+  "alpha": 1.5,
+  "mapping_seed_base": 1729,
+  "mapping_seed_effective": 1729,
+  "stream_seed": 31415,
+  "peak_lr": 0.0002,
+  "lr_schedule": "constant",
+  "paper_lr_warmup_steps": 0,
+  "weight_decay": 1e-06,
+  "betas": [
+    0.9,
+    0.999
+  ],
+  "eps": 1e-08,
+  "precision": "bf16",
+  "d_model": 256,
+  "layers": 4,
+  "heads": 8,
+  "ff_mult": 4,
+  "eval_seed": 424242,
+  "branch_digest": "48ce15ced2d3a67b92fe1b0840342f679d1257aeb14b86f558aa149c39334ac6",
+  "schedule": {
+    "temporal_digest": "c9e5ea6011e6a2d21508458bafe5b69d81912f27dcab85167466c4276369d418",
+    "multiset_digest": "c9e5ea6011e6a2d21508458bafe5b69d81912f27dcab85167466c4276369d418",
+    "condition": "slow",
+    "persistence_h": null,
+    "n_steps": 160000
+  },
+  "run_signature": "72a2ea6d4ca1616aadb6cff394a96cdbdfc352f39de521ed4a5fdc9e39552303"
+}
