@@ -1,0 +1,26 @@
+{
+  "fresh_seed": 20260825,
+  "representation_checks": {
+    "rank_val_accuracy": 0.990625,
+    "notation_val_accuracy": 1.0,
+    "raw_notation_probe_val_accuracy": 1.0,
+    "notation_rank_cosine": 1.964639848427518e-17,
+    "notation_accuracy_ge_0p95": true,
+    "abs_cosine_le_1e_5": true,
+    "pass": true
+  },
+  "object_gate": {
+    "n_unique_hard": 123,
+    "n_hard_exact_operand_errors": 41,
+    "n_hard_scientific_operand_errors": 39,
+    "scientific_operand_choice_rate": 0.9512195121951219,
+    "n_unique_hard_ge_100": true,
+    "n_hard_exact_operand_errors_ge_30": true,
+    "scientific_operand_choice_rate_ge_0p80": true,
+    "pass": true
+  },
+  "full_rank_probe_accuracy": 0.9893617021276596,
+  "hard_rank_probe_accuracy": 0.8617886178861789,
+  "full_generation_accuracy": 0.7909887359198998,
+  "hard_generation_accuracy": 0.6666666666666666
+}

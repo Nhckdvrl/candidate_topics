@@ -1,0 +1,57 @@
+{
+  "verdict": "NOTATION_READABLE_BUT_NOT_CAUSAL_AT_LSAT",
+  "fresh_seed": 20260825,
+  "representation_checks": {
+    "rank_val_accuracy": 0.990625,
+    "notation_val_accuracy": 1.0,
+    "raw_notation_probe_val_accuracy": 1.0,
+    "notation_rank_cosine": 1.964639848427518e-17,
+    "notation_accuracy_ge_0p95": true,
+    "abs_cosine_le_1e_5": true,
+    "pass": true
+  },
+  "object_gate": {
+    "n_unique_hard": 123,
+    "n_hard_exact_operand_errors": 41,
+    "n_hard_scientific_operand_errors": 39,
+    "scientific_operand_choice_rate": 0.9512195121951219,
+    "n_unique_hard_ge_100": true,
+    "n_hard_exact_operand_errors_ge_30": true,
+    "scientific_operand_choice_rate_ge_0p80": true,
+    "pass": true
+  },
+  "full_rank_probe_accuracy": 0.9893617021276596,
+  "hard_rank_probe_accuracy": 0.8617886178861789,
+  "full_generation_accuracy": 0.7909887359198998,
+  "hard_generation_accuracy": 0.6666666666666666,
+  "primary_n": 32,
+  "manipulation_checks": {
+    "neutralization_prefill_calls": 4,
+    "expected_prefill_calls": 4,
+    "max_rank_logit_change_neutralization": 1.2874603271484375e-05,
+    "max_notation_threshold_residual": 1.8156715668737888e-06,
+    "max_rank_logit_change_random_null": 2.002716064453125e-05,
+    "notation_neutralized_ge_0p99": true,
+    "ranking_preserved_ge_0p99": true
+  },
+  "R_not": 0.0,
+  "R_null_by_seed": {
+    "20260901": 0.0,
+    "20260902": 0.0,
+    "20260903": 0.0,
+    "20260904": 0.0,
+    "20260905": 0.0,
+    "20260906": 0.0,
+    "20260907": 0.0,
+    "20260908": 0.0
+  },
+  "R_null_mean": 0.0,
+  "DeltaR": 0.0,
+  "DeltaR_bootstrap_95ci": [
+    0.0,
+    0.0
+  ],
+  "invalid_or_neither_rate": 0.0,
+  "changed_valid_n": 0,
+  "correct_fraction_among_changed_valid": null
+}

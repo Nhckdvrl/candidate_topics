@@ -1,0 +1,9 @@
+{
+  "rank_val_accuracy": 0.990625,
+  "notation_val_accuracy": 1.0,
+  "raw_notation_probe_val_accuracy": 1.0,
+  "notation_rank_cosine": 1.964639848427518e-17,
+  "notation_accuracy_ge_0p95": true,
+  "abs_cosine_le_1e_5": true,
+  "pass": true
+}
