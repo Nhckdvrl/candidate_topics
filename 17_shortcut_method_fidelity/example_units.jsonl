@@ -1,0 +1,8 @@
+{"lineage_id":"demo-L1","paper_id":"P0","hop":0,"method_family":"demo_assay","unit_name":"incubation_time","critical":true,"status":"same"}
+{"lineage_id":"demo-L1","paper_id":"P0","hop":0,"method_family":"demo_assay","unit_name":"temperature","critical":true,"status":"same"}
+{"lineage_id":"demo-L1","paper_id":"P1","hop":1,"method_family":"demo_assay","unit_name":"incubation_time","critical":true,"status":"omitted_but_recoverable"}
+{"lineage_id":"demo-L1","paper_id":"P1","hop":1,"method_family":"demo_assay","unit_name":"temperature","critical":true,"status":"explicitly_modified"}
+{"lineage_id":"demo-L1","paper_id":"P2","hop":2,"method_family":"demo_assay","unit_name":"incubation_time","critical":true,"status":"lost_or_unrecoverable"}
+{"lineage_id":"demo-L1","paper_id":"P2","hop":2,"method_family":"demo_assay","unit_name":"temperature","critical":true,"status":"silent_divergence"}
+{"lineage_id":"demo-L2","paper_id":"Q1","hop":1,"method_family":"demo_imaging","unit_name":"software_version","critical":true,"status":"same"}
+{"lineage_id":"demo-L2","paper_id":"Q1","hop":1,"method_family":"demo_imaging","unit_name":"threshold","critical":true,"status":"omitted_but_recoverable"}
