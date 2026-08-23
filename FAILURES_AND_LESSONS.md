@@ -662,6 +662,53 @@ harness. A cheap null result is only worth having if it cannot be blamed on the 
 
 ---
 
+## Topic 18 — Negative Behavioral Adaptation
+
+### What happened
+
+The original seed result compared inhibition and preference across different task
+families. Topic 18 replaced that confounded comparison with one completely
+crossed arbitrary-action experiment in which positive and negative episodes
+differed only in feedback sign. An equal-outcome baseline checked residual label
+and position preferences.
+
+The final three-family panel was technically valid and produced:
+
+```text
+Phi-4-mini   Delta = 0.391
+Gemma3-12B   Delta = 0.203
+Qwen2.5-7B   Delta = 0.047
+pooled       Delta = 0.214, 95% CI [0.135, 0.292]
+```
+
+The pooled effect was substantial, but the frozen claim required a large,
+counterbalance-robust gap across the panel. Qwen failed that bar. Conversely, two
+families showed strong effects, so the clean-null kill region also failed. The
+only valid decision was `INCONCLUSIVE_DO_NOT_TUNE`, followed by archive.
+
+### Failure / stop type
+
+**Layer D — valid G0, model-general claim not established / frozen gray zone.**
+
+### Main lessons
+
+1. **A pooled effect cannot override a preregistered generality gate.** Averaging
+   Phi and Gemma with Qwen would create an attractive headline while hiding that
+   the proposed “intrinsic” limitation is weak in one full model family.
+2. **Technical invalidity must remain separate from behavior.** Qwen3 initially
+   emitted only a truncated `<think>` preamble. The scorer returned `INVALID`
+   instead of treating this as incorrect adaptation; thinking was then disabled
+   as one format-level repair.
+3. **Counterbalance nuisance preferences instead of silently shopping labels.**
+   Literal symbol preferences were measurable, but marked identity and both
+   orders were fully crossed. Aggregate baseline marked-action selection was
+   exactly 0.5 in every final model.
+4. **A valid gray-zone result is still a stop result in candidate screening.**
+   Explaining family heterogeneity would require a new model/prompt/training
+   search program, not a continuation of the promised one-shot falsification.
+
+---
+
 # 4. Cross-topic lessons
 
 The eight archived projects now cover distinct ways a research candidate can stop:
