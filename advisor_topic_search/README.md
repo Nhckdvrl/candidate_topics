@@ -4,7 +4,7 @@
 
 这里不是一个“想到什么就记什么”的脑暴目录，而是一套候选题过滤系统。我们的目标不是积累最多的题，而是持续留下少数满足以下条件的问题：
 
-> **问题自然、外部锚点明确、只比前人多走一步、首轮实验简单可杀、正结果值得高兴、后面还有机制或方法口子，并且在我们的现实资源下能做。**
+> **问题自然、外部锚点明确、只比前人多走一步、首轮实验简单可杀、正结果值得高兴、后面还有机制或方法口子，并且在我们的现实资源下真正做得出来。**
 
 最重要的几条原则先写在最前面：
 
@@ -13,6 +13,7 @@
 3. **我们的资源不是“算力少”，而是“现金少、人工标注能力少、GPU 算力相对充足”。** 因此少用付费 API、少造人工标注数据，但可以积极利用本地开源模型做 hidden-state、probing、activation patching、steering、causal intervention、checkpoint trajectory 等机制实验。
 4. **导师不只关心最新 LLM phenomenon，也在意老的科学问题能否在 LLM 时代得到新的、以前做不了的处理方式。** 旧问题 + 新实验轴是高优先级来源。
 5. **机制分析不是为了显得深。** 必须先有真实、稳定、值得解释的 phenomenon；机制工具是解释这个 phenomenon 的手段，不是题目存在的理由。
+6. **实际可行性优先于题目看起来漂亮。** TOP_POOL 优先要求 seed 已在我们能访问的 open-weight model 上报告关键现象，并且 dataset、labels、prompt/scoring recipe、reproduction code 尽量齐全。我们的研究风险应该主要押在“新的科学问题是否成立”，而不是同时押在“现象能否复现、模型能不能跑、数据能不能重建、指标能不能定义”。
 
 ---
 
@@ -29,9 +30,11 @@
         ↓
 确认这个问题不依赖我们自己发明一个奇怪 construct 才成立
         ↓
-找到现成数据 / gold labels / open models / checkpoints / traces / measurement
+最好确认关键 phenomenon 已经出现在我们准备分析的 open model 上
         ↓
-设计一个简单、决定性的 G0，先确认 phenomenon 是否真的存在
+找到现成 data / gold labels / prompts / code / checkpoints / traces / measurement
+        ↓
+设计一个简单、决定性的 G0，确认 critical cell 在同一模型里有足够密度
         ↓
 若为正，再利用充足 GPU 做 representation / mechanism / causal intervention
         ↓
@@ -42,7 +45,11 @@
 
 > **是哪篇论文、哪个已知现象、或者哪个旧科学问题，逼出了这个下一问？**
 
-如果没有外部支点，就先不要注册为候选。
+然后必须再回答：
+
+> **这个问题成立所依赖的实验对象，是否已经在我们真正能跑的模型和公开 artifact 上存在？**
+
+如果第一个问题答不出来，题是脑补的；如果第二个问题答不出来，题的工程/现象风险仍然太高。
 
 ---
 
@@ -175,11 +182,67 @@ layer × step × threshold × model × prompt × dataset
 
 ```text
 现成 dataset / gold labels
-+ open model/checkpoints
++ 已知会出现目标 phenomenon 的 open model
++ seed 的 prompt / scoring / reproduction code
 + automatic scoring
 + 本地 GPU 机制分析
 = 最适合我们的题
 ```
+
+## 3.5 Artifact completeness 是研究可行性的一部分
+
+以后不能只写“dataset public / model open”就算 resource audit 通过。
+
+TOP_POOL 应尽量确认下面四件套：
+
+```text
+data
++ exact model/checkpoint
++ prompt / scoring recipe
++ reproduction code
+```
+
+四件套越完整，我们越能把时间花在真正新的问题上。
+
+如果 seed 的核心现象只在 GPT-5 / Claude / Gemini 上出现，而我们准备做机制的 Qwen/Llama/Gemma 是否有同样现象完全未知，那么这个题不能直接升 TOP。
+
+## 3.6 Same-model prerequisite
+
+机制分析必须解释**同一个模型里真实发生的 failure event**。
+
+优先：
+
+```text
+seed 已报告 Qwen3-8B 的 anomaly
+→ 官方代码可复现
+→ 我们在 Qwen3-8B 上跑 G0
+→ hidden-state / patching
+```
+
+避免：
+
+```text
+seed 只报告 closed frontier model
+→ 假设 8B open model 也会有
+→ 先写大量机制代码
+→ 最后发现 prerequisite 不存在
+```
+
+## 3.7 Critical-cell density before mechanism
+
+如果 claim 依赖下面这种 cell：
+
+```text
+内部判断正确 / 局部能力存在
+BUT
+最终行为错误
+```
+
+必须在 hidden-state 分析前先统计这个 cell 的真实密度。
+
+Aggregate gap 不等于 mechanism-level phenomenon。
+
+如果关键 cell 稀少，只能靠挑模型、挑 prompt、挑 layer、挑 subset 才出现，直接降级。
 
 ---
 
@@ -352,7 +415,9 @@ final decision 却不跟随
 ```text
 已有 behavioral / representational anomaly
 →
-简单 G0 复现
+同一 open model 上简单 G0 复现
+→
+确认 critical cell 密度
 →
 明确需要解释的 decision point
 →
@@ -384,6 +449,20 @@ probe / patch / ablate / steer
 - critical transition / reversal / error cell 有足够密度；
 - 同一模型中有 clean positive / negative instances；
 - 不是 parser / sampling / threshold artifact。
+
+## 6.4 机制实验也必须 bounded-search
+
+机制题尤其容易在 `layer × token × strength` 上 winner's curse。
+
+以后默认：
+
+- train / validation 用于选择 probe / operating point；
+- layer、token、steering strength 的选择规则在 test 前冻结；
+- steering 强度尽量按 residual-stream norm 校准，而不是直接跨层/跨模型比较 raw coefficient；
+- 必须有 random direction / shuffled-label / matched-norm 等少量明确 null；
+- 优先 natural counterfactual patching，而不是无约束地扫 steering coefficient。
+
+这不是为了把 control 做复杂，而是避免 measurement 自己制造 phenomenon。
 
 ---
 
@@ -419,7 +498,19 @@ LLM 只是让旧问题第一次拥有更好的 measurement / intervention。
 
 ## E. 作者已经发布代码、数据和 open-model setting
 
-这是极大加分项，因为我们可以先复现，再只改一个变量。
+这是现在的**强优先项**，而不只是“加分项”。
+
+最理想的 seed 已经告诉我们：
+
+```text
+exact open model
++ exact dataset
++ exact prompt/scoring
++ exact anomaly
++ reproduction code
+```
+
+我们只比它多问一个问题。
 
 ---
 
@@ -439,10 +530,17 @@ LLM 只是让旧问题第一次拥有更好的 measurement / intervention。
 12. 只有 toy regime 成立，meaningful regime 要靠不断 model/data/config fishing。
 13. 正结果之后没有 mechanism / intervention / mitigation / method opening。
 14. 为了做机制，先假设一个从未被证明存在的 latent object。
+15. seed 的 anomaly 只在 inaccessible closed model 上出现，而 open model prerequisite 完全未知。
+16. dataset public，但 prompt/scoring/reproduction chain 缺失到需要我们先逆向重建整篇 seed。
+17. 关键 dissociation 只有 aggregate score，没有可用 instance-level density。
 
 特别记住：
 
 > **如果 gate 和 kill line 越设计越复杂，通常不是我们越来越严谨，而是问题本身越来越不自然。**
+
+以及：
+
+> **如果一个题要同时赌“现象存在、模型能复现、测量有效、机制成立”，那不是一个高可行性候选。最好只保留最后一个真正的科学赌注。**
 
 ---
 
@@ -461,21 +559,38 @@ Seed paper / old scientific question：
 为什么尺度像 ACL/NAACL/EMNLP：
 最近 exact collision：
 同门 collision：
+
+Artifact completeness：
+- released dataset：
+- exact model/checkpoint：
+- prompt/scoring recipe：
+- reproduction code：
+
+Same-model prerequisite：
+- seed 是否已在我们准备分析的 open model 上报告现象：
+- 如果没有，最便宜 prerequisite reproduction 是什么：
+
 已有 dataset / labels / code：
 可用 open models / checkpoints：
+Critical-cell definition：
+Critical-cell expected / reported density：
 G0 第一枪：
 Kill line：
 Paid API requirement for G0：
 New annotation requirement for G0：
 Local GPU estimate：
 Mechanism-ready?：
+Mechanism search space 如何冻结：
 如果为正，下一步 mechanism：
 如果为正，下一步 method / intervention：
+如果为负，能否得到明确科学结论：
 最终最强 headline：
 状态：
 ```
 
 如果“哪一个结果自然逼出下一问”写不出来，通常说明题还是脑补的。
+
+如果 Artifact completeness / Same-model prerequisite / Critical-cell density 三项都含糊，不能叫 TOP_POOL。
 
 ---
 
@@ -525,6 +640,21 @@ exact question / contrast / mechanism 可以明确检索。
 ### G14. Mechanism identifiability
 如果要做机制，planned intervention 必须真的能区分 causal use，而不只是多画 hidden-state 图。
 
+### G15. Artifact completeness
+TOP 候选优先要求 data + exact model + prompt/scoring + reproduction code 基本齐全。
+
+### G16. Same-model phenomenon
+要解释的 exact failure event 必须已在目标 open model 中出现，或能用极便宜的冻结 reproduction 确认。
+
+### G17. Critical-cell density
+机制 claim 所依赖的 instance-level dissociation / transition 必须有足够密度，aggregate gap 不能代替。
+
+### G18. Bounded mechanism search
+layer / token / strength 等选择必须能通过 validation 冻结，不能靠 test-set fishing 找机制。
+
+### G19. Interpretable null
+如果 intervention 无效，应该能清楚回答 scientific question 的一部分，而不是永远归因于“可能没找到正确 layer/feature”。
+
 ---
 
 # 11. 标准搜索流程
@@ -568,29 +698,48 @@ single variable → meaningful interaction
 - 同门；
 - 本仓库 archived failures。
 
-## Stage 5：resource audit
+## Stage 5：artifact + resource audit
 
 先确认：
 
 ```text
 公开数据？
 公开标签？
-open models？
+exact open model/checkpoint？
+seed 是否已在这个模型上出现关键现象？
+prompt / scoring recipe？
+reproduction code？
 公开 checkpoint？
 本地 GPU 能跑？
 需要多少 API？
 需要多少人工标注？
 ```
 
-## Stage 6：才设计 G0
+Artifact 缺失本身就是风险，不要等写代码后才发现。
+
+## Stage 6：critical-cell audit
+
+在任何 probe / SAE / patching 前先确认：
+
+```text
+我们真正要解释的 instance-level event 是什么？
+它在同一模型中有多少？
+是否有 clean positive / negative instances？
+```
+
+如果关键 cell 不存在，直接停。
+
+## Stage 7：才设计 G0
 
 G0 的目标不是漂亮，而是：
 
 > **最快判断这个 scientific object 是否真的值得后续机制分析。**
 
-## Stage 7：phenomenon 成立后才上机制工具
+## Stage 8：phenomenon 成立后才上机制工具
 
 GPU 用在这里，而不是用 sweep 把不存在的 phenomenon 挖出来。
+
+机制工具的 selection 只在 train/validation 做；test 保留为锁定确认。
 
 ---
 
@@ -606,8 +755,12 @@ Seed papers：
 旧科学问题（若有）：
 自然下一问：
 一步 extension：
+Artifact completeness：
+Same-model prerequisite：
+Critical-cell density：
 资源检查：
 机制分析可能性：
+Mechanism identifiability：
 Exact collision：
 同门 / archived collision：
 保留候选：
@@ -626,15 +779,11 @@ Exact collision：
 
 > **一个清楚的外部 seed / 旧科学问题 → 一个自然的一步 extension → 一个具体可测对象 → 一个简单决定性实验 → 一个值得解释的现象 → 一个明确后续口子。**
 
-结合我们的实际资源，当前应当特别偏向：
+结合我们的实际资源和前面大量失败经验，当前应当特别偏向：
 
-> **NLP 顶会尺度的问题 + 现成数据 + open model + automatic labels + GPU-heavy mechanism / causal analysis。**
+> **NLP 顶会尺度的问题 + 已经站住的 open-model phenomenon + 现成 data/code + automatic labels + GPU-heavy mechanism / causal analysis。**
 
-以后判断一个题，不再只问：
-
-> “这个方向热门吗？”
-
-而要同时问四件事：
+以后判断一个题，不再只问“这个方向热门吗”或者“这个标题酷不酷”，而要同时问：
 
 > **它为什么是一个自然问题？**
 >
@@ -642,6 +791,12 @@ Exact collision：
 >
 > **如果证明出来，ACL/NAACL/EMNLP 的读者为什么会在意？**
 >
+> **seed 是否已经替我们证明了最关键的 prerequisite，而不是让我们重新赌一次 phenomenon existence？**
+>
 > **我们能否不花大量 API / 标注钱，却用自己的 GPU 把它做得比普通 behavioral paper 更深？**
 
-这四个问题共同构成这个目录现在的选题标准。
+最理想的项目不是“什么都很新”。
+
+最理想的是：
+
+> **前人已经把实验对象钉在桌上；我们只多问一个真正重要、尚未回答，而且能被因果实验直接回答的问题。**
