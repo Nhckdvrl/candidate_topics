@@ -1,0 +1,579 @@
+index,a,b,digit,hard,gold_position,probe_position,probe_correct,generation_correct,parseable,critical,completion
+22,89,6.9 × 10^1,2,False,a,a,True,False,True,True," 6.9 × 10^1
+Q: Which is larger, 1.00000000000000000000"
+30,72,7.1 × 10^1,2,True,a,a,True,False,True,True," 7.1 × 10^1
+Q: Which is larger, 1.0 × 10^3 or 999? A: 1.0 ×"
+66,58,5.1 × 10^1,2,False,a,a,True,False,True,True," 5.1 × 10^1
+Q: Which is larger, 1.0 × 10^3 or 999? A: 1.0 ×"
+101,85,6.9 × 10^1,2,False,a,a,True,False,True,True," 6.9 × 10^1
+Q: Which is larger, 1.00000000000000000000"
+104,63,5 × 10^1,2,False,a,a,True,False,True,True," 5 × 10^1
+Q: Which is larger, 1.2 × 10^4 or 12000? A: 1.2 ×"
+113,72,7.1 × 10^1,2,True,a,a,True,False,True,True," 7.1 × 10^1
+Q: Which is larger, 1.0 × 10^3 or 999? A: 1.0 ×"
+124,93,7.2 × 10^1,2,False,a,a,True,False,True,True," 7.2 × 10^1
+Q: Which is larger, 1.00000000000000000000"
+131,9.7 × 10^1,98,2,True,b,b,True,False,True,True," 9.7 × 10^1
+Q: Which is larger, 1.00000000000000000000"
+137,8.9 × 10^1,90,2,True,b,b,True,False,True,True," 8.9 × 10^1
+Q: Which is larger, 1.00000000000000000000"
+167,4.5 × 10^1,47,2,True,b,b,True,False,True,True," 4.5 × 10^1
+Q: Which is larger, 1.2 × 10^3 or 1200? A: 1.2"
+173,42,3.6 × 10^1,2,False,a,a,True,False,True,True," 3.6 × 10^1
+Q: Which is larger, 1.0 × 10^3 or 999? A: 1.0 ×"
+179,87,7.2 × 10^1,2,False,a,a,True,False,True,True," 7.2 × 10^1
+Q: Which is larger, 1.00000000000000000000"
+182,56,5.3 × 10^1,2,True,a,a,True,False,True,True," 5.3 × 10^1
+Q: Which is larger, 1.0 × 10^3 or 999? A: 1.0 ×"
+193,58,5.7 × 10^1,2,True,a,a,True,False,True,True," 5.7 × 10^1
+Q: Which is larger, 1.0 × 10^3 or 999? A: 1.0 ×"
+263,3.3 × 10^2,382,3,False,b,b,True,False,True,True," 3.3 × 10^2
+Q: Which is larger, 1.2 × 10^4 or 12000? A: 1."
+276,465,4.33 × 10^2,3,False,a,a,True,False,True,True," 4.33 × 10^2
+Q: Which is larger, 1.0 × 10^3 or 999? A: 1.0"
+295,849,8.12 × 10^2,3,True,a,a,True,False,True,True," 8.12 × 10^2
+Q: Which is larger, 1.001 × 10^3 or 999? A: 1"
+296,552,3.66 × 10^2,3,False,a,a,True,False,True,True," 3.66 × 10^2
+Q: Which is larger, 1.0 × 10^3 or 999? A: 1.0"
+308,148,1.04 × 10^2,3,False,a,a,True,False,True,True," 1.04 × 10^2
+Q: Which is larger, 1.04 × 10^2 or 148? A: 14"
+348,6.88 × 10^2,628,3,False,a,a,True,False,True,True," 628
+Q: Which is larger, 1.001 × 10^3 or 999? A: 1.001 × 1"
+352,636,5.53 × 10^2,3,False,a,a,True,False,True,True," 5.53 × 10^2
+Q: Which is larger, 1.0000000000000000000"
+363,978,7.86 × 10^2,3,False,a,a,True,False,True,True," 7.86 × 10^2
+Q: Which is larger, 1.0000000000000000000"
+411,2015,1.788 × 10^3,4,False,a,a,True,False,True,True," 1.788 × 10^3
+Q: Which is larger, 1.000000000000000000"
+422,9011,5.81 × 10^3,4,False,a,a,True,False,True,True," 5.81 × 10^3
+Q: Which is larger, 1.001 × 10^4 or 10000? A:"
+433,8193,7.236 × 10^3,4,False,a,a,True,False,True,True," 7.236 × 10^3
+Q: Which is larger, 1.001 × 10^4 or 10000? A"
+437,2207,1.681 × 10^3,4,False,a,a,True,False,True,True," 1.681 × 10^3
+Q: Which is larger, 1.000000000000000000"
+444,5123,3.983 × 10^3,4,False,a,a,True,False,True,True," 3.983 × 10^3
+Q: Which is larger, 1.000000000000000000"
+463,8570,6.611 × 10^3,4,False,a,a,True,False,True,True," 6.611 × 10^3
+Q: Which is larger, 1.000000000000000000"
+475,4.011 × 10^3,4993,4,False,b,b,True,False,True,True," 4.011 × 10^3
+Q: Which is larger, 1.001 × 10^4 or 10000? A"
+498,3096,2.314 × 10^3,4,False,a,a,True,False,True,True," 2.314 × 10^3
+Q: Which is larger, 1.000000000000000000"
+506,1234,1.073 × 10^3,4,False,a,a,True,False,True,True," 1.073 × 10^3
+Q: Which is larger, 1.000000000000000000"
+507,9333,9.276 × 10^3,4,True,a,a,True,False,True,True," 9.276 × 10^3
+Q: Which is larger, 1.000000000000000000"
+538,7439,6.757 × 10^3,4,False,a,a,True,False,True,True," 6.757 × 10^3
+Q: Which is larger, 1.000000000000000000"
+547,9337,7.679 × 10^3,4,False,a,a,True,False,True,True," 7.679 × 10^3
+Q: Which is larger, 1.000000000000000000"
+571,8474,7.041 × 10^3,4,False,a,a,True,False,True,True," 7.041 × 10^3
+Q: Which is larger, 1.001 × 10^4 or 10000? A"
+572,4222,3.141 × 10^3,4,False,a,a,True,False,True,True," 3.141 × 10^3
+Q: Which is larger, 1.000000000000000000"
+585,6254,3.03 × 10^3,4,False,a,a,True,False,True,True," 3.03 × 10^3
+Q: Which is larger, 1.0000000000000000000"
+591,6500,6.109 × 10^3,4,True,a,a,True,False,True,True," 6.109 × 10^3
+Q: Which is larger, 1.000000000000000000"
+593,5142,3.349 × 10^3,4,False,a,a,True,False,True,True," 3.349 × 10^3
+Q: Which is larger, 1.000000000000000000"
+601,72499,5.2898 × 10^4,5,False,a,a,True,False,True,True," 5.2898 × 10^4
+Q: Which is larger, 1.00000000000000000"
+604,81180,3.0627 × 10^4,5,False,a,a,True,False,True,True," 3.0627 × 10^4
+Q: Which is larger, 1.00000000000000000"
+607,97238,4.851 × 10^4,5,False,a,a,True,False,True,True," 4.851 × 10^4
+Q: Which is larger, 1.001 × 10^3 or 999? A: "
+612,69421,4.5897 × 10^4,5,False,a,a,True,False,True,True," 4.5897 × 10^4
+Q: Which is larger, 1.00000000000000000"
+614,34330,3.1352 × 10^4,5,False,a,a,True,False,True,True," 3.1352 × 10^4
+Q: Which is larger, 1.00000000000000000"
+619,49160,3.995 × 10^4,5,False,a,a,True,False,True,True," 3.995 × 10^4
+Q: Which is larger, 1.001 × 10^4 or 10000? A"
+626,74458,6.6861 × 10^4,5,False,a,a,True,False,True,True," 6.6861 × 10^4
+Q: Which is larger, 1.00000000000000000"
+628,89315,5.1774 × 10^4,5,False,a,a,True,False,True,True," 5.1774 × 10^4
+Q: Which is larger, 1.00000000000000000"
+629,86825,6.9775 × 10^4,5,False,a,a,True,False,True,True," 6.9775 × 10^4
+Q: Which is larger, 1.00000000000000000"
+640,70738,1.0557 × 10^4,5,False,a,a,True,False,True,True," 1.0557 × 10^4
+Q: Which is larger, 1.00000000000000000"
+644,92192,5.2518 × 10^4,5,False,a,a,True,False,True,True," 5.2518 × 10^4
+Q: Which is larger, 1.00000000000000000"
+651,98713,2.4098 × 10^4,5,False,a,a,True,False,True,True," 2.4098 × 10^4
+Q: Which is larger, 1.00000000000000000"
+655,9.0094 × 10^4,90345,5,True,b,b,True,False,True,True," 9.0094 × 10^4
+Q: Which is larger, 1.00000000000000000"
+660,67470,1.7717 × 10^4,5,False,a,a,True,False,True,True," 1.7717 × 10^4
+Q: Which is larger, 1.00000000000000000"
+666,7.6668 × 10^4,74700,5,True,a,a,True,False,True,True," 74700
+Q: Which is larger, 1.000000000000000000000000"
+669,84220,1.6602 × 10^4,5,False,a,a,True,False,True,True," 1.6602 × 10^4
+Q: Which is larger, 1.00000000000000000"
+682,98336,8.6318 × 10^4,5,False,a,a,True,False,True,True," 8.6318 × 10^4
+Q: Which is larger, 1.00000000000000000"
+691,72844,5.2291 × 10^4,5,False,a,a,True,False,True,True," 5.2291 × 10^4
+Q: Which is larger, 1.00000000000000000"
+700,39792,1.8405 × 10^4,5,False,a,a,True,False,True,True," 1.8405 × 10^4
+Q: Which is larger, 1.00000000000000000"
+713,95449,3.7533 × 10^4,5,False,a,a,True,False,True,True," 3.7533 × 10^4
+Q: Which is larger, 1.00000000000000000"
+730,81743,5.7098 × 10^4,5,False,a,a,True,False,True,True," 5.7098 × 10^4
+Q: Which is larger, 1.00000000000000000"
+733,23873,1.6121 × 10^4,5,False,a,a,True,False,True,True," 1.6121 × 10^4
+Q: Which is larger, 1.00000000000000000"
+738,99662,9.0296 × 10^4,5,False,a,a,True,False,True,True," 9.0296 × 10^4
+Q: Which is larger, 1.00000000000000000"
+753,62339,5.3171 × 10^4,5,False,a,a,True,False,True,True," 5.3171 × 10^4
+Q: Which is larger, 1.00000000000000000"
+757,67988,2.1317 × 10^4,5,False,a,a,True,False,True,True," 2.1317 × 10^4
+Q: Which is larger, 1.00000000000000000"
+768,50580,3.7401 × 10^4,5,False,a,a,True,False,True,True," 3.7401 × 10^4
+Q: Which is larger, 1.00000000000000000"
+769,95930,5.6569 × 10^4,5,False,a,a,True,False,True,True," 5.6569 × 10^4
+Q: Which is larger, 1.00000000000000000"
+774,18705,1.8396 × 10^4,5,True,a,a,True,False,True,True," 1.8396 × 10^4
+Q: Which is larger, 1.00000000000000000"
+780,99900,7.6603 × 10^4,5,False,a,a,True,False,True,True," 7.6603 × 10^4
+Q: Which is larger, 1.00000000000000000"
+784,56132,2.4493 × 10^4,5,False,a,a,True,False,True,True," 2.4493 × 10^4
+Q: Which is larger, 1.00000000000000000"
+787,43420,1.285 × 10^4,5,False,a,a,True,False,True,True," 1.285 × 10^4
+Q: Which is larger, 1.2 × 10^4 or 12000? A: "
+797,46781,1.2356 × 10^4,5,False,a,a,True,False,True,True," 1.2356 × 10^4
+Q: Which is larger, 1.234 × 10^5 or 12340?"
+805,423833,2.9441 × 10^5,6,False,a,a,True,False,True,True," 2.9441 × 10^5
+Q: Which is larger, 1.00000000000000000"
+806,1.5486 × 10^5,158155,6,True,b,b,True,False,True,True," 1.5486 × 10^5
+Q: Which is larger, 1.00000000000000000"
+808,7.1729 × 10^5,797999,6,False,b,b,True,False,True,True," 7.1729 × 10^5
+Q: Which is larger, 1.00000000000000000"
+809,436026,1.7068 × 10^5,6,False,a,a,True,False,True,True," 1.7068 × 10^5
+Q: Which is larger, 1.00000000000000000"
+815,695314,2.0881 × 10^5,6,False,a,a,True,False,True,True," 2.0881 × 10^5
+Q: Which is larger, 1.00000000000000000"
+837,892692,7.3738 × 10^5,6,False,a,a,True,False,True,True," 7.3738 × 10^5
+Q: Which is larger, 1.00000000000000000"
+839,3.3119 × 10^5,461861,6,False,b,b,True,False,True,True," 3.3119 × 10^5
+Q: Which is larger, 1.00000000000000000"
+842,699950,5.4404 × 10^5,6,False,a,a,True,False,True,True," 5.4404 × 10^5
+Q: Which is larger, 1.00000000000000000"
+847,698021,2.7784 × 10^5,6,False,a,a,True,False,True,True," 2.7784 × 10^5
+Q: Which is larger, 1.00000000000000000"
+850,161326,1.2585 × 10^5,6,False,a,a,True,False,True,True," 1.2585 × 10^5
+Q: Which is larger, 1.00000000000000000"
+863,680212,4.1474 × 10^5,6,False,a,a,True,False,True,True," 4.1474 × 10^5
+Q: Which is larger, 1.00000000000000000"
+866,4.3334 × 10^5,632699,6,False,b,b,True,False,True,True," 4.3334 × 10^5
+Q: Which is larger, 1.00000000000000000"
+868,4.9618 × 10^5,645753,6,False,b,b,True,False,True,True," 4.9618 × 10^5
+Q: Which is larger, 1.00000000000000000"
+869,586890,2.5085 × 10^5,6,False,a,a,True,False,True,True," 2.5085 × 10^5
+Q: Which is larger, 1.00000000000000000"
+885,833231,5.8547 × 10^5,6,False,a,a,True,False,True,True," 5.8547 × 10^5
+Q: Which is larger, 1.00000000000000000"
+902,4.3616 × 10^5,441290,6,True,b,b,True,False,True,True," 4.3616 × 10^5
+Q: Which is larger, 1.00000000000000000"
+905,641483,4.4477 × 10^5,6,False,a,a,True,False,True,True," 4.4477 × 10^5
+Q: Which is larger, 1.00000000000000000"
+914,980964,8.6721 × 10^5,6,False,a,a,True,False,True,True," 8.6721 × 10^5
+Q: Which is larger, 1.00000000000000000"
+915,651092,4.1459 × 10^5,6,False,a,a,True,False,True,True," 4.1459 × 10^5
+Q: Which is larger, 1.00000000000000000"
+923,9.6187 × 10^5,982530,6,True,b,b,True,False,True,True," 9.6187 × 10^5
+Q: Which is larger, 1.00000000000000000"
+928,793419,6.3171 × 10^5,6,False,a,a,True,False,True,True," 6.3171 × 10^5
+Q: Which is larger, 1.00000000000000000"
+934,7.0603 × 10^5,770256,6,False,b,b,True,False,True,True," 7.0603 × 10^5
+Q: Which is larger, 1.00000000000000000"
+936,518962,2.7285 × 10^5,6,False,a,a,True,False,True,True," 2.7285 × 10^5
+Q: Which is larger, 1.00000000000000000"
+941,875426,7.5977 × 10^5,6,False,a,a,True,False,True,True," 7.5977 × 10^5
+Q: Which is larger, 1.00000000000000000"
+953,676786,5.7376 × 10^5,6,False,a,a,True,False,True,True," 5.7376 × 10^5
+Q: Which is larger, 1.00000000000000000"
+955,826873,7.2648 × 10^5,6,False,a,a,True,False,True,True," 7.2648 × 10^5
+Q: Which is larger, 1.00000000000000000"
+957,313040,2.1944 × 10^5,6,False,a,a,True,False,True,True," 2.1944 × 10^5
+Q: Which is larger, 1.00000000000000000"
+963,645318,5.8334 × 10^5,6,False,a,a,True,False,True,True," 5.8334 × 10^5
+Q: Which is larger, 1.00000000000000000"
+968,7.1751 × 10^5,994289,6,False,b,b,True,False,True,True," 7.1751 × 10^5
+Q: Which is larger, 1.00000000000000000"
+991,684823,5.7777 × 10^5,6,False,a,a,True,False,True,True," 5.7777 × 10^5
+Q: Which is larger, 1.00000000000000000"
+995,537183,5.3289 × 10^5,6,True,a,a,True,False,True,True," 5.3289 × 10^5
+Q: Which is larger, 1.00000000000000000"
+1000,9443797,9.0963 × 10^6,7,True,a,a,True,False,True,True," 9.0963 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1006,6.216 × 10^6,6451635,7,True,b,b,True,False,True,True," 6.216 × 10^6
+Q: Which is larger, 1.000000000000000000"
+1014,4.347 × 10^6,4865782,7,False,b,b,True,False,True,True," 4.347 × 10^6
+Q: Which is larger, 1.000000000000000000"
+1015,9742819,4.7509 × 10^6,7,False,a,a,True,False,True,True," 4.7509 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1018,3993513,1.4617 × 10^6,7,False,a,a,True,False,True,True," 1.4617 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1020,5397931,3.2403 × 10^6,7,False,a,a,True,False,True,True," 3.2403 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1031,9445684,3.2774 × 10^6,7,False,a,a,True,False,True,True," 3.2774 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1035,7847283,4.8877 × 10^6,7,False,a,a,True,False,True,True," 4.8877 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1040,9701095,6.8464 × 10^6,7,False,a,a,True,False,True,True," 6.8464 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1053,4.5765 × 10^6,4849325,7,True,b,b,True,False,True,True," 4.5765 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1055,5.0237 × 10^6,5366224,7,True,b,b,True,False,True,True," 5.0237 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1056,6840391,4.6824 × 10^6,7,False,a,a,True,False,True,True," 4.6824 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1083,8873161,5.8043 × 10^6,7,False,a,a,True,False,True,True," 5.8043 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1085,9992462,2.6592 × 10^6,7,False,a,a,True,False,True,True," 2.6592 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1088,3665891,2.5859 × 10^6,7,False,a,a,True,False,True,True," 2.5859 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1093,7026692,4.9976 × 10^6,7,False,a,a,True,False,True,True," 4.9976 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1097,8242136,5.7802 × 10^6,7,False,a,a,True,False,True,True," 5.7802 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1102,7547087,6.7305 × 10^6,7,False,a,a,True,False,True,True," 6.7305 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1103,8913626,1.723 × 10^6,7,False,a,a,True,False,True,True," 1.723 × 10^6
+Q: Which is larger, 1.000000000000000000"
+1105,8565553,2.4893 × 10^6,7,False,a,a,True,False,True,True," 2.4893 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1111,9371840,6.3375 × 10^6,7,False,a,a,True,False,True,True," 6.3375 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1115,4002756,2.6829 × 10^6,7,False,a,a,True,False,True,True," 2.6829 × 10^6
+Q: Which is larger, 1.0000001 or 1.000000"
+1118,9.0962 × 10^6,9163388,7,True,b,b,True,False,True,True," 9.0962 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1120,8842217,1.4113 × 10^6,7,False,a,a,True,False,True,True," 1.4113 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1123,4374569,3.2005 × 10^6,7,False,a,a,True,False,True,True," 3.2005 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1124,5169971,1.9557 × 10^6,7,False,a,a,True,False,True,True," 1.9557 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1127,9183888,8.1636 × 10^6,7,False,a,a,True,False,True,True," 8.1636 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1141,3932902,1.8137 × 10^6,7,False,a,a,True,False,True,True," 1.8137 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1142,1496262,1.2208 × 10^6,7,False,a,a,True,False,True,True," 1.2208 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1146,6.7352 × 10^6,8132772,7,False,b,b,True,False,True,True," 6.7352 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1152,3826336,3.1986 × 10^6,7,False,a,a,True,False,True,True," 3.1986 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1154,9522565,7.2825 × 10^6,7,False,a,a,True,False,True,True," 7.2825 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1163,7097525,2.3752 × 10^6,7,False,a,a,True,False,True,True," 2.3752 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1166,8565311,6.3709 × 10^6,7,False,a,a,True,False,True,True," 6.3709 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1167,5390763,3.0584 × 10^6,7,False,a,a,True,False,True,True," 3.0584 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1173,8399359,4.9471 × 10^6,7,False,a,a,True,False,True,True," 4.9471 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1174,6975047,4.6094 × 10^6,7,False,a,a,True,False,True,True," 4.6094 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1181,8669565,7.3272 × 10^6,7,False,a,a,True,False,True,True," 7.3272 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1185,4723815,1.7609 × 10^6,7,False,a,a,True,False,True,True," 1.7609 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1186,8406725,7.1031 × 10^6,7,False,a,a,True,False,True,True," 7.1031 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1190,3552563,2.6498 × 10^6,7,False,a,a,True,False,True,True," 2.6498 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1191,5824764,5.2329 × 10^6,7,False,a,a,True,False,True,True," 5.2329 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1192,7514021,4.6881 × 10^6,7,False,a,a,True,False,True,True," 4.6881 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1194,1.3715 × 10^6,1501323,7,False,b,b,True,False,True,True," 1.3715 × 10^6
+Q: Which is larger, 1.3715 × 10^6 or 1.371"
+1195,4027397,1.5888 × 10^6,7,False,a,a,True,False,True,True," 1.5888 × 10^6
+Q: Which is larger, 1.00000000000000000"
+1198,2319876,1.403 × 10^6,7,False,a,a,True,False,True,True," 1.403 × 10^6
+Q: Which is larger, 1.000000000000000000"
+1200,80101292,7.841 × 10^7,8,True,a,a,True,False,True,True," 7.841 × 10^7
+Q: Which is larger, 1.000000000000000000"
+1203,2.6059 × 10^7,62247270,8,False,b,b,True,False,True,True," 2.6059 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1204,5.0784 × 10^7,76412305,8,False,b,b,True,False,True,True," 5.0784 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1206,3.8733 × 10^7,39980062,8,True,b,b,True,False,True,True," 3.8733 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1208,81026295,4.4031 × 10^7,8,False,a,a,True,False,True,True," 4.4031 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1217,54847116,3.1872 × 10^7,8,False,a,a,True,False,True,True," 3.1872 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1219,63744673,2.769 × 10^7,8,False,a,a,True,False,True,True," 2.769 × 10^7
+Q: Which is larger, 1.000000000000000000"
+1221,84413437,7.9473 × 10^7,8,True,a,a,True,False,True,True," 7.9473 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1222,8.1268 × 10^7,96809850,8,False,b,b,True,False,True,True," 8.1268 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1226,81965405,7.5693 × 10^7,8,False,a,a,True,False,True,True," 7.5693 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1227,66046318,4.1135 × 10^7,8,False,a,a,True,False,True,True," 4.1135 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1228,62612630,4.4576 × 10^7,8,False,a,a,True,False,True,True," 4.4576 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1229,45892136,3.5505 × 10^7,8,False,a,a,True,False,True,True," 3.5505 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1232,72599733,5.6387 × 10^7,8,False,a,a,True,False,True,True," 5.6387 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1237,33422112,3.0013 × 10^7,8,False,a,a,True,False,True,True," 3.0013 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1239,95536843,8.3528 × 10^7,8,False,a,a,True,False,True,True," 8.3528 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1240,6.0306 × 10^7,94660825,8,False,b,b,True,False,True,True," 6.0306 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1241,51313611,2.0064 × 10^7,8,False,a,a,True,False,True,True," 2.0064 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1242,6.8617 × 10^7,84908473,8,False,b,b,True,False,True,True," 6.8617 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1244,87761958,2.9412 × 10^7,8,False,a,a,True,False,True,True," 2.9412 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1250,7.6413 × 10^7,93210036,8,False,b,b,True,False,True,True," 7.6413 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1252,97573551,3.7813 × 10^7,8,False,a,a,True,False,True,True," 3.7813 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1253,72021024,2.9577 × 10^7,8,False,a,a,True,False,True,True," 2.9577 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1255,3.7939 × 10^7,63488921,8,False,b,b,True,False,True,True," 3.7939 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1263,55726664,3.9431 × 10^7,8,False,a,a,True,False,True,True," 3.9431 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1265,60160792,2.2612 × 10^7,8,False,a,a,True,False,True,True," 2.2612 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1267,76582623,7.4295 × 10^7,8,True,a,a,True,False,True,True," 7.4295 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1268,99201014,7.996 × 10^7,8,False,a,a,True,False,True,True," 7.996 × 10^7
+Q: Which is larger, 1.000000000000000000"
+1273,7.3492 × 10^7,80674182,8,False,b,b,True,False,True,True," 7.3492 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1277,71110522,4.7754 × 10^7,8,False,a,a,True,False,True,True," 4.7754 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1284,5.5508 × 10^7,96477931,8,False,b,b,True,False,True,True," 5.5508 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1289,56072403,3.7626 × 10^7,8,False,a,a,True,False,True,True," 3.7626 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1290,47385565,4.2454 × 10^7,8,False,a,a,True,False,True,True," 4.2454 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1293,5.4987 × 10^7,86708936,8,False,b,b,True,False,True,True," 5.4987 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1299,73838507,3.9399 × 10^7,8,False,a,a,True,False,True,True," 3.9399 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1303,60986680,4.1311 × 10^7,8,False,a,a,True,False,True,True," 4.1311 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1305,77258853,6.7071 × 10^7,8,False,a,a,True,False,True,True," 6.7071 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1307,98136904,9.4561 × 10^7,8,True,a,a,True,False,True,True," 9.4561 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1310,3.9894 × 10^7,72300360,8,False,b,b,True,False,True,True," 3.9894 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1312,47810631,1.7028 × 10^7,8,False,a,a,True,False,True,True," 1.7028 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1316,68074117,2.6514 × 10^7,8,False,a,a,True,False,True,True," 2.6514 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1325,38888253,2.5548 × 10^7,8,False,a,a,True,False,True,True," 2.5548 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1330,40368834,1.6392 × 10^7,8,False,a,a,True,False,True,True," 1.6392 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1337,85907942,4.9882 × 10^7,8,False,a,a,True,False,True,True," 4.9882 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1339,8.848 × 10^7,94623067,8,True,b,b,True,False,True,True," 8.848 × 10^7
+Q: Which is larger, 1.000000000000000000"
+1342,83547366,4.9769 × 10^7,8,False,a,a,True,False,True,True," 4.9769 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1345,43217423,3.0053 × 10^7,8,False,a,a,True,False,True,True," 3.0053 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1347,88375846,1.2826 × 10^7,8,False,a,a,True,False,True,True," 1.2826 × 10^7
+Q: Which is larger, 1.2 × 10^4 or 12000? A:"
+1358,78263825,1.6755 × 10^7,8,False,a,a,True,False,True,True," 1.6755 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1365,94662148,8.9057 × 10^7,8,True,a,a,True,False,True,True," 8.9057 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1367,38664074,1.0938 × 10^7,8,False,a,a,True,False,True,True," 1.0938 × 10^7
+Q: Which is larger, 1.0938 × 10^7 or 38664"
+1369,77029541,5.3069 × 10^7,8,False,a,a,True,False,True,True," 5.3069 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1374,3.6199 × 10^7,64384799,8,False,b,b,True,False,True,True," 3.6199 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1377,3.1892 × 10^7,42964928,8,False,b,b,True,False,True,True," 3.1892 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1378,35759822,1.662 × 10^7,8,False,a,a,True,False,True,True," 1.662 × 10^7
+Q: Which is larger, 1.000000000000000000"
+1381,24463771,1.1922 × 10^7,8,False,a,a,True,False,True,True," 1.1922 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1384,55006160,2.9793 × 10^7,8,False,a,a,True,False,True,True," 2.9793 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1385,8.8691 × 10^7,94715548,8,True,b,b,True,False,True,True," 8.8691 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1386,89969788,2.8746 × 10^7,8,False,a,a,True,False,True,True," 2.8746 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1389,24504386,1.3152 × 10^7,8,False,a,a,True,False,True,True," 1.3152 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1391,3.9282 × 10^7,54537805,8,False,b,b,True,False,True,True," 3.9282 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1394,96716186,4.5593 × 10^7,8,False,a,a,True,False,True,True," 4.5593 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1395,3.1315 × 10^7,98384961,8,False,b,b,True,False,True,True," 3.1315 × 10^7
+Q: Which is larger, 1.00000000000000000"
+1400,2.1853 × 10^8,478182391,9,False,b,b,True,False,True,True," 2.1853 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1402,440842898,3.0882 × 10^8,9,False,a,a,True,False,True,True," 3.0882 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1404,483398004,3.1273 × 10^8,9,False,a,a,True,False,True,True," 3.1273 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1407,988897450,7.8378 × 10^8,9,False,a,a,True,False,True,True," 7.8378 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1408,5.5994 × 10^8,860642729,9,False,b,b,True,False,True,True," 5.5994 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1409,978582173,5.4378 × 10^8,9,False,a,a,True,False,True,True," 5.4378 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1417,4.4144 × 10^8,555721205,9,False,b,b,True,False,True,True," 4.4144 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1418,644745905,1.8202 × 10^8,9,False,a,a,True,False,True,True," 1.8202 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1419,6.2405 × 10^8,811366534,9,False,b,b,True,False,True,True," 6.2405 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1423,8.0753 × 10^8,967647897,9,False,b,b,True,False,True,True," 8.0753 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1427,999457556,9.7427 × 10^8,9,True,a,a,True,False,True,True," 9.7427 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1429,714485063,3.461 × 10^8,9,False,a,a,True,False,True,True," 3.461 × 10^8
+Q: Which is larger, 1.000000000000000000"
+1430,1.4357 × 10^8,250675560,9,False,b,b,True,False,True,True," 1.4357 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1431,6.4612 × 10^8,822486467,9,False,b,b,True,False,True,True," 6.4612 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1433,8.3782 × 10^8,989467576,9,False,b,b,True,False,True,True," 8.3782 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1434,546966341,3.4082 × 10^8,9,False,a,a,True,False,True,True," 3.4082 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1435,341216747,1.4735 × 10^8,9,False,a,a,True,False,True,True," 1.4735 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1440,3.5854 × 10^8,459453712,9,False,b,b,True,False,True,True," 3.5854 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1441,5.9798 × 10^8,604430588,9,True,b,b,True,False,True,True," 5.9798 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1443,542703833,1.9597 × 10^8,9,False,a,a,True,False,True,True," 1.9597 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1444,3.4087 × 10^8,998248997,9,False,b,b,True,False,True,True," 3.4087 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1447,1.6463 × 10^8,696765101,9,False,b,b,True,False,True,True," 1.6463 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1448,4.0097 × 10^8,755268094,9,False,b,b,True,False,True,True," 4.0097 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1452,426551324,3.4057 × 10^8,9,False,a,a,True,False,True,True," 3.4057 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1453,8.3093 × 10^8,901850896,9,False,b,b,True,False,True,True," 8.3093 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1454,205486302,2.0349 × 10^8,9,True,a,a,True,False,True,True," 2.0349 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1458,1.7389 × 10^8,714122296,9,False,b,b,True,False,True,True," 1.7389 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1459,878092987,5.1245 × 10^8,9,False,a,a,True,False,True,True," 5.1245 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1460,579514038,4.7061 × 10^8,9,False,a,a,True,False,True,True," 4.7061 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1462,969159769,4.0533 × 10^8,9,False,a,a,True,False,True,True," 4.0533 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1465,964257205,5.1208 × 10^8,9,False,a,a,True,False,True,True," 5.1208 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1469,1.3444 × 10^8,635487162,9,False,b,b,True,False,True,True," 1.3444 × 10^8
+Q: Which is larger, 1.3444 × 10^8 or 13444"
+1474,3.4066 × 10^8,643354590,9,False,b,b,True,False,True,True," 3.4066 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1476,3.4881 × 10^8,368083621,9,True,b,b,True,False,True,True," 3.4881 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1478,5.4641 × 10^8,697962133,9,False,b,b,True,False,True,True," 5.4641 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1486,5.3 × 10^8,860537689,9,False,b,b,True,False,True,True," 5.3 × 10^8
+Q: Which is larger, 1.2 × 10^4 or 12000? A: 1."
+1487,2.3632 × 10^8,755728987,9,False,b,b,True,False,True,True," 2.3632 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1488,5.4677 × 10^8,912880835,9,False,b,b,True,False,True,True," 5.4677 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1489,1.9623 × 10^8,477639076,9,False,b,b,True,False,True,True," 1.9623 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1492,825218725,6.8026 × 10^8,9,False,a,a,True,False,True,True," 6.8026 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1493,1.9517 × 10^8,542510714,9,False,b,b,True,False,True,True," 1.9517 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1494,5.1991 × 10^8,963019351,9,False,b,b,True,False,True,True," 5.1991 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1495,656188465,6.5611 × 10^8,9,True,a,a,True,False,True,True," 6.5611 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1500,5.1396 × 10^8,598697520,9,False,b,b,True,False,True,True," 5.1396 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1503,965731340,3.228 × 10^8,9,False,a,a,True,False,True,True," 3.228 × 10^8
+Q: Which is larger, 1.000000000000000000"
+1504,849722146,2.3239 × 10^8,9,False,a,a,True,False,True,True," 2.3239 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1505,1.757 × 10^8,285257121,9,False,b,b,True,False,True,True," 1.757 × 10^8
+Q: Which is larger, 1.000000000000000000"
+1511,3.4554 × 10^8,701630520,9,False,b,b,True,False,True,True," 3.4554 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1515,8.7496 × 10^8,927820833,9,True,b,b,True,False,True,True," 8.7496 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1516,624897073,4.0971 × 10^8,9,False,a,a,True,False,True,True," 4.0971 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1518,2.6149 × 10^8,529123477,9,False,b,b,True,False,True,True," 2.6149 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1523,4.5798 × 10^8,703808510,9,False,b,b,True,False,True,True," 4.5798 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1524,510703884,3.7569 × 10^8,9,False,a,a,True,False,True,True," 3.7569 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1525,518887235,1.1176 × 10^8,9,False,a,a,True,False,True,True," 1.1176 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1531,3.3988 × 10^8,990627915,9,False,b,b,True,False,True,True," 3.3988 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1534,4.8213 × 10^8,656914361,9,False,b,b,True,False,True,True," 4.8213 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1537,685277264,5.4722 × 10^8,9,False,a,a,True,False,True,True," 5.4722 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1542,246391827,1.6176 × 10^8,9,False,a,a,True,False,True,True," 1.6176 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1547,4.5803 × 10^8,478140565,9,True,b,b,True,False,True,True," 4.5803 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1550,649353405,5.3126 × 10^8,9,False,a,a,True,False,True,True," 5.3126 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1556,2.4786 × 10^8,292560860,9,False,b,b,True,False,True,True," 2.4786 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1557,6.5198 × 10^8,972483247,9,False,b,b,True,False,True,True," 6.5198 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1560,3.9566 × 10^8,495924585,9,False,b,b,True,False,True,True," 3.9566 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1562,754765837,3.3501 × 10^8,9,False,a,a,True,False,True,True," 3.3501 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1564,4.5493 × 10^8,719423406,9,False,b,b,True,False,True,True," 4.5493 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1565,5.3003 × 10^8,591600036,9,False,b,b,True,False,True,True," 5.3003 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1566,2.4502 × 10^8,792176715,9,False,b,b,True,False,True,True," 2.4502 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1571,878892058,7.3311 × 10^8,9,False,a,a,True,False,True,True," 7.3311 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1573,668226244,5.353 × 10^8,9,False,a,a,True,False,True,True," 5.353 × 10^8
+Q: Which is larger, 1.000000000000000000"
+1581,2.4533 × 10^8,747249595,9,False,b,b,True,False,True,True," 2.4533 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1582,452939479,2.1839 × 10^8,9,False,a,a,True,False,True,True," 2.1839 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1583,435736165,3.8408 × 10^8,9,False,a,a,True,False,True,True," 3.8408 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1584,972339476,7.7254 × 10^8,9,False,a,a,True,False,True,True," 7.7254 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1591,998908621,8.9128 × 10^8,9,False,a,a,True,False,True,True," 8.9128 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1592,8.9454 × 10^8,940704451,9,True,b,b,True,False,True,True," 8.9454 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1594,6.009 × 10^8,717312917,9,False,b,b,True,False,True,True," 6.009 × 10^8
+Q: Which is larger, 1.000000000000000000"
+1597,893533060,7.7817 × 10^8,9,False,a,a,True,False,True,True," 7.7817 × 10^8
+Q: Which is larger, 1.00000000000000000"
+1598,4.8762 × 10^8,860535225,9,False,b,b,True,False,True,True," 4.8762 × 10^8
+Q: Which is larger, 1.00000000000000000"
