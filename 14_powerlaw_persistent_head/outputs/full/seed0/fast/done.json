@@ -1,0 +1,12 @@
+{
+  "protocol_version": "topic14-v3-2026-08-22",
+  "run_signature": "26d8a8ad539715b24ff997a87d6f4ea24d145dc492df00c8930e1a681ebbebc0",
+  "branch_digest": "48ce15ced2d3a67b92fe1b0840342f679d1257aeb14b86f558aa149c39334ac6",
+  "final_model_digest": "e2096598165c3a515512631585a14d62e66ccfb27c51ed07cf9866c40134fd36",
+  "last": {
+    "step": 160000,
+    "exact_accuracy": 0.999755859375,
+    "token_accuracy": 0.999951171875,
+    "eval_loss": 0.00012572998966788873
+  }
+}

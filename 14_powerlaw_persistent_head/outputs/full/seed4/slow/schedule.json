@@ -1,0 +1,7 @@
+{
+  "temporal_digest": "c9e5ea6011e6a2d21508458bafe5b69d81912f27dcab85167466c4276369d418",
+  "multiset_digest": "c9e5ea6011e6a2d21508458bafe5b69d81912f27dcab85167466c4276369d418",
+  "condition": "slow",
+  "persistence_h": null,
+  "n_steps": 160000
+}
