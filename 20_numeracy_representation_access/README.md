@@ -1,150 +1,54 @@
 # 20 — Representation or Access? Why Can LLMs Encode Numerical Magnitude but Fail to Use It?
 
-**Status: CANDIDATE / FROZEN G0 READY**
+**Status: CANDIDATE / G0 PASS / G1 FROZEN**
 
-## The natural question
+## Natural question
 
-A system can fail at a task for two fundamentally different reasons:
-
-1. the relevant information was never represented correctly; or
-2. the information is present internally, but the decision process fails to use it.
-
-For numerical reasoning, this is an old and natural distinction: **representation deficit vs. access deficit**.
-
-Modern LLMs make the distinction unusually testable because we can inspect the hidden state immediately before generation and compare what is linearly available there with what the model actually says.
+A system can fail because the relevant information was never represented correctly, or because the information is present internally but the decision process fails to use it. For numerical reasoning this is the old and natural distinction between **representation deficit** and **access deficit**.
 
 The concrete question is:
 
-> **When an LLM fails to compare two numbers written in different notations, is the numerical ordering absent from its representation, or is the ordering already present but inaccessible to generation?**
+> **When an LLM fails to compare two numbers written in different notations, is the numerical ordering absent from its representation, or is the ordering already present but not used by generation?**
 
-This is not a generic "probe the model" project. The seed paper already establishes a large representation/behavior gap on exactly the open models we can run. The project starts one step later: test whether that gap survives in the **same model, same prompt, same decision regime**, then ask whether the readable ranking state is causally connected to output.
+The project is deliberately not a generic probing paper. The seed already establishes a large representation/behavior gap; our contribution begins at the stronger same-prompt, same-instance dissociation and asks whether the readable ranking state is causally connected to output.
 
 ---
 
-## Seed paper
+## Seed
 
 Fengting Yuchi, Li Du, Jason Eisner. **LLMs Know More About Numbers than They Can Say.** EACL 2026 Oral / Short.
 
 - Paper: https://aclanthology.org/2026.eacl-short.47/
 - arXiv: https://arxiv.org/abs/2602.07812
-- Official repository: https://github.com/VCY019/Numeracy-Probing
+- Official code: https://github.com/VCY019/Numeracy-Probing
+- Upstream revision used here: `9e1be04b69965662886c79d543936389c5407d27`
 
-The paper reports, on the primary `int-sci` comparison setting:
-
-```text
-Qwen3-8B
-one-shot verbalization accuracy ≈ 70.00%
-zero-shot classifier-probe accuracy ≈ 98.88%
-```
-
-and similarly large gaps on several other 7B–8B open models.
-
-The released project contains:
+The seed reports on the primary `int-sci` setting for Qwen3-8B roughly:
 
 ```text
-construct_data.py
-get_embeds.py
-train_probe.py
-verbalization.py
-finetune.py
+one-shot verbalization = 70.00%
+zero-shot classifier probe = 98.88%
 ```
 
-plus exact scripts for the tested open models.
-
-This is unusually strong experimental inheritance: the phenomenon, target model, data generator, labels, probe recipe and behavioral evaluation are already public.
+But that cross-condition gap is not itself an access result: probing is zero-shot, verbalization is one-shot, and the appendix shows prompt-position effects. Therefore Topic 20 first required the stronger object to exist under the **same balanced five-shot prompt**.
 
 ---
 
-## Why the published gap is not yet enough
+# G0 — same-prompt mechanism prerequisite
 
-A closer audit found an important confound in the headline comparison:
-
-- the paper's probing result uses a **zero-shot** prompt;
-- the headline verbalization result uses a **one-shot** prompt;
-- the appendix shows that some 7B models imitate the answer position in the one-shot demonstration;
-- few-shot prompting reduces several of those positional artifacts.
-
-Therefore we do **not** interpret `98.88% probe vs 70% generation` as direct evidence for an access bottleneck.
-
-The stronger project-level prerequisite is:
+Frozen model and data:
 
 ```text
-same Qwen3-8B
-same balanced five-shot prompt
-same input instance
-same pre-generation hidden state
-
-probe says correct ranking
-BUT
-that prompt's greedy generation is wrong
+model: Qwen/Qwen3-8B
+HF snapshot: b968826d9c46dd6066d109eabc6255188de91218
+dataset: official seed-0 int_sci_compare
+train / val / test: 8000 / 1600 / 1600
+prompt: exact official balanced 5-shot int-sci prompt
+hidden state: final prompt token
+hard regime: |log2(a/b)| < 0.1
 ```
 
-If this exact `probe-correct / generation-wrong` cell is not dense, the mechanism project dies before activation intervention.
-
----
-
-## Frozen primary setting
-
-### Model
-
-```text
-Qwen/Qwen3-8B
-```
-
-No model search in G0.
-
-### Data
-
-Use the official seed-0 `int_sci_compare` dataset only:
-
-```text
-8,000 train
-1,600 validation
-1,600 test
-```
-
-A static audit of the released generator found, for the published seed:
-
-- no displayed ties;
-- no ordering flips caused by five-significant-digit scientific formatting;
-- approximately balanced correct-answer position;
-- 129 / 1,600 test items in the seed paper's hard regime `|log2(a/b)| < 0.1`.
-
-`dec_sci_compare` is **not** part of the survival gate. It is reserved for confirmation only after the seed-exact primary G0 passes.
-
-### Prompt
-
-Use the exact five `int-sci` demonstrations already implemented in the official `src/verbalization.py`:
-
-```text
-9.9 × 10^2   vs 100
-161230        vs 7.182 × 10^5
-713           vs 4.78 × 10^2
-1.354 × 10^6 vs 4906723
-20834         vs 6.5 × 10^3
-```
-
-with answer positions alternating `A, B, A, B, A`.
-
-No prompt-template search.
-
-### Hidden-state position
-
-Use only:
-
-```text
-last input token immediately before answer generation
-```
-
-No token search.
-
-Train one logistic ranking probe per layer on train, choose the best layer on validation, break exact ties toward the earliest layer, then lock the layer before test.
-
----
-
-## Primary G0 object
-
-The project is not about an aggregate accuracy gap. The project-level object is the instance-level cell:
+The primary object was the instance-level cell:
 
 ```text
 probe correct
@@ -152,146 +56,202 @@ AND
 generation wrong
 ```
 
-Report the 2×2 table:
+not merely an aggregate accuracy gap.
+
+## Frozen G0 result
+
+**Verdict: `GO_CAUSAL_G1`**
+
+| subset | N | probe accuracy | generation accuracy | gap | invalid |
+|---|---:|---:|---:|---:|---:|
+| full test | 1600 | 0.996875 | 0.817500 | 0.179375 | 0% |
+| hard test | 129 | 0.961240 | 0.682171 | 0.279070 | 0% |
+
+Hard 2×2:
 
 | | generation correct | generation wrong |
 |---|---:|---:|
-| probe correct | n11 | **n10 critical** |
-| probe wrong | n01 | n00 |
+| probe correct | 86 | **38** |
+| probe wrong | 2 | 3 |
 
-The main subset is fixed in advance:
-
-```text
-|log2(a/b)| < 0.1
-```
-
-because the seed paper already identifies this as the difficult numerical-comparison regime.
-
----
-
-## Frozen survival gate
-
-Proceed to causal mechanism work only if the locked Qwen3-8B `int-sci` test satisfies all of the following:
-
-1. full-test probe accuracy `>= 0.90`;
-2. hard-subset probe accuracy `>= 0.80`;
-3. hard-subset `A_probe - A_generation >= 0.15`;
-4. hard subset has at least `30` `probe-correct / generation-wrong` cases;
-5. invalid/unparseable generations are `< 5%` of the hard subset.
-
-### GO
-
-`GO_CAUSAL_G1`
-
-Only then study inference-time causal access.
-
-### KILL / DOWNGRADE
-
-`KILL_OR_DOWNGRADE_ACCESS_PROJECT`
-
-Kill the access-mechanism project if balanced five-shot prompting closes the gap, if same-prompt probe accuracy collapses, or if the critical cell is too sparse.
-
-Do **not** rescue by changing prompt, model, token position, hard threshold, nonlinear probe, or test-selected layer.
-
-A failed G0 would not refute the seed paper; it would show that the stronger same-computation access interpretation lacks a sufficiently clean experimental object.
-
----
-
-## Why this candidate is unusually feasible
-
-This topic was promoted from `advisor_topic_search` because it passes the feasibility-first audit better than the other current NLP candidates:
+So:
 
 ```text
-published phenomenon: yes
-same accessible open model: yes
-released data generator: yes
-exact automatic labels: yes
-released probe recipe: yes
-released verbalization recipe: yes
-paid API for G0: 0
-new human annotation: 0
-foundation-model training: 0
-local GPU usefulness: high
+N_critical = 38 / 129
+R_critical = 0.294574
+error coverage = 38 / 41 = 0.926829
 ```
 
-The research risk is concentrated in one new scientific question instead of stacked uncertainty about whether the object, model regime, measurement and labels all exist.
+The G0-selected best decoding layer was layer 36 (zero-based block 35), with validation accuracy `0.999375`.
+
+All preregistered G0 conditions passed. See [`G0_RESULTS.md`](./G0_RESULTS.md) and [`artifacts/g0/`](./artifacts/g0/).
+
+### Important interpretation boundary
+
+G0 proves a real **same-prompt representation/behavior dissociation**: on almost every generation error in the hard set, the correct ordering is still linearly readable immediately before generation.
+
+G0 does **not** prove that the probe direction is the model's native causal decision variable. That is G1.
 
 ---
 
-## If G0 is positive: G1
+# Post-G0 audit
 
-A positive G0 proves only that correct ranking information is readily decodable while output is wrong. It does **not** prove that the probe direction is the model's native causal channel.
+Manual inspection revealed two facts that must not be silently folded into the original claim:
 
-G1 should therefore test causal access with a bounded intervention design.
+1. at least one exact displayed hard critical pair is duplicated in the released seed-0 test set;
+2. the hard critical errors appear to overwhelmingly choose the scientific-notation operand.
 
-Preferred route:
+Because both observations were made after inspecting seed-0 test, they are exploratory. `post_g0_audit.py` records duplicates and notation-choice structure, but all new scientific claims must be confirmed on a fresh seed.
 
-1. keep the G0-selected layer/token rule fixed or select one operating point on validation only;
-2. construct matched numerical counterfactuals where the semantic magnitudes are unchanged but notation/interface changes;
-3. use activation patching / residual-space intervention to move the ranking state toward the correct counterpart;
-4. compare against shuffled-label and norm-matched random-direction nulls;
-5. evaluate once on locked `probe-correct / generation-wrong` test cases.
-
-The key question is:
-
-> **Can changing the readable ranking state causally change the model's generated choice?**
-
-A clean null is also informative: if ranking is strongly decodable but calibrated intervention does not affect output, the readable state may be epiphenomenal or off the actual generation path.
+This is why G1 does **not** reuse the 38 seed-0 critical cases as confirmatory evidence.
 
 ---
 
-## Method opening
+# G1 — causal access
 
-If a specific representation-to-readout bottleneck is identified, the natural follow-up is not another benchmark. It is a method that improves **access to already represented numerical relations**, for example:
+The frozen protocol is [`G1_CAUSAL_ACCESS.md`](./G1_CAUSAL_ACCESS.md).
 
-- representation-aware readout training;
-- routing / access regularization;
-- lightweight contrastive finetuning on notation-equivalent pairs;
-- intervention-inspired auxiliary objectives that preserve internal ranking information through the generation path.
+Fresh confirmation:
 
-The seed paper already shows that strengthening numerical representations during training can improve behavior. Our stronger contribution would be to localize whether the remaining failure is genuinely an access/readout problem and identify the causal stage where the information is lost or ignored.
+```text
+fresh generator seed = 20260824
+same Qwen3-8B snapshot
+same int-sci task
+same exact five-shot prompt
+```
+
+Exact displayed duplicates are counted once for inferential statistics; exact numerical ties are excluded without replacement. Seed-0 train/validation remain the only data used to fit the ranking probe.
+
+## G1-P0: fresh-object replication
+
+Before intervention, the fresh unique hard set must satisfy:
+
+- `N_hard >= 100`;
+- frozen seed-0 probe hard accuracy `>= 0.90`;
+- at least `25` unique `probe-correct / generation-wrong` examples;
+- critical rate `>= 0.20`;
+- invalid generation `< 5%`.
+
+Otherwise: `STOP_G1_NONREPLICATION`. No seed/model/prompt rescue.
+
+## G1 causal layer
+
+The G0 maximum was at the final layer, which leaves little downstream computation after intervention. Therefore G1 uses a rule chosen solely from the already-frozen seed-0 validation curve:
+
+> earliest layer with validation ranking-probe accuracy `>= 0.99`.
+
+This fixes:
+
+```text
+L_sat = layer 20
+zero-based block = 19
+seed-0 validation probe accuracy = 0.990625
+```
+
+No G1 layer sweep is allowed.
+
+## G1 rank reflection
+
+At `L_sat`, for frozen logistic probe
+
+```text
+m(h) = w^T h + b
+```
+
+apply the minimum-L2 reflection across its hyperplane:
+
+```text
+h_flip = h - 2 m(h) / ||w||^2 * w
+```
+
+There is no steering coefficient to tune.
+
+Primary population: fresh unique hard examples that are originally both probe-correct and generation-correct.
+
+Primary outcome: after reflection, does an originally correct output flip to the **opposite original operand**?
+
+Null: eight fixed Gaussian directions (`20260831...20260838`), each orthogonal to the ranking direction and scaled per example to exactly the same L2 perturbation norm.
+
+Define:
+
+```text
+F_rank = opposite-operand flip rate under rank reflection
+F_null = mean flip rate under 8 norm-matched random nulls
+DeltaF = F_rank - F_null
+```
+
+### Frozen G1 verdicts
+
+`RANK_DIRECTION_CAUSAL` only if:
+
+- probe sign flip succeeds on `>= 99%`;
+- `DeltaF >= 0.20`;
+- paired bootstrap 95% CI lower bound `> 0`;
+- at least `80%` of changed rank-reflection outputs remain one of the two original operands rather than garbage.
+
+Strong null:
+
+```text
+READABLE_BUT_NOT_CAUSALLY_USED_AT_LSAT
+```
+
+if `DeltaF <= 0.05` and CI upper bound `<= 0.10`.
+
+Otherwise:
+
+```text
+INCONCLUSIVE_DO_NOT_TUNE
+```
+
+Executable implementation: [`g1_rank_reflection.py`](./g1_rank_reflection.py). Frozen runner: [`run_g1.sh`](./run_g1.sh).
 
 ---
 
-## Collision / novelty boundary
+# Conditional notation-competition branch
 
-The seed already proves:
+The seed-0 error inspection suggests a potentially sharper mechanism:
+
+> the model may compute the correct magnitude ordering but generation may follow a competing notation-format route.
+
+This is **not yet a result**. It was discovered on the seed-0 test set.
+
+Only if the fresh seed confirms that at least `80%` of hard exact-operand errors choose the scientific-notation operand may G1-P4 test a notation-side representation at the same frozen layer while preserving the ranking projection. A failure of the main rank-causality test cannot be rescued by searching notation subspaces.
+
+---
+
+# Novelty boundary
+
+The seed already establishes:
 
 - numerical magnitude is linearly recoverable;
-- pairwise ranking can be highly decodable;
-- explicit mixed-notation verbal comparison is much worse;
-- a probe-aware training objective can improve verbal behavior.
+- pairwise ranking is highly decodable;
+- mixed-notation verbal comparison is worse;
+- probe-aware finetuning can improve behavior.
 
-Therefore this project must **not** claim merely that representation and behavior differ or that representation quality matters.
+A nearby 2026 mechanistic-interpretability paper studies ordinal/numeric representation geometry with activation patching. Therefore **activation patching numeric representations is not itself the novelty**.
 
-The protected novelty claim is narrower:
+The protected question is narrower:
 
-> **Does a same-prompt, same-instance ranking representation remain correct when generation fails, and is that representation causally accessible to the generation decision?**
-
-If a recent paper directly performs inference-time causal intervention on this exact numeracy dissociation, reassess before G1.
+> **When the same computation contains the correct ranking but generation chooses wrongly, is that ranking coordinate causally used by the generated decision, and if not, what competing readout dominates it?**
 
 ---
 
-## Resource fit
+# Resource fit and stop rule
 
-This topic matches the project's current resource profile:
+```text
+paid API: 0
+new annotation: 0
+foundation-model training: 0
+open-weight GPU mechanism analysis: yes
+```
 
-- little cash available for closed APIs;
-- no budget for large new human annotation;
-- strong local GPU availability.
+If fresh G1-P0 fails, stop. If the frozen rank intervention gives a strong null, accept it. Do not search layer × token × strength × prompt × model until something becomes positive.
 
-So the expensive part, if G0 survives, is exactly the part we are well equipped to do: repeated hidden-state extraction, activation intervention and open-model mechanism analysis.
+Canonical files:
 
----
-
-## Canonical preregistration and implementation
-
-The search-stage audit is retained at:
-
-- [`../advisor_topic_search/ROUND_04_2026-08-23.md`](../advisor_topic_search/ROUND_04_2026-08-23.md)
-- [`../advisor_topic_search/ROUND_05_2026-08-23.md`](../advisor_topic_search/ROUND_05_2026-08-23.md)
-- [`../advisor_topic_search/g0/NUMERACY_ACCESS_G0.md`](../advisor_topic_search/g0/NUMERACY_ACCESS_G0.md)
-- [`../advisor_topic_search/g0/numeracy_data_audit.py`](../advisor_topic_search/g0/numeracy_data_audit.py)
-- [`../advisor_topic_search/g0/numeracy_same_prompt_g0.py`](../advisor_topic_search/g0/numeracy_same_prompt_g0.py)
-
-`run_g0.sh` in this directory is the registered-candidate entrypoint and delegates to that frozen implementation so there is only one scientific source of truth.
+- [`G0_RESULTS.md`](./G0_RESULTS.md)
+- [`G1_CAUSAL_ACCESS.md`](./G1_CAUSAL_ACCESS.md)
+- [`post_g0_audit.py`](./post_g0_audit.py)
+- [`g1_rank_reflection.py`](./g1_rank_reflection.py)
+- [`run_g0.sh`](./run_g0.sh)
+- [`run_g1.sh`](./run_g1.sh)
