@@ -17,7 +17,7 @@ This script is deliberately narrow:
 - test evaluated once after layer selection
 - hard regime fixed by seed paper: |log2(a/b)| < 0.1
 
-It does NOT perform activation steering or patching.  If this prerequisite does
+It does NOT perform activation steering or patching. If this prerequisite does
 not pass, do not start mechanism work.
 
 Expected usage
@@ -143,7 +143,6 @@ def generation_correct(sample: dict, completion: str) -> tuple[bool, bool]:
         return False, False
     a, b = parse_value(sample["a"]), parse_value(sample["b"])
     target = max(a, b)
-    # Mirror upstream spirit while allowing tiny floating-point noise.
     ok = abs(pred - target) <= max(1e-3, 1e-8 * abs(target))
     return bool(ok), True
 
@@ -156,7 +155,13 @@ def first_device(model):
 
 
 def extract_hidden(model, tokenizer, prompts, batch_size: int):
-    """Return [N, L, D] float16 CPU array for last non-padding input token."""
+    """Return [N, L, D] float16 CPU array for the final prompt token.
+
+    Tokenizer padding is fixed to LEFT in main(). Therefore the last non-padding
+    token is always position -1. Using `attention_mask.sum()-1` would be wrong
+    for left padding. Direct `layer[:, -1, :]` also avoids cross-device fancy
+    indexing problems when `device_map=auto` places layers on different GPUs.
+    """
     chunks = []
     device = first_device(model)
     for start in tqdm(range(0, len(prompts), batch_size), desc="hidden states"):
@@ -172,15 +177,12 @@ def extract_hidden(model, tokenizer, prompts, batch_size: int):
                 use_cache=False,
                 return_dict=True,
             )
-        # hidden_states[0] is embedding output; use transformer layer outputs only.
-        hs = out.hidden_states[1:]
-        last_idx = attention_mask.sum(dim=1) - 1
-        per_layer = []
-        arange = torch.arange(input_ids.shape[0], device=device)
-        for layer in hs:
-            per_layer.append(layer[arange, last_idx, :].detach().to("cpu", dtype=torch.float16))
-        # [B,L,D]
-        chunks.append(torch.stack(per_layer, dim=1).numpy())
+        hs = out.hidden_states[1:]  # skip embedding output
+        per_layer = [
+            layer[:, -1, :].detach().to("cpu", dtype=torch.float16)
+            for layer in hs
+        ]
+        chunks.append(torch.stack(per_layer, dim=1).numpy())  # [B,L,D]
         del out, hs, input_ids, attention_mask
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -208,11 +210,13 @@ def generate(model, tokenizer, prompts, samples, batch_size: int, max_new_tokens
         completions = tokenizer.batch_decode(seq[:, input_ids.shape[1] :], skip_special_tokens=True)
         for sample, completion in zip(batch_samples, completions):
             ok, parseable = generation_correct(sample, completion)
-            records.append({
-                "generation_correct": ok,
-                "parseable": parseable,
-                "completion": completion,
-            })
+            records.append(
+                {
+                    "generation_correct": ok,
+                    "parseable": parseable,
+                    "completion": completion,
+                }
+            )
         del seq, input_ids, attention_mask
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -229,17 +233,13 @@ def fit_probes(train_x, train_y, val_x, val_y):
         models.append(clf)
         val_accs.append(float(accuracy_score(val_y, pred)))
     best = max(val_accs)
-    # Earliest-layer tie break (within numerical precision).
     selected = next(i for i, a in enumerate(val_accs) if abs(a - best) < 1e-12)
     return models, val_accs, selected
 
 
 def evaluate_dataset(name, data_root, model, tokenizer, args):
     limits = {"train": args.train_limit, "val": args.val_limit, "test": args.test_limit}
-    splits = {}
-    prompts = {}
-    labels = {}
-    hidden = {}
+    splits, prompts, labels, hidden = {}, {}, {}, {}
 
     for split in ("train", "val", "test"):
         rows = load_jsonl(data_root / name / f"{split}.jsonl", limits[split])
@@ -255,29 +255,29 @@ def evaluate_dataset(name, data_root, model, tokenizer, args):
     test_probe = clf.predict(hidden["test"][:, selected, :].astype(np.float32))
     test_probe_correct = test_probe == labels["test"]
 
-    gen = generate(
-        model, tokenizer, prompts["test"], splits["test"], args.batch_size, args.max_new_tokens
-    )
+    gen = generate(model, tokenizer, prompts["test"], splits["test"], args.batch_size, args.max_new_tokens)
     gen_correct = np.asarray([r["generation_correct"] for r in gen], dtype=bool)
     parseable = np.asarray([r["parseable"] for r in gen], dtype=bool)
     hard_mask = np.asarray([hard(x) for x in splits["test"]], dtype=bool)
 
     records = []
     for i, sample in enumerate(splits["test"]):
-        records.append({
-            "index": i,
-            "a": sample["a"],
-            "b": sample["b"],
-            "digit": sample.get("digit"),
-            "hard": bool(hard_mask[i]),
-            "gold_position": answer_position(sample),
-            "probe_prediction_position": "a" if int(test_probe[i]) == 1 else "b",
-            "probe_correct": bool(test_probe_correct[i]),
-            "generation_correct": bool(gen_correct[i]),
-            "parseable": bool(parseable[i]),
-            "critical": bool(test_probe_correct[i] and not gen_correct[i]),
-            "completion": gen[i]["completion"],
-        })
+        records.append(
+            {
+                "index": i,
+                "a": sample["a"],
+                "b": sample["b"],
+                "digit": sample.get("digit"),
+                "hard": bool(hard_mask[i]),
+                "gold_position": answer_position(sample),
+                "probe_prediction_position": "a" if int(test_probe[i]) == 1 else "b",
+                "probe_correct": bool(test_probe_correct[i]),
+                "generation_correct": bool(gen_correct[i]),
+                "parseable": bool(parseable[i]),
+                "critical": bool(test_probe_correct[i] and not gen_correct[i]),
+                "completion": gen[i]["completion"],
+            }
+        )
 
     def metrics(mask):
         n = int(mask.sum())
@@ -296,6 +296,7 @@ def evaluate_dataset(name, data_root, model, tokenizer, args):
             "n_critical": int(critical.sum()),
             "critical_rate": float(critical.mean()),
             "error_coverage_by_probe_correct": float(critical.sum() / errors.sum()) if errors.sum() else None,
+            "n_invalid": int((~pa).sum()),
             "invalid_rate": float((~pa).mean()),
             "n11_probe_ok_gen_ok": int((p & g).sum()),
             "n10_probe_ok_gen_wrong": int((p & ~g).sum()),
@@ -314,17 +315,13 @@ def evaluate_dataset(name, data_root, model, tokenizer, args):
     }
 
 
-def survival_gate(results):
+def survival_gate(results, smoke_only: bool):
     hard = [r["hard_test"] for r in results]
     total_n = sum(x["n"] for x in hard)
-    pooled_probe_correct = sum(
-        x["n11_probe_ok_gen_ok"] + x["n10_probe_ok_gen_wrong"] for x in hard
-    )
-    pooled_gen_correct = sum(
-        x["n11_probe_ok_gen_ok"] + x["n01_probe_wrong_gen_ok"] for x in hard
-    )
+    pooled_probe_correct = sum(x["n11_probe_ok_gen_ok"] + x["n10_probe_ok_gen_wrong"] for x in hard)
+    pooled_gen_correct = sum(x["n11_probe_ok_gen_ok"] + x["n01_probe_wrong_gen_ok"] for x in hard)
     pooled_critical = sum(x["n10_probe_ok_gen_wrong"] for x in hard)
-    pooled_invalid = sum(round(x["invalid_rate"] * x["n"]) for x in hard)
+    pooled_invalid = sum(x["n_invalid"] for x in hard)
     probe_acc = pooled_probe_correct / total_n
     gen_acc = pooled_gen_correct / total_n
     gap = probe_acc - gen_acc
@@ -337,8 +334,12 @@ def survival_gate(results):
         "positive_gap_both_datasets": all(x["gap"] > 0 for x in hard),
         "pooled_invalid_rate_lt_0p05": pooled_invalid / total_n < 0.05,
     }
+    if smoke_only:
+        verdict = "SMOKE_ONLY_NO_PROJECT_DECISION"
+    else:
+        verdict = "GO_CAUSAL_G1" if all(conditions.values()) else "KILL_OR_DOWNGRADE_ACCESS_PROJECT"
     return {
-        "verdict": "GO_CAUSAL_G1" if all(conditions.values()) else "KILL_OR_DOWNGRADE_ACCESS_PROJECT",
+        "verdict": verdict,
         "conditions": conditions,
         "pooled_hard": {
             "n": total_n,
@@ -346,6 +347,7 @@ def survival_gate(results):
             "generation_accuracy": gen_acc,
             "gap": gap,
             "n_critical": pooled_critical,
+            "n_invalid": pooled_invalid,
             "invalid_rate": pooled_invalid / total_n,
         },
     }
@@ -355,6 +357,7 @@ def main():
     args = parse_args()
     set_seed(args.seed)
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    smoke_only = any(x is not None for x in (args.train_limit, args.val_limit, args.test_limit))
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
@@ -362,23 +365,18 @@ def main():
     tokenizer.padding_side = "left"
 
     dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        device_map="auto",
-        torch_dtype=dtype,
-    )
+    model = AutoModelForCausalLM.from_pretrained(args.model, device_map="auto", torch_dtype=dtype)
     model.eval()
 
     results = []
     for name in DATASETS:
         result = evaluate_dataset(name, args.data_root, model, tokenizer, args)
         results.append(result)
-        # Keep item-level records separate from compact summary.
         with (args.out_dir / f"{name}_records.jsonl").open("w", encoding="utf-8") as f:
             for row in result.pop("records"):
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    gate = survival_gate(results)
+    gate = survival_gate(results, smoke_only=smoke_only)
     payload = {
         "model": args.model,
         "prompt": "official balanced 5-shot",
