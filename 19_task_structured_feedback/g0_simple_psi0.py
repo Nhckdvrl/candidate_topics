@@ -98,12 +98,13 @@ def restore_mujoco(model: Any, data: Any, snap: dict[str, Any]) -> None:
 
 
 def apply_right_arm_delta(model: Any, data: Any, delta: np.ndarray) -> None:
-    """Apply a physical qpos perturbation and forward MuJoCo without stepping time."""
+    """Apply only a physical qpos perturbation, preserving all other state fields."""
     mujoco = _require_mujoco()
     d = np.asarray(delta, dtype=np.float64).reshape(7)
-    qpos, dof = right_arm_addresses(model)
+    qpos, _ = right_arm_addresses(model)
     data.qpos[qpos] += d
-    data.qvel[dof] = 0.0
+    # Keep qvel/act/controller history exactly matched to the saved state. G0 asks
+    # for an instantaneous q intervention and does not integrate either branch.
     mujoco.mj_forward(model, data)
 
 
