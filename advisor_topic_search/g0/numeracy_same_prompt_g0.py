@@ -3,34 +3,28 @@
 
 Scientific prerequisite
 -----------------------
-On the exact same five-shot prompt and model, does the last-input-token residual
-stream contain linearly decodable correct ranking information while the model's
-greedy generation is wrong?
+On the exact same five-shot prompt and Qwen3-8B, does the last-input-token
+residual stream contain linearly decodable correct ranking information while
+the model's greedy generation is wrong?
 
-This script is deliberately narrow:
+This script is deliberately seed-exact and narrow:
 - primary model: Qwen/Qwen3-8B
-- official seed-0 int_sci_compare + dec_sci_compare JSONL files
-- exact 5-shot demonstrations from VCY019/Numeracy-Probing/src/verbalization.py
+- primary dataset: official seed-0 int_sci_compare only
+- exact 5-shot int-sci demonstrations from the EACL-2026 paper / official code
 - hidden-state position: last input token only
 - one logistic classifier per layer
 - layer chosen by validation accuracy, earliest-layer tie break
 - test evaluated once after layer selection
 - hard regime fixed by seed paper: |log2(a/b)| < 0.1
 
-It does NOT perform activation steering or patching. If this prerequisite does
-not pass, do not start mechanism work.
+Why int-sci only?
+-----------------
+The paper states that int-sci is used for the headline Table 1 and the explicit
+k=1..5 few-shot experiment. dec-sci is reserved for post-G0 confirmation rather
+than being added as a second prerequisite gamble.
 
-Expected usage
---------------
-First generate the official data with the upstream repository, then run:
-
-python advisor_topic_search/g0/numeracy_same_prompt_g0.py \
-  --data-root /path/to/Numeracy-Probing/data \
-  --model Qwen/Qwen3-8B \
-  --out-dir numeracy_same_prompt_qwen3_8b
-
-Dependencies: torch, transformers, numpy, scikit-learn, tqdm.
-No paid API or human annotation is used.
+This script does NOT perform activation steering or patching. If this
+prerequisite does not pass, do not start mechanism work.
 """
 
 from __future__ import annotations
@@ -49,38 +43,28 @@ from sklearn.metrics import accuracy_score
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+PRIMARY_DATASET = "int_sci_compare"
 NUMBER_RE = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?(?:\s*[×x*]\s*10\^?-?\d+)?")
-DATASETS = ("int_sci_compare", "dec_sci_compare")
-
-FEW_SHOT = {
-    "int_sci_compare": [
-        ("9.9 × 10^2", "100", 0),
-        ("161230", "7.182 × 10^5", 1),
-        ("713", "4.78 × 10^2", 0),
-        ("1.354 × 10^6", "4906723", 1),
-        ("20834", "6.5 × 10^3", 0),
-    ],
-    "dec_sci_compare": [
-        ("9.9 × 10^2", "899.9", 0),
-        ("161230.51", "7.182 × 10^5", 1),
-        ("712.34", "4.78 × 10^2", 0),
-        ("1.354 × 10^6", "4906723.2", 1),
-        ("20834.17033", "6.5 × 10^3", 0),
-    ],
-}
+FEW_SHOT = [
+    ("9.9 × 10^2", "100", 0),
+    ("161230", "7.182 × 10^5", 1),
+    ("713", "4.78 × 10^2", 0),
+    ("1.354 × 10^6", "4906723", 1),
+    ("20834", "6.5 × 10^3", 0),
+]
 
 
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--data-root", type=Path, required=True)
     p.add_argument("--model", default="Qwen/Qwen3-8B")
-    p.add_argument("--out-dir", type=Path, default=Path("numeracy_same_prompt_g0"))
+    p.add_argument("--out-dir", type=Path, default=Path("numeracy_same_prompt_qwen3_8b"))
     p.add_argument("--batch-size", type=int, default=8)
     p.add_argument("--max-new-tokens", type=int, default=40)
     p.add_argument("--seed", type=int, default=20260823)
-    p.add_argument("--train-limit", type=int, default=None, help="Smoke-test only; leave unset for frozen G0.")
-    p.add_argument("--val-limit", type=int, default=None, help="Smoke-test only; leave unset for frozen G0.")
-    p.add_argument("--test-limit", type=int, default=None, help="Smoke-test only; leave unset for frozen G0.")
+    p.add_argument("--train-limit", type=int, default=None, help="Smoke only; unset for frozen G0.")
+    p.add_argument("--val-limit", type=int, default=None, help="Smoke only; unset for frozen G0.")
+    p.add_argument("--test-limit", type=int, default=None, help="Smoke only; unset for frozen G0.")
     return p.parse_args()
 
 
@@ -106,9 +90,9 @@ def load_jsonl(path: Path, limit: int | None = None):
     return rows
 
 
-def make_prompt(sample: dict, dataset_name: str) -> str:
+def make_prompt(sample: dict) -> str:
     demos = []
-    for a, b, ans_id in FEW_SHOT[dataset_name]:
+    for a, b, ans_id in FEW_SHOT:
         ans = (a, b)[ans_id]
         demos.append(f"Q: Which is larger, {a} or {b}? A: {ans}")
     return "\n".join(demos) + f"\nQ: Which is larger, {sample['a']} or {sample['b']}? A:"
@@ -118,13 +102,9 @@ def label(sample: dict) -> int:
     return int(parse_value(sample["a"]) > parse_value(sample["b"]))
 
 
-def hard(sample: dict) -> bool:
+def is_hard(sample: dict) -> bool:
     a, b = parse_value(sample["a"]), parse_value(sample["b"])
     return abs(math.log2(a / b)) < 0.1
-
-
-def answer_position(sample: dict) -> str:
-    return "a" if label(sample) == 1 else "b"
 
 
 def parse_generated_number(text: str):
@@ -147,7 +127,7 @@ def generation_correct(sample: dict, completion: str) -> tuple[bool, bool]:
     return bool(ok), True
 
 
-def first_device(model):
+def input_device(model):
     try:
         return model.get_input_embeddings().weight.device
     except Exception:
@@ -155,16 +135,15 @@ def first_device(model):
 
 
 def extract_hidden(model, tokenizer, prompts, batch_size: int):
-    """Return [N, L, D] float16 CPU array for the final prompt token.
+    """Return [N, L, D] float16 CPU array for final prompt token.
 
-    Tokenizer padding is fixed to LEFT in main(). Therefore the last non-padding
-    token is always position -1. Using `attention_mask.sum()-1` would be wrong
-    for left padding. Direct `layer[:, -1, :]` also avoids cross-device fancy
-    indexing problems when `device_map=auto` places layers on different GPUs.
+    Padding is LEFT, so the final non-padding token is always position -1.
+    Direct layer[:, -1, :] also avoids cross-device fancy indexing when
+    device_map=auto distributes layers across GPUs.
     """
+    device = input_device(model)
     chunks = []
-    device = first_device(model)
-    for start in tqdm(range(0, len(prompts), batch_size), desc="hidden states"):
+    for start in tqdm(range(0, len(prompts), batch_size), desc="hidden"):
         batch = prompts[start : start + batch_size]
         enc = tokenizer(batch, return_tensors="pt", padding=True, add_special_tokens=True)
         input_ids = enc["input_ids"].to(device)
@@ -177,25 +156,20 @@ def extract_hidden(model, tokenizer, prompts, batch_size: int):
                 use_cache=False,
                 return_dict=True,
             )
-        hs = out.hidden_states[1:]  # skip embedding output
-        per_layer = [
-            layer[:, -1, :].detach().to("cpu", dtype=torch.float16)
-            for layer in hs
-        ]
-        chunks.append(torch.stack(per_layer, dim=1).numpy())  # [B,L,D]
-        del out, hs, input_ids, attention_mask
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        layers = out.hidden_states[1:]  # skip embedding output
+        per_layer = [x[:, -1, :].detach().to("cpu", dtype=torch.float16) for x in layers]
+        chunks.append(torch.stack(per_layer, dim=1).numpy())
+        del out, layers, input_ids, attention_mask
     return np.concatenate(chunks, axis=0)
 
 
-def generate(model, tokenizer, prompts, samples, batch_size: int, max_new_tokens: int):
-    device = first_device(model)
-    records = []
+def run_generation(model, tokenizer, prompts, samples, batch_size: int, max_new_tokens: int):
+    device = input_device(model)
+    rows = []
     for start in tqdm(range(0, len(prompts), batch_size), desc="generation"):
-        batch_prompts = prompts[start : start + batch_size]
-        batch_samples = samples[start : start + batch_size]
-        enc = tokenizer(batch_prompts, return_tensors="pt", padding=True, add_special_tokens=True)
+        ps = prompts[start : start + batch_size]
+        ss = samples[start : start + batch_size]
+        enc = tokenizer(ps, return_tensors="pt", padding=True, add_special_tokens=True)
         input_ids = enc["input_ids"].to(device)
         attention_mask = enc["attention_mask"].to(device)
         with torch.inference_mode():
@@ -208,148 +182,48 @@ def generate(model, tokenizer, prompts, samples, batch_size: int, max_new_tokens
                 eos_token_id=tokenizer.eos_token_id,
             )
         completions = tokenizer.batch_decode(seq[:, input_ids.shape[1] :], skip_special_tokens=True)
-        for sample, completion in zip(batch_samples, completions):
-            ok, parseable = generation_correct(sample, completion)
-            records.append(
-                {
-                    "generation_correct": ok,
-                    "parseable": parseable,
-                    "completion": completion,
-                }
-            )
+        for sample, completion in zip(ss, completions):
+            correct, parseable = generation_correct(sample, completion)
+            rows.append({"correct": correct, "parseable": parseable, "completion": completion})
         del seq, input_ids, attention_mask
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-    return records
+    return rows
 
 
-def fit_probes(train_x, train_y, val_x, val_y):
-    n_layers = train_x.shape[1]
+def fit_layerwise_probes(train_x, train_y, val_x, val_y):
     models, val_accs = [], []
-    for layer in tqdm(range(n_layers), desc="fit probes"):
+    for layer in tqdm(range(train_x.shape[1]), desc="probes"):
         clf = LogisticRegression(max_iter=10000, random_state=0)
         clf.fit(train_x[:, layer, :].astype(np.float32), train_y)
         pred = clf.predict(val_x[:, layer, :].astype(np.float32))
         models.append(clf)
         val_accs.append(float(accuracy_score(val_y, pred)))
     best = max(val_accs)
-    selected = next(i for i, a in enumerate(val_accs) if abs(a - best) < 1e-12)
+    selected = next(i for i, x in enumerate(val_accs) if abs(x - best) < 1e-12)
     return models, val_accs, selected
 
 
-def evaluate_dataset(name, data_root, model, tokenizer, args):
-    limits = {"train": args.train_limit, "val": args.val_limit, "test": args.test_limit}
-    splits, prompts, labels, hidden = {}, {}, {}, {}
-
-    for split in ("train", "val", "test"):
-        rows = load_jsonl(data_root / name / f"{split}.jsonl", limits[split])
-        splits[split] = rows
-        prompts[split] = [make_prompt(x, name) for x in rows]
-        labels[split] = np.asarray([label(x) for x in rows], dtype=np.int64)
-        hidden[split] = extract_hidden(model, tokenizer, prompts[split], args.batch_size)
-
-    probe_models, val_accs, selected = fit_probes(
-        hidden["train"], labels["train"], hidden["val"], labels["val"]
-    )
-    clf = probe_models[selected]
-    test_probe = clf.predict(hidden["test"][:, selected, :].astype(np.float32))
-    test_probe_correct = test_probe == labels["test"]
-
-    gen = generate(model, tokenizer, prompts["test"], splits["test"], args.batch_size, args.max_new_tokens)
-    gen_correct = np.asarray([r["generation_correct"] for r in gen], dtype=bool)
-    parseable = np.asarray([r["parseable"] for r in gen], dtype=bool)
-    hard_mask = np.asarray([hard(x) for x in splits["test"]], dtype=bool)
-
-    records = []
-    for i, sample in enumerate(splits["test"]):
-        records.append(
-            {
-                "index": i,
-                "a": sample["a"],
-                "b": sample["b"],
-                "digit": sample.get("digit"),
-                "hard": bool(hard_mask[i]),
-                "gold_position": answer_position(sample),
-                "probe_prediction_position": "a" if int(test_probe[i]) == 1 else "b",
-                "probe_correct": bool(test_probe_correct[i]),
-                "generation_correct": bool(gen_correct[i]),
-                "parseable": bool(parseable[i]),
-                "critical": bool(test_probe_correct[i] and not gen_correct[i]),
-                "completion": gen[i]["completion"],
-            }
-        )
-
-    def metrics(mask):
-        n = int(mask.sum())
-        if n == 0:
-            return {}
-        p = test_probe_correct[mask]
-        g = gen_correct[mask]
-        pa = parseable[mask]
-        critical = p & ~g
-        errors = ~g
-        return {
-            "n": n,
-            "probe_accuracy": float(p.mean()),
-            "generation_accuracy": float(g.mean()),
-            "gap": float(p.mean() - g.mean()),
-            "n_critical": int(critical.sum()),
-            "critical_rate": float(critical.mean()),
-            "error_coverage_by_probe_correct": float(critical.sum() / errors.sum()) if errors.sum() else None,
-            "n_invalid": int((~pa).sum()),
-            "invalid_rate": float((~pa).mean()),
-            "n11_probe_ok_gen_ok": int((p & g).sum()),
-            "n10_probe_ok_gen_wrong": int((p & ~g).sum()),
-            "n01_probe_wrong_gen_ok": int((~p & g).sum()),
-            "n00_probe_wrong_gen_wrong": int((~p & ~g).sum()),
-        }
-
+def summarize(mask, probe_ok, gen_ok, parseable):
+    n = int(mask.sum())
+    if n == 0:
+        return {"n": 0}
+    p = probe_ok[mask]
+    g = gen_ok[mask]
+    q = parseable[mask]
+    critical = p & ~g
     return {
-        "dataset": name,
-        "selected_layer_zero_based": int(selected),
-        "selected_layer_one_based": int(selected + 1),
-        "validation_probe_accuracy_by_layer": val_accs,
-        "full_test": metrics(np.ones(len(splits["test"]), dtype=bool)),
-        "hard_test": metrics(hard_mask),
-        "records": records,
-    }
-
-
-def survival_gate(results, smoke_only: bool):
-    hard = [r["hard_test"] for r in results]
-    total_n = sum(x["n"] for x in hard)
-    pooled_probe_correct = sum(x["n11_probe_ok_gen_ok"] + x["n10_probe_ok_gen_wrong"] for x in hard)
-    pooled_gen_correct = sum(x["n11_probe_ok_gen_ok"] + x["n01_probe_wrong_gen_ok"] for x in hard)
-    pooled_critical = sum(x["n10_probe_ok_gen_wrong"] for x in hard)
-    pooled_invalid = sum(x["n_invalid"] for x in hard)
-    probe_acc = pooled_probe_correct / total_n
-    gen_acc = pooled_gen_correct / total_n
-    gap = probe_acc - gen_acc
-
-    conditions = {
-        "pooled_probe_accuracy_ge_0p80": probe_acc >= 0.80,
-        "pooled_gap_ge_0p15": gap >= 0.15,
-        "pooled_n_critical_ge_60": pooled_critical >= 60,
-        "each_dataset_n_critical_ge_20": all(x["n10_probe_ok_gen_wrong"] >= 20 for x in hard),
-        "positive_gap_both_datasets": all(x["gap"] > 0 for x in hard),
-        "pooled_invalid_rate_lt_0p05": pooled_invalid / total_n < 0.05,
-    }
-    if smoke_only:
-        verdict = "SMOKE_ONLY_NO_PROJECT_DECISION"
-    else:
-        verdict = "GO_CAUSAL_G1" if all(conditions.values()) else "KILL_OR_DOWNGRADE_ACCESS_PROJECT"
-    return {
-        "verdict": verdict,
-        "conditions": conditions,
-        "pooled_hard": {
-            "n": total_n,
-            "probe_accuracy": probe_acc,
-            "generation_accuracy": gen_acc,
-            "gap": gap,
-            "n_critical": pooled_critical,
-            "n_invalid": pooled_invalid,
-            "invalid_rate": pooled_invalid / total_n,
-        },
+        "n": n,
+        "probe_accuracy": float(p.mean()),
+        "generation_accuracy": float(g.mean()),
+        "gap": float(p.mean() - g.mean()),
+        "n_critical": int(critical.sum()),
+        "critical_rate": float(critical.mean()),
+        "n_invalid": int((~q).sum()),
+        "invalid_rate": float((~q).mean()),
+        "n11_probe_ok_gen_ok": int((p & g).sum()),
+        "n10_probe_ok_gen_wrong": int((p & ~g).sum()),
+        "n01_probe_wrong_gen_ok": int((~p & g).sum()),
+        "n00_probe_wrong_gen_wrong": int((~p & ~g).sum()),
+        "error_coverage_by_probe_correct": float(critical.sum() / (~g).sum()) if (~g).sum() else None,
     }
 
 
@@ -357,7 +231,7 @@ def main():
     args = parse_args()
     set_seed(args.seed)
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    smoke_only = any(x is not None for x in (args.train_limit, args.val_limit, args.test_limit))
+    smoke = any(x is not None for x in (args.train_limit, args.val_limit, args.test_limit))
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
@@ -368,27 +242,79 @@ def main():
     model = AutoModelForCausalLM.from_pretrained(args.model, device_map="auto", torch_dtype=dtype)
     model.eval()
 
-    results = []
-    for name in DATASETS:
-        result = evaluate_dataset(name, args.data_root, model, tokenizer, args)
-        results.append(result)
-        with (args.out_dir / f"{name}_records.jsonl").open("w", encoding="utf-8") as f:
-            for row in result.pop("records"):
-                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    limits = {"train": args.train_limit, "val": args.val_limit, "test": args.test_limit}
+    data, prompts, labels, hidden = {}, {}, {}, {}
+    for split in ("train", "val", "test"):
+        path = args.data_root / PRIMARY_DATASET / f"{split}.jsonl"
+        data[split] = load_jsonl(path, limits[split])
+        prompts[split] = [make_prompt(x) for x in data[split]]
+        labels[split] = np.asarray([label(x) for x in data[split]], dtype=np.int64)
+        hidden[split] = extract_hidden(model, tokenizer, prompts[split], args.batch_size)
 
-    gate = survival_gate(results, smoke_only=smoke_only)
+    probes, val_accs, selected = fit_layerwise_probes(
+        hidden["train"], labels["train"], hidden["val"], labels["val"]
+    )
+    test_pred = probes[selected].predict(hidden["test"][:, selected, :].astype(np.float32))
+    probe_ok = test_pred == labels["test"]
+
+    generated = run_generation(
+        model, tokenizer, prompts["test"], data["test"], args.batch_size, args.max_new_tokens
+    )
+    gen_ok = np.asarray([x["correct"] for x in generated], dtype=bool)
+    parseable = np.asarray([x["parseable"] for x in generated], dtype=bool)
+    hard_mask = np.asarray([is_hard(x) for x in data["test"]], dtype=bool)
+    full_mask = np.ones(len(data["test"]), dtype=bool)
+
+    full = summarize(full_mask, probe_ok, gen_ok, parseable)
+    hard = summarize(hard_mask, probe_ok, gen_ok, parseable)
+
+    conditions = {
+        "full_probe_accuracy_ge_0p90": full.get("probe_accuracy", 0) >= 0.90,
+        "hard_probe_accuracy_ge_0p80": hard.get("probe_accuracy", 0) >= 0.80,
+        "hard_gap_ge_0p15": hard.get("gap", -1) >= 0.15,
+        "hard_n_critical_ge_30": hard.get("n_critical", 0) >= 30,
+        "hard_gap_positive": hard.get("gap", -1) > 0,
+        "hard_invalid_rate_lt_0p05": hard.get("invalid_rate", 1) < 0.05,
+    }
+    if smoke:
+        verdict = "SMOKE_ONLY_NO_PROJECT_DECISION"
+    else:
+        verdict = "GO_CAUSAL_G1" if all(conditions.values()) else "KILL_OR_DOWNGRADE_ACCESS_PROJECT"
+
+    with (args.out_dir / "test_records.jsonl").open("w", encoding="utf-8") as f:
+        for i, sample in enumerate(data["test"]):
+            row = {
+                "index": i,
+                "a": sample["a"],
+                "b": sample["b"],
+                "digit": sample.get("digit"),
+                "hard": bool(hard_mask[i]),
+                "gold_position": "a" if labels["test"][i] == 1 else "b",
+                "probe_position": "a" if test_pred[i] == 1 else "b",
+                "probe_correct": bool(probe_ok[i]),
+                "generation_correct": bool(gen_ok[i]),
+                "parseable": bool(parseable[i]),
+                "critical": bool(probe_ok[i] and not gen_ok[i]),
+                "completion": generated[i]["completion"],
+            }
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
     payload = {
         "model": args.model,
-        "prompt": "official balanced 5-shot",
+        "dataset": PRIMARY_DATASET,
+        "prompt": "official int-sci balanced 5-shot",
         "hard_regime": "abs(log2(a/b)) < 0.1",
-        "seed": args.seed,
+        "selected_layer_zero_based": int(selected),
+        "selected_layer_one_based": int(selected + 1),
+        "validation_probe_accuracy_by_layer": val_accs,
+        "full_test": full,
+        "hard_test": hard,
         "smoke_limits": {
             "train": args.train_limit,
             "val": args.val_limit,
             "test": args.test_limit,
         },
-        "datasets": results,
-        "survival_gate": gate,
+        "survival_gate": {"verdict": verdict, "conditions": conditions},
     }
     (args.out_dir / "summary.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(json.dumps(payload, indent=2))
