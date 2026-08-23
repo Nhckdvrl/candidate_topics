@@ -1,6 +1,6 @@
 # Topic 22 Validation Audit
 
-**Audit status: G0 logic accepted after hardening; model run still required.**
+**Audit status: G0a passed; first G0b run invalidated by measurement bugs; repaired G0b v2 ready for rerun.**
 
 ## Claim hierarchy
 
@@ -12,55 +12,110 @@ Keep these three levels separate.
 
 G0 establishes only (1) and (2). It cannot by itself establish (3).
 
+## Current empirical status
+
+G0a passed on the full released test set:
+
+- 5,383 valid pairs;
+- 0 malformed pairs;
+- ground-truth flip rate 1.0;
+- age/sex match rate 1.0;
+- median changed-token fraction 0.0726;
+- p90 changed-token fraction 0.2516.
+
+The first Qwen3-14B G0b run produced 81.25% invalid pairs. That run is **measurement-invalid** and its previous scientific-stop label is withdrawn.
+
 ## Audit findings and fixes
 
 ### A. The original Qwen3-8B direct screen was not seed-faithful
 
 The ACL paper reports open-model baselines under zero-shot CoT and provides a strong published reference for `Qwen/Qwen3-14B` (Baseline Accuracy 44.12%, Bias Trap Rate 54.19%).
 
-**Fix:** G0b now uses Qwen3-14B + zero-shot CoT first. Direct answer is a later mechanism-feasibility gate, not a substitute for seed reproduction.
+**Fix:** G0b uses Qwen3-14B + zero-shot CoT first. Direct answer is a later mechanism-feasibility gate, not a substitute for seed reproduction.
 
-### B. Free-text reasoning could contaminate diagnosis scoring
+### B. The first Qwen3 thinking run used an invalid decoding regime
 
-A CoT may mention several diagnoses before choosing one. Searching the whole output for disease names can falsely classify a reasoning mention as the final prediction.
+The first local G0b used greedy decoding with `enable_thinking=True`.
 
-**Fix:** only the explicit final marker
+The official Qwen3 model card explicitly recommends thinking-mode sampling (`temperature=0.6`, `top_p=0.95`, `top_k=20`) and warns against greedy decoding because it can degrade performance and cause pathological repetition.
 
-```text
-FINAL_DIAGNOSIS: <diagnosis>
-```
+**Fix:** repaired G0b v2 uses exactly those Qwen3-recommended thinking settings. The scientific model/sample/gate are unchanged.
 
-is scored. If no canonical final diagnosis can be resolved, the sample is invalid rather than guessed.
+### C. The first reasoning budget was far too short
 
-### C. Stratified sampling distorted the benchmark prevalence
+The first local run used only 1,024 new tokens. Qwen3's official thinking example allows up to 32,768 new tokens and separates thinking from final answer at the `</think>` token.
+
+A sample still inside reasoning at token 1,024 cannot be treated as a wrong or unparsable diagnosis.
+
+**Fix:** CoT budget is now 32,768 new tokens. The evaluator records `hit_max_tokens`, `thinking_not_closed`, and token counts explicitly.
+
+### D. Free-text reasoning and answer extraction were conflated
+
+Searching the whole CoT for disease names is invalid because reasoning may discuss several diagnoses. Conversely, requiring our custom literal `FINAL_DIAGNOSIS:` marker made valid free-text final answers appear invalid.
+
+**Fix:** repaired scoring first separates Qwen3's post-`</think>` final-answer content at token level. Only this final segment is eligible for scoring. The preferred marker is accepted but no longer mandatory. Conservative canonical-label extraction also accepts an unambiguous final diagnosis phrased naturally. No LLM judge or semantic fuzzy matcher is used.
+
+### E. Stochastic thinking needs reproducibility
+
+Switching from greedy to correct thinking-mode sampling introduces sampling variance.
+
+**Fix:** every `case_id` receives a deterministic pair seed derived from `(global_seed, case_id)`. Control and trap branches use the same pair seed (common random numbers). Re-running the same experiment is therefore reproducible while respecting Qwen3's recommended thinking mode.
+
+### F. Invalid outputs now have scientific meaning
+
+Previously all unresolved examples collapsed into one `invalid` bucket.
+
+**Fix:** v2 records branch-level failure reasons:
+
+- `hit_max_tokens`;
+- `thinking_not_closed`;
+- `unresolved_final`.
+
+If pair-level invalid rate remains above 0.10, the verdict is now `MEASUREMENT_RUNTIME_FAILURE`, not `SEED_PHENOMENON_NOT_REPRODUCED`. A scientific negative is assigned only when the measurement is healthy and the substantive frozen gates fail.
+
+### G. Stratified sampling distorted benchmark prevalence
 
 Diagnosis-balanced sampling is useful for analysis but not for reproducing a benchmark-level conditional rate.
 
 **Fix:** G0b/c use one fixed random sample of benchmark pairs. The exact `case_id` list is written to both summaries, and `run_g0.sh` checks CoT and direct modes used the identical pair set.
 
-### D. Pair locality was previously overinterpretable
+### H. Pair locality must not be overinterpreted
 
 A small text edit does not itself prove that the changed tokens are medically decisive evidence.
 
-**Fix:** G0a is explicitly only an **alignment/intervention-feasibility** audit. It saves exact changed spans in `pair_diffs.jsonl`. Medical validity of the counterfactual flip comes from the MedEinst construction/validation, not from text-distance statistics.
+**Fix:** G0a is only an **alignment/intervention-feasibility** audit. Medical validity of the counterfactual flip comes from MedEinst construction/validation, not from edit distance.
 
-### E. Variable-length CoT would recreate a mechanism-identification problem
+### I. Variable-length CoT remains a bad mechanism object
 
-If the Bias Trap exists only in open-ended reasoning traces, token-level comparisons require trajectory alignment and can quickly become another expanding-control project.
+Even if repaired G0b reproduces the seed, open-ended CoT trajectories are not our intended mechanism substrate.
 
-**Fix:** after seed-faithful CoT reproduction, G0c requires a dense exact Bias Trap subset on the same model and same pairs with thinking disabled and a fixed final-answer format. If direct mode is too weak, stop the simple mechanism route rather than probing arbitrary CoT states.
+**Fix:** G0c still requires a dense Bias Trap subset on the same model and same exact pairs with thinking disabled. If direct mode is too weak, stop the simple mechanism route rather than probing arbitrary CoT states.
 
-### F. CoT truncation could create fake invalid outputs
+## Frozen repaired G0b contract
 
-A 512-token generation cap could terminate Qwen3 reasoning before the required final marker.
+Unchanged scientific choices:
 
-**Fix:** CoT now has a frozen default of `1024` new tokens (direct mode `64`), and the actual budget is recorded in the summary.
+- model: `Qwen/Qwen3-14B`;
+- split: MedEinst `test`;
+- 256 fixed random pairs;
+- seed: `20260823`;
+- exact Bias Trap definition;
+- all original G0b thresholds.
+
+Measurement repair only:
+
+- thinking sampling: `temperature=0.6`, `top_p=0.95`, `top_k=20`;
+- CoT max-new-token ceiling: 32,768;
+- post-`</think>` final-answer scoring;
+- robust-but-conservative canonical diagnosis extraction;
+- common-random-number control/trap sampling;
+- explicit invalid/truncation diagnostics.
 
 ## What positive G0s identify
 
 If G0a+b+c all pass, the valid prerequisite statement is:
 
-> The released MedEinst pairs are sufficiently aligned for paired analysis; Qwen3-14B reproduces a dense old-diagnosis persistence effect under the seed's zero-shot CoT regime; and a dense subset of the same phenomenon remains in a fixed-position direct-answer regime suitable for controlled internal intervention.
+> The released MedEinst pairs are sufficiently aligned for paired analysis; Qwen3-14B reproduces a dense old-diagnosis persistence effect under a valid Qwen3 thinking regime; and a dense subset of the same phenomenon remains in a fixed-position direct-answer regime suitable for controlled internal intervention.
 
 This still does **not** show that the new evidence was encoded.
 
@@ -79,4 +134,4 @@ The changed span may contain several correlated lexical changes rather than one 
 
 ## Current verdict
 
-**RUN G0a -> G0b -> G0c in order.** Do not implement G1 until all three pass.
+**RERUN repaired G0b v2.** If invalid rate is healthy (`<=0.10`) and substantive gates fail, stop scientifically. If invalid remains high due nontermination/unresolved final answers, treat it as measurement/runtime failure. Do not implement G1 until G0b and G0c both pass.
