@@ -1,0 +1,27 @@
+{
+  "seed0_probe_val_accuracy": 0.990625,
+  "n": 1598,
+  "n_hard": 138,
+  "probe_accuracy_full": 0.9899874843554443,
+  "probe_accuracy_hard": 0.8985507246376812,
+  "generation_accuracy_full": 0.776595744680851,
+  "generation_accuracy_hard": 0.5652173913043478,
+  "n_hard_critical": 51,
+  "hard_critical_rate": 0.3695652173913043,
+  "hard_invalid_rate": 0.0,
+  "n_hard_generation_errors": 60,
+  "n_hard_errors_exact_operand": 60,
+  "n_hard_errors_choose_scientific_operand": 55,
+  "hard_error_scientific_choice_rate": 0.9166666666666666,
+  "fresh_object_gate": {
+    "pass": false,
+    "conditions": {
+      "n_hard_ge_100": true,
+      "hard_probe_ge_0p90": false,
+      "n_hard_critical_ge_25": true,
+      "hard_critical_rate_ge_0p20": true,
+      "hard_invalid_lt_0p05": true
+    }
+  },
+  "notation_followup_eligible": true
+}

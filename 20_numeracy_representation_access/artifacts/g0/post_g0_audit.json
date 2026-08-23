@@ -1,0 +1,59 @@
+{
+  "note": "Descriptive seed-0 audit only; notation pattern is exploratory and must be confirmed on a fresh seed.",
+  "n_test": 1600,
+  "n_unique_displayed_pairs": 1597,
+  "n_duplicate_test_instances": 3,
+  "n_hard": 129,
+  "n_unique_hard_displayed_pairs": 128,
+  "n_duplicate_hard_instances": 1,
+  "n_hard_critical": 38,
+  "n_unique_hard_critical_displayed_pairs": 37,
+  "n_duplicate_hard_critical_instances": 1,
+  "hard_critical": {
+    "n": 38,
+    "n_exact_operand_choice": 38,
+    "n_scientific_operand_choice": 37,
+    "scientific_choice_rate_among_exact_operand_choices": 0.9736842105263158,
+    "digit_counts": {
+      "2": 7,
+      "3": 1,
+      "4": 2,
+      "5": 3,
+      "6": 4,
+      "7": 5,
+      "8": 8,
+      "9": 8
+    },
+    "gold_position_counts": {
+      "a": 19,
+      "b": 19
+    }
+  },
+  "hard_generation_errors": {
+    "n": 41,
+    "n_exact_operand_choice": 41,
+    "n_scientific_operand_choice": 40,
+    "scientific_choice_rate_among_exact_operand_choices": 0.975609756097561,
+    "digit_counts": {
+      "2": 7,
+      "3": 1,
+      "4": 3,
+      "5": 3,
+      "6": 5,
+      "7": 5,
+      "8": 8,
+      "9": 9
+    },
+    "gold_position_counts": {
+      "a": 22,
+      "b": 19
+    }
+  },
+  "duplicate_hard_critical_pairs": [
+    {
+      "a": "72",
+      "b": "7.1 \u00d7 10^1",
+      "count": 2
+    }
+  ]
+}
