@@ -18,13 +18,14 @@ For one saved physical observation:
 
 - query twice with identical state and pair seed;
 - assert first returned 36-D action max absolute difference <=1e-6 (or the smallest tolerance justified by the actual dtype/backend; report it explicitly);
-- branch queries must not mutate/use each other's RTC state.
+- branch queries must not mutate/use each other's RTC state;
+- preserve the same previous base-height/context value used by the deployed Ψ₀ state vector across base/task/null branches.
 
 Failure: `PAIRED_INFERENCE_NOT_IDENTIFIED`; stop.
 
 ## Phase P2 — collect deployed states
 
-Run 20 successful level-0 episodes using the official RTC policy. Record every *fresh policy query* state (not every 200-Hz WBC step), including a restorable MuJoCo snapshot. Retain the last three fresh-policy query states before success from each episode.
+Run 20 successful level-0 episodes using the official RTC policy. Record every *fresh policy query* state (not every 200-Hz WBC step), including a restorable MuJoCo snapshot and the policy-side previous-height/context values needed to rebuild exactly the same Ψ₀ state input. Retain the last three fresh-policy query states before success from each episode.
 
 No response-based frame selection.
 
@@ -36,9 +37,9 @@ At each selected state:
 2. call `build_pair_from_sim(..., epsilon=0.08)`;
 3. reject if fixed finite-geometry gate fails or a joint limit/simulator-validity check fails;
 4. base/task/null must start from the same snapshot;
-5. physically set right-arm qpos, zero those qvels, `mj_forward`, then re-render/rebuild proprio.
+5. physically change **only** the seven right-arm qpos values, preserve qvel/controller/time/other state, call `mj_forward` without integration, then re-render/rebuild proprio.
 
-Do not spoof proprio with a frozen image.
+Do not spoof proprio with a frozen image and do not introduce a second velocity/history intervention.
 
 ## Phase P4 — G0a common-random-number queries
 
