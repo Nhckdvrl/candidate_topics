@@ -2,18 +2,18 @@
 
 > 这是 `advisor_topic_search/` 的**唯一当前候选状态表**。
 >
-> `ROUND_*.md` 保存搜索历史与完整审计过程；本文件只回答一个问题：**现在到底有哪些题还活着，下一步做什么？**
+> `ROUND_*.md` 保存搜索历史与完整审计；本文件只回答：**现在到底哪些题还活着，下一步做什么？**
 >
-> 每轮搜索/审核结束后必须同步更新本文件。已经 KILL 的题不允许因为换模型、换数据集、换 probe 就偷偷复活；需要复活时必须写明新的 scientific reason。
+> 每轮结束后必须同步更新。已经 KILL 的题不能因为换模型、换数据、换 probe 偷偷复活；若复活必须写明新的 scientific reason。
 
 Last updated: 2026-08-23
 Source of current ranking: `ROUND_07_2026-08-23.md`
 
 ---
 
-## A. ACTIVE — 可以直接进入 prerequisite / G0
+# A. ACTIVE — 可以直接进入 prerequisite / G0
 
-### A1. SemTrace — lexical retrieval survives, semantic execution fails in the middle
+## A1. SemTrace — lexical retrieval survives, semantic execution fails in the middle
 
 **Seed**: ACL 2026 main, *Sense and Sensitivity: Examining the Influence of Semantic Recall on Long Context Code Understanding*.
 
@@ -21,16 +21,16 @@ Source of current ranking: `ROUND_07_2026-08-23.md`
 
 > **Why does context position selectively destroy operational state transition while lexical access to the same code remains available?**
 
-**Why it is alive**:
+**Why alive**:
 
-- ACL main seed；
-- 同一 model / 同一 program / 只移动 context position；
-- seed 已报告巨大 semantic middle-position failure；
-- lexical retrieval 可作为同一输入上的 intact control；
-- 官方 reproduction package 完整；
-- 7B/8B open models 可跑；
-- SemTrace synthetic program 的 intermediate states 可程序化得到 exact labels；
-- 不需要人工标注或付费 API。
+- ACL main seed;
+- same model / same synthetic program / move only relevant code position;
+- huge reported semantic middle-position failure;
+- lexical recall provides an intact control on the same content;
+- official reproduction package complete;
+- 7B/8B open models;
+- intermediate program states are exactly computable;
+- no manual annotation / paid API prerequisite.
 
 **Frozen critical cell**:
 
@@ -42,31 +42,90 @@ edge:   lexical correct
 middle: lexical correct
 ```
 
-只有这个 cell 有足够密度时才允许做 mechanism。
-
 **First G0**:
 
-1. 在一个 seed 已验证的 7B/8B open model 上复现 edge vs middle semantic drop；
-2. 对相同实例验证 lexical retrieval 保持；
-3. 统计 `edge-correct / middle-wrong / lexical-intact` 密度；
-4. 若密度足够，再针对 exact intermediate program state 做 bounded layer-wise diagnostic / causal patching。
+1. reproduce edge-vs-middle semantic drop on one seed-listed 7B/8B model;
+2. verify lexical recall remains intact on the same instances;
+3. measure `edge-correct / middle-wrong / lexical-intact` density;
+4. only then localize exact intermediate program-state failure / causal patching.
 
 **Kill line**:
 
-- critical cell 稀疏；
-- lexical retrieval 与 semantic execution 同时崩；
-- intermediate-state failure 无法与 generic position effect 区分；
-- 最终只能得到“middle position 比较差”而没有 selective semantic-computation story。
+- critical cell sparse;
+- lexical and semantic failures collapse together;
+- result reduces to generic position degradation;
+- mechanism requires broad layer/token fishing.
 
-**Collision boundary**:
+**Collision boundary**: not generic state tracking, binding, or lost-in-the-middle. Novelty must be **selective operational-computation collapse under intact lexical access**.
 
-不能写成 generic “state tracking mechanism” 或 generic “lost in the middle”。已有工作已经覆盖 transformer state tracking、binding circuits 和一般 positional failures。新意必须落在 **lexical access intact 时 semantic computation selective collapse**。
-
-**Status**: `SURVIVAL_TOP / CODE_NEXT`
+**Status**: `SURVIVAL_TOP / #1 / CODE_NEXT`
 
 ---
 
-### A2. MedEinst — encoding failure or failed belief update under Einstellung?
+## A2. ChronoScope — reference-time state loss or failure to use it?
+
+**Seed**: ACL 2026 main, *Evaluating Temporal Consistency in Multi-Turn Language Models*.
+
+Official repo: `yashkumaratri/ChronoScope`.
+
+**Research question**:
+
+> **When a model drifts from an established historical scope back to a present-day answer, has the conversational reference-time state been lost, or is it still represented but unable to override present-day parametric knowledge?**
+
+**Why alive**:
+
+- ACL main seed;
+- >1.4M deterministically generated temporal chains;
+- classic reference-time / discourse-state question;
+- Gold Context removes previous-answer error propagation;
+- official evaluator explicitly stores historical gold and `present_day_answer`;
+- official `drift` error means wrong historical answer exactly matches valid present-day truth;
+- open models directly supported: Qwen2.5-7B, Qwen3-4B, Llama-3.1-8B, Mistral-7B, Gemma-7B, GPT-OSS-20B, etc.;
+- local HF inference and automatic scoring already implemented;
+- no new annotation / closed API dependency.
+
+**Frozen prerequisite cell**:
+
+```text
+Gold Context
+same chain + same model
+initial explicit temporal turn = correct
+later implicit-scope turn = wrong
+wrong answer = official present_day_answer
+```
+
+Existing screen:
+
+```text
+advisor_topic_search/g0/chronoscope_drift_g0.py
+```
+
+The screen consumes the official evaluator JSON and reports chain/turn drift density by family and position.
+
+**Mechanism only after G0**:
+
+1. freeze one model and one/two clean families, starting with carryover;
+2. make a matched explicit-year-restatement version of the same follow-up;
+3. compare explicit-correct vs implicit-drift temporal-scope representation;
+4. bounded natural counterfactual activation patching;
+5. test whether the intervention specifically changes present-day substitution back to historical gold.
+
+**Kill line**:
+
+- first-correct → later-present-drift sparse on accessible models;
+- drift disappears in Gold Context;
+- explicit year restatement does not rescue the same instances;
+- probe only decodes lexical year tokens, not maintained implicit state;
+- result reduces to generic context-vs-parametric conflict already explained elsewhere;
+- rescue depends on layer/strength fishing.
+
+**Collision boundary**: not generic temporal QA, generic multi-turn memory, or generic RAG conflict. The object is **implicit conversational reference-time state and its causal competition with the present-day prior**.
+
+**Status**: `SURVIVAL_TOP / #2 / RUN_DRIFT_G0`
+
+---
+
+## A3. MedEinst — encoding failure or failed belief update under Einstellung?
 
 **Seed**: ACL 2026 main, *MedEinst: Benchmarking the Einstellung Effect in Medical LLMs through Counterfactual Differential Diagnosis*.
 
@@ -74,18 +133,18 @@ middle: lexical correct
 
 > **When decisive counterevidence is introduced, does the model fail to encode it, or is it encoded but unable to update the already-formed diagnostic state?**
 
-**Why it is alive**:
+**Why alive**:
 
-- classic Einstellung / mental-set scientific question；
-- 5,383 control–trap pairs；
-- seed 已定义关键 failure：control correct，但 trap 仍回到 control diagnosis；
-- open model 已出现 substantial Bias Trap Rate；
-- diagnosis label 可自动评分；
-- 不需要重新证明“Einstellung 是否存在”。
+- classic Einstellung / mental-set scientific question;
+- 5,383 control–trap pairs;
+- seed already defines the Bias-Trap critical failure;
+- open models show substantial trap behavior;
+- diagnosis labels automatic;
+- no need to re-prove the existence of Einstellung.
 
 **Mandatory prerequisite**:
 
-先验证 control→trap 是否真的是局部 discriminative-evidence edit，而不是整段 narrative 大面积重写。
+Verify control→trap is genuinely local discriminative-evidence editing, not diffuse narrative rewrite.
 
 Existing G0:
 
@@ -95,25 +154,25 @@ advisor_topic_search/g0/medeinst_pair_structure.py
 
 **Promotion condition**:
 
-- pair edits 足够局部；
-- control accuracy 足够高；
-- Bias Trap critical cell 密度足够；
-- decisive evidence span 可从公开数据/构造中稳定确定，不依赖大规模人工医学判断。
+- edits local;
+- control accuracy high enough;
+- Bias-Trap critical cell dense;
+- decisive evidence span can be located reproducibly without large expert annotation.
 
 **Kill line**:
 
-- pair edit diffuse；
-- critical cell 太少；
-- 需要人工逐例决定“真正关键证据”；
-- 为解释结果必须不断增加 clinical confound controls。
+- edit diffuse;
+- critical cell sparse;
+- key evidence requires manual clinical judgment item-by-item;
+- explanation starts requiring many clinical confound controls.
 
-**Status**: `SURVIVAL_TOP / RUN_PAIR_LOCALITY_G0`
+**Status**: `SURVIVAL_TOP / #3 / RUN_PAIR_LOCALITY_G0`
 
 ---
 
-## B. HOLD / DEEP AUDIT — 科学问题强，但 prerequisite/resource 还没过
+# B. HOLD / DEEP AUDIT — strong science, prerequisite/resource not cleared
 
-### B1. In-context representation deployment bottleneck
+## B1. In-context representation deployment bottleneck
 
 **Seed**: ACL 2026 main, *Language Models Struggle to Use Representations Learned In-Context*.
 
@@ -121,62 +180,36 @@ advisor_topic_search/g0/medeinst_pair_structure.py
 
 > **What deployment-specific routing/readout computation makes an already learned in-context representation inert under one interface but usable under another?**
 
-**Why it is scientifically strong**:
+Seed directly reports latent novel semantics despite poor downstream deployment, so the dissociation is not invented by us.
 
-Seed 已直接报告：
-
-```text
-novel in-context semantics are encoded in latent representations
-BUT
-models struggle to deploy them downstream
-```
-
-这比我们自己先做 probe 再寻找 gap 要健康得多，并且 paper 没有给出完整 causal mechanism。
-
-**Why it is not ACTIVE yet**:
-
-当前仍未确认完整官方 reproduction artifact / generator / exact code path。自己重建会重新同时承担 task-generation、prompt、latent measurement 和 critical-cell reproduction risk。
+**Blocking issue**: no trustworthy complete official reproduction package found. Rebuilding generator + prompts + probe regime would reintroduce too much prerequisite risk.
 
 **Promotion gate**:
 
-1. 找到官方 code/data；或
-2. appendix 足以无 tuning 地在一个 open model 上精确重现 critical cell。
+1. official code/data appears; or
+2. appendix enables exact untuned critical-cell reproduction on one open model.
 
 **Status**: `SCIENCE_TOP / HOLD_FOR_ARTIFACT`
 
 ---
 
-### B2. Table DRE — structural understanding vs value referencing
+## B2. Table DRE — structural understanding vs value referencing
 
 **Seed**: ACL 2026 main, *When LLMs Read Tables Carelessly: Measuring and Reducing Data Referencing Errors*.
 
 **Research question**:
 
-> **When table structure is understood but the model cites the wrong value, is the failure in localization, entity–value binding, or late readout substitution?**
+> **When table structure is understood but the model cites the wrong value, is the failure localization, entity–value binding, or late readout substitution?**
 
-**Why it is interesting**:
+Pros: structured/exact labels, programmatic perturbations, small/open models.
 
-- DRE 在 1.7B–20B 模型上稳定出现；
-- table 的 row / column / value identity 可自动得到 exact labels；
-- seed 已构造 programmatic table/value perturbations；
-- 可以寻找 `structure-correct / value-reference-wrong` 的天然 critical cell；
-- 很适合 open model + causal intervention。
-
-**Main collision**:
-
-通用 entity binding / positional binding / counterfactual binding 已经有较成熟机制工作。因此不能把贡献写成“首次发现 binding failure”。只有 **table-specific referencing failure under intact structural understanding** 才有机会成立。
-
-**Promotion gate**:
-
-- 找到并核实官方 reproduction artifact；
-- 在一个 7B/8B accessible open model 上确认高密度 `structure-correct / reference-wrong` cell；
-- 证明该 cell 不能被 generic retrieval/binding failure 简单解释。
+Main risk: generic entity/positional binding mechanism is already crowded. Need a dense `structure-correct / reference-wrong` cell that cannot be reduced to generic retrieval/binding.
 
 **Status**: `DEEP_AUDIT / ARTIFACT_AND_COLLISION_GATE`
 
 ---
 
-### B3. Context-shaped truth geometry → source choice
+## B3. Context-shaped truth geometry → source choice
 
 **Seed**: ACL 2026 main, *How Context Shapes Truth: Geometric Transformations of Statement-level Truth Representations in LLMs*.
 
@@ -184,119 +217,145 @@ models struggle to deploy them downstream
 
 > **Do context-induced transformations of truth representations causally determine whether context or parametric memory controls behavior under conflict?**
 
-**Why it is interesting**:
+Seed already reports geometry changes; next step must establish specific source-selection causality, not another truth-vector plot/steer.
 
-Seed 已经报告 context 对 truth-vector direction/magnitude 的系统性改变，且 conflict with parametric knowledge 会造成更大的 geometry shift。因此我们不需要自己先证明“context 会改变 truth representation”。
-
-真正的下一问应当是：
-
-```text
-context-induced truth geometry
-→ source selection
-→ final behavior
-```
-
-而不是再画一遍 probe / PCA / steering 图。
-
-**Main risks**:
-
-- truth-vector / knowledge-conflict / steering 文献很拥挤；
-- 本轮尚未找到可信官方 reproduction repo；
-- 如果只能证明 truth vector 可 steer，则 novelty 不足。
-
-**Promotion gate**:
-
-- 找到官方 artifact；
-- 在 same-fact aligned/conflicting context 中，geometry 能预测 instance-level source choice；
-- intervention 能特异性改变 source choice，而非普遍改变 truthfulness/logits。
+Risks: knowledge-conflict/truth-vector literature crowded; official reproduction artifact not verified.
 
 **Status**: `DEEP_AUDIT / HOLD_FOR_ARTIFACT`
 
 ---
 
-## C. WATCH — 有价值，但当前不值得先下注
+# C. WATCH — scientifically useful, currently not worth first bet
 
-### C1. Temporal Forgetting — storage loss vs access loss
+## C1. Belief consistency — stability vs correctness
 
-**Seed**: ACL 2026 main, *Temporal Sampling for Forgotten Reasoning in LLMs*.
+**Seed**: ACL 2026 main, *Assessing Belief Consistency on the Logical Conversation Process*.
 
-**Attraction**: 同一实例 earlier checkpoint 正确、later checkpoint 错误；有公开 Qwen2.5-7B RL checkpoints 与 sampled responses。
+Interesting dissociation: some code/math post-training families improve belief consistency while logical failure increases.
 
-**Why only WATCH**:
+Question:
 
-- open-ended CoT across checkpoints 不具有稳定步骤对齐；
-- representation bases 跨 checkpoint 变化；
-- storage-vs-access 很容易被迫依赖 alignment / Procrustes / trajectory matching / elicitation controls；
-- Round 07 又发现 NeurIPS 等已有更多 example-level forgetting / retained-knowledge 工作，collision 更重。
+> does training improve belief-state persistence, or merely increase stubborn commitment even when the state is wrong?
+
+Why WATCH: no clean official artifact found, sampling-heavy evaluation, model-family comparison confounds, prompt sensitivity.
+
+**Status**: `WATCH / STABILITY_VS_CORRECTNESS`
+
+## C2. GSM-Infinite — computation cliff
+
+ICML 2025 synthetic exact reasoning resource.
+
+Potential question: around the complexity cliff, are correct intermediate node values still represented but failing to propagate through the next dependency edge?
+
+Why WATCH: very executable, but generic state-tracking / propagation mechanism may not be scientifically distinct from SemTrace and adjacent work.
+
+**Status**: `WATCH+ / BACKUP_RESOURCE`
+
+## C3. Correct trace → wrong final answer
+
+ACL 2026 reports very dense cells where an intermediate trace is correct but final answer is wrong in small open models.
+
+Why WATCH: CoT faithfulness / hidden computation / reasonless-token space is crowded. Need sharper causal distinction than “why doesn’t correct CoT control answer?”
+
+**Status**: `WATCH+ / COLLISION_HEAVY`
+
+## C4. Emergent response planning — commitment vs rewrite
+
+ICML 2025 shows pre-output hidden states predict future response properties.
+
+Potential question:
+
+> is the pre-output answer plan a commitment or a provisional state that is rewritten as reasoning unfolds?
+
+Why WATCH: latent planning/steering follow-ups are moving fast; no exact paired plan-reversal object yet.
+
+**Status**: `WATCH+ / NEED_EXACT_TRANSITION_OBJECT`
+
+## C5. Illusions of Confidence — stable answer vs robust belief
+
+Perfect self-consistency can coexist with severe vulnerability to social/authority interference.
+
+Why WATCH: nice old metacognition distinction, but natural follow-up currently looks too much like robust-vs-brittle probe/steering rather than a forced computation bottleneck.
+
+**Status**: `WATCH+`
+
+## C6. Temporal Forgetting — storage loss vs access loss
+
+Same problem can be correct at an earlier checkpoint and wrong later.
+
+Why WATCH: cross-checkpoint basis changes and open-ended CoT path changes make storage-vs-access mechanism identification assumption-heavy; adjacent forgetting work is increasingly crowded.
 
 **Status**: `WATCH / LOWER_PRIORITY`
 
-### C2. Description–History Gap mechanism
+## C7. Description–History Gap
 
-**Seed**: ACL 2026 main / Outstanding, description–experience gap in risky decision making.
+Classic risky-decision old question, but reasoning-vs-conversation post-training comparison changes too many factors at once.
 
-**Attraction**: 经典 decision-science old question；公开 Qwen/OLMo family choice data；post-training 与行为差异明显。
+**Status**: `WATCH / LOWER_PRIORITY`
 
-**Why only WATCH**:
+## C8. ImplicitMemBench — non-declarative memory
 
-reasoning-vs-conversation model comparison同时改变太多训练因素；若解释“为什么 math reasoning training 改变 DH gap”，会迅速长出大量 disentangling controls。
-
-**Status**: `WATCH / REMOVE_FROM_ACTIVE_QUEUE`
-
-### C3. ImplicitMemBench — non-declarative memory in LLM agents
-
-**Seed**: ACL 2026 main / Best Resource Paper, *ImplicitMemBench: Measuring Unconscious Behavioral Adaptation in Large Language Models*.
-
-**Attraction**:
-
-- procedural memory / priming / classical conditioning 都是经典 old questions；
-- 17 模型，300-item suite；
-- 报告很强的 inhibition-vs-preference asymmetry。
-
-**Why only WATCH**:
-
-当前 benchmark 定义的是 behavioral adaptation，并没有天然给出 representation-level storage/access dissociation。直接“上 hidden-state probe”会很像 benchmark + mechanism tool 的套壳；三个 construct 也可能没有统一机制。
+Classic procedural memory / priming / conditioning framing is attractive, but current benchmark does not give a single clean representation-level storage/access dissociation. Directly adding hidden-state analysis risks becoming benchmark + mechanism-tool work.
 
 **Status**: `WATCH / OLD_QUESTION_REFERENCE`
 
+## C9. Agent memory experience-following — proactive interference
+
+Retrieved similar past experiences can bias current agent behavior and propagate errors.
+
+Potential question: corrupt current task state vs hijack action readout.
+
+Why WATCH: agent-memory / ICL retrieval behavior crowded; generic similar-example following is a strong alternative explanation.
+
+**Status**: `WATCH`
+
 ---
 
-## D. RECENTLY KILLED / REFERENCE ONLY — 不要在下一轮重复提出
+# D. RECENTLY KILLED / REFERENCE ONLY — do not recycle next round
 
 | Candidate | Verdict | Main reason |
 |---|---|---|
-| EMNLP Decision Boundary / SCE mechanism | KILL | exact question 已拥挤；继续加 hidden-state/patching 不形成足够 scientific novelty |
-| MathIF reasoning-loses-control mechanism | KILL / watch only | 与已有 CoT trajectory / correctness-signal / steering work过近 |
-| IFEval++ reliability mechanism | KILL | 下一问容易退化成 paraphrase robustness + probe |
-| Instruction tuning → misinformation | KILL | base→instruct 同时改变过多因素，且 role/context-awareness mechanism 已被深入研究 |
-| RFC-Bench reference-free misinformation | KILL | reference vs reference-free conditions 信息本身不同，不能干净解释成 latent knowledge vs use |
-| Fact mutability → source routing | KILL / demoted | mutable/stable 与 relation family 高度混淆，probe 容易只读 relation identity |
-| Numeracy representation→generation | OUT OF PRIMARY POOL | seed venue 不符合当前主 seed policy；仅作背景/方法参考 |
-| Progressive Quiz Bowl reversal | HOLD-OLD | G0 脚本已存在，但当前 ranking 已被更高可行性对象替代 |
-| General instruction FT → context-awareness loss | KILL / reference | seed/adjacent work 已做 attention、role bias、head steering 和 training-data attribution |
-| Personality self-report vs behavior | KILL AS PRIMARY | activation/personality intervention space 已快速拥挤 |
-| Refinement fluency-vs-adequacy | KILL | judge/专业人工依赖较高，且 seed 已给 projection-style解释 |
-| Unlearning latent retained knowledge | KILL | 领域拥挤，评测复杂且常依赖 judge / knowledge-correlation machinery |
-| METER causal reasoning mechanism | KILL | seed 已做 evidence-node saliency / information-flow analysis |
-| ACL SAE causal semantic modules | REFERENCE ONLY | 已是完整 causal mechanism 方法工作，不是新的 scientific object |
+| BOULDER generic multi-turn degradation | KILL | Lost-in-Conversation / intent-mismatch / rolling-memory space already crowded |
+| code→CoT training-order advantage | KILL | teacher forcing / gradient path / exposure bias etc. create too many competing explanations |
+| AR-Bench generic information-gain mechanism | KILL | active task disambiguation / information-gain selection already directly studied |
+| Reasoning Trap tool hallucination | KILL AS FOLLOW-UP | seed already provides representation-collapse + late-residual mechanism |
+| EMNLP Decision Boundary / SCE | KILL | exact question crowded; hidden-state extension insufficient novelty |
+| MathIF reasoning-loses-control | KILL / watch only | overlaps CoT trajectory / correctness-signal / steering work |
+| IFEval++ reliability mechanism | KILL | likely paraphrase robustness + probe |
+| Instruction tuning → misinformation | KILL | base→instruct changes too many factors; role/context mechanisms already studied |
+| RFC-Bench reference-free misinformation | KILL | reference vs no-reference conditions differ in available information |
+| Fact mutability → source routing | KILL | mutability highly confounded with relation family |
+| Numeracy representation→generation | OUT OF PRIMARY POOL | seed venue outside current primary policy |
+| general parametric-vs-context reconciliation | REFERENCE ONLY | NeurIPS 2025 already traces entity flow and performs intervention |
+| generic metacognitive activation monitoring | REFERENCE ONLY | already directly studied with neurofeedback-style paradigms |
+| LAD / MP-STRUCT | KILL | core explanation entangled with vocabulary/entropy; control tree grows |
+| reversal-curse semantics follow-up | KILL | seed already argues semantics exists and order bias drives failure |
+| personalization factuality mechanism | KILL AS FOLLOW-UP | seed already gives representational-entanglement account + steering |
+| new-knowledge hallucination mechanism | KILL AS FOLLOW-UP | seed already gives attention mechanism + mitigation |
+| general RAG context interference | KILL / CROWDED | many ACL/NeurIPS works already study conflict/interference mechanism |
 
 ---
 
-## E. Queue discipline
+# E. Queue discipline
 
-当前执行顺序：
+Current execution order:
 
 ```text
 1. SemTrace prerequisite / critical-cell G0
-2. MedEinst pair-locality + critical-cell G0
-3. 继续寻找 In-context deployment 官方 artifact
-4. Table DRE artifact + critical-cell + collision audit
-5. Context-shaped truth artifact + source-choice audit
-6. WATCH 不主动开大实验
+2. ChronoScope Gold-Context present-drift G0
+3. MedEinst pair-locality + Bias-Trap G0
+4. continue searching for In-context-deployment official artifact
+5. DEEP_AUDIT only after the first three gates move
+6. WATCH candidates do not receive large mechanism implementations
 ```
 
-禁止同时给 5–10 个候选写大段 mechanism code。
+The goal is not a large topic list. It is to move one object from:
 
-Round 07 的一个重要结论是：**没有新发现能仅凭题味挤掉已经 survived 多轮审计的候选。** 新题必须在 scientific value 和 survival probability 两边都真正更强，才允许改排名。
+```text
+published anomaly
+→ dense local critical cell
+→ identifiable computation failure
+→ causal mechanism
+```
 
-目标不是保持题池丰富，而是尽快把研究风险集中到**一个已经真实存在、可识别、值得解释的 scientific object**上。
+without adding rescue controls at every step.
