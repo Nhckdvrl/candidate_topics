@@ -15,6 +15,7 @@ import argparse
 import json
 import os
 import random
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -36,13 +37,20 @@ def extract_json_object(text: str) -> dict:
             return obj
     except json.JSONDecodeError:
         pass
-    start, end = text.find("{"), text.rfind("}")
-    if start < 0 or end <= start:
+    decoder = json.JSONDecoder()
+    candidates: list[dict] = []
+    for start, char in enumerate(text):
+        if char != "{":
+            continue
+        try:
+            obj, _ = decoder.raw_decode(text[start:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict):
+            candidates.append(obj)
+    if not candidates:
         raise ValueError(f"model response is not a JSON object: {text[:300]!r}")
-    obj = json.loads(text[start : end + 1])
-    if not isinstance(obj, dict):
-        raise ValueError("model response JSON must be an object")
-    return obj
+    return candidates[-1]
 
 
 def chat_completion(base_url: str, model: str, messages: list[dict], max_tokens: int) -> str:
@@ -53,6 +61,10 @@ def chat_completion(base_url: str, model: str, messages: list[dict], max_tokens:
             "messages": messages,
             "temperature": 0,
             "max_tokens": max_tokens,
+            # Qwen3's hidden reasoning otherwise consumes the locked output
+            # budget before the required JSON measurement object is emitted.
+            # This is serving-format plumbing, not a prompt or estimand change.
+            "chat_template_kwargs": {"enable_thinking": False},
         }
     ).encode("utf-8")
     req = urllib.request.Request(
@@ -61,12 +73,19 @@ def chat_completion(base_url: str, model: str, messages: list[dict], max_tokens:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=180) as response:
-            data = json.load(response)
-    except urllib.error.HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"LLM HTTP {exc.code}: {body[:1000]}") from exc
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=180) as response:
+                data = json.load(response)
+            break
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            if attempt == 2 or 400 <= exc.code < 500:
+                raise RuntimeError(f"LLM HTTP {exc.code}: {body[:1000]}") from exc
+        except (TimeoutError, urllib.error.URLError):
+            if attempt == 2:
+                raise
+        time.sleep(2**attempt)
     return data["choices"][0]["message"]["content"]
 
 
@@ -199,7 +218,10 @@ def judge_certainty_twice(
         parse_certainty_answer(ans2), second_a_is_source
     )
     shift = shift1 if shift1 == shift2 else "UNKNOWN"
-    return shift, [ans1, ans2]
+    return shift, [
+        {"parsed": ans1, "raw_response": raw1},
+        {"parsed": ans2, "raw_response": raw2},
+    ]
 
 
 def annotate_edge(
@@ -241,6 +263,7 @@ def annotate_edge(
         "measurement_meta": {
             "model": model,
             "proposition_evidence_reason": pe.get("reason", ""),
+            "proposition_evidence_raw_response": raw,
             "certainty_judgments": certainty_raw,
         },
     }
@@ -257,6 +280,11 @@ def main() -> None:
     )
     p.add_argument("--max-tokens", type=int, default=700)
     p.add_argument("--seed", type=int, default=20260823)
+    p.add_argument(
+        "--resume",
+        action="store_true",
+        help="append only edge_ids not already present in the output",
+    )
     args = p.parse_args()
     if not args.model:
         p.error("set --model or MODEL")
@@ -265,14 +293,25 @@ def main() -> None:
 
     rng = random.Random(args.seed)
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    completed: set[str] = set()
+    if args.resume and args.output.exists():
+        with args.output.open("r", encoding="utf-8") as done:
+            for line in done:
+                if line.strip():
+                    completed.add(str(json.loads(line)["edge_id"]))
+    mode = "a" if args.resume else "w"
     with args.input.open("r", encoding="utf-8") as src, args.output.open(
-        "w", encoding="utf-8"
+        mode, encoding="utf-8"
     ) as dst:
         for lineno, line in enumerate(src, 1):
             if not line.strip():
                 continue
             obj = json.loads(line)
             validate_raw_edge(obj, lineno)
+            # Advance the frozen order-randomization stream even for resumed rows.
+            if str(obj["edge_id"]) in completed:
+                rng.randrange(2)
+                continue
             measured = annotate_edge(
                 obj, args.base_url, args.model, args.max_tokens, rng
             )

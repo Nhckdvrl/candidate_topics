@@ -1,0 +1,6 @@
+{
+  "verdict": "STOP_MEASUREMENT_NOT_RELIABLE",
+  "formal_primary_analysis_run": false,
+  "reason": "Prespecified known Greenberg-style transmutation case was not recovered by the frozen instrument.",
+  "gold_audit_report": "gold_audit_report.json"
+}

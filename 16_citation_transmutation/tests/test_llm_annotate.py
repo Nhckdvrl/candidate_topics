@@ -8,6 +8,13 @@ def test_extract_json_object_accepts_fenced_noise():
     assert obj["stronger"] == "A"
 
 
+def test_extract_json_object_uses_final_valid_object_after_reasoning():
+    obj = extract_json_object(
+        'draft {"stronger":"A"}\nfinal {"stronger":"B","reason":"final"}'
+    )
+    assert obj == {"stronger": "B", "reason": "final"}
+
+
 @pytest.mark.parametrize(
     "stronger,a_is_source,expected",
     [

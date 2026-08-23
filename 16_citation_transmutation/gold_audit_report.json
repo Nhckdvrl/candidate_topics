@@ -1,0 +1,55 @@
+{
+  "n_gold": 68,
+  "same_core_proposition": {
+    "tp": 51,
+    "fp": 3,
+    "precision": 0.9444444444444444
+  },
+  "directly_supported_by_source": {
+    "tp": 33,
+    "fp": 1,
+    "precision": 0.9705882352941176
+  },
+  "evidence_status_NONE": {
+    "tp": 36,
+    "fp": 0,
+    "precision": 1.0
+  },
+  "primary_eligibility_precision": {
+    "tp": 14,
+    "fp": 0,
+    "precision": 1.0
+  },
+  "certainty_shift": {
+    "n_gold_determinate": 52,
+    "exact_agreement_including_abstentions": 0.9230769230769231,
+    "n_model_determinate": 48,
+    "coverage": 0.9230769230769231,
+    "agreement_conditional_on_model_determinate": 1.0,
+    "confusion_gold_to_measured": {
+      "UP": {
+        "UP": 31,
+        "UNKNOWN": 4
+      },
+      "SAME": {
+        "SAME": 8
+      },
+      "DOWN": {
+        "DOWN": 9
+      }
+    }
+  },
+  "known_greenberg_case": {
+    "n_edges": 4,
+    "exact": 2,
+    "gold_up_edges": 3,
+    "up_edges_recovered": 1,
+    "recovered": false
+  },
+  "frozen_gates": {
+    "same_core_precision_min": 0.9,
+    "none_precision_min": 0.9,
+    "certainty_agreement_min": 0.85
+  },
+  "gate_pass": false
+}

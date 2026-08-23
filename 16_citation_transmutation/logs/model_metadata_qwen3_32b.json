@@ -1,0 +1,22 @@
+{
+  "measurement_role": "frozen_primary_instrument",
+  "model": "Qwen/Qwen3-32B",
+  "served_model_name": "Qwen3-32B-Instruct",
+  "huggingface_snapshot_revision": "9216db5781bf21249d130ec9da846c4624c16137",
+  "serving_framework": "vLLM",
+  "serving_framework_version": "0.22.1",
+  "python": "3.12.13",
+  "pytorch": "2.11.0+cu130",
+  "transformers": "5.10.2",
+  "host": "local workstation",
+  "gpu": "2 x NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+  "nvidia_driver": "580.82.07",
+  "tensor_parallel_size": 2,
+  "dtype": "auto (BF16 weights)",
+  "max_context_tokens": 32768,
+  "gpu_memory_utilization": 0.70,
+  "enforce_eager": true,
+  "temperature": 0,
+  "generation_config": "vllm",
+  "annotation_seed": 20260823
+}
