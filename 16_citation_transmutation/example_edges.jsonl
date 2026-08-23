@@ -1,0 +1,6 @@
+{"edge_id":"demo-001","source_claim":"Treatment X may reduce marker Y.","citing_claim":"Treatment X reduces marker Y.","same_claim":true,"new_primary_evidence":false,"source_certainty":0.45,"citing_certainty":0.80}
+{"edge_id":"demo-002","source_claim":"Protein A may regulate pathway B.","citing_claim":"Protein A regulates pathway B.","same_claim":true,"new_primary_evidence":false,"source_certainty":0.40,"citing_certainty":0.75}
+{"edge_id":"demo-003","source_claim":"Compound C is associated with outcome D.","citing_claim":"Compound C is associated with outcome D.","same_claim":true,"new_primary_evidence":false,"source_certainty":0.65,"citing_certainty":0.65}
+{"edge_id":"demo-004","source_claim":"Mechanism E may explain phenotype F.","citing_claim":"Mechanism E likely explains phenotype F.","same_claim":true,"new_primary_evidence":true,"source_certainty":0.45,"citing_certainty":0.70}
+{"edge_id":"demo-005","source_claim":"Factor G may increase response H.","citing_claim":"Factor G increases response H.","same_claim":true,"new_primary_evidence":true,"source_certainty":0.45,"citing_certainty":0.80}
+{"edge_id":"demo-006","source_claim":"Method M detects signal N.","citing_claim":"Method M was used to measure N.","same_claim":false,"new_primary_evidence":false,"source_certainty":0.90,"citing_certainty":0.90}
