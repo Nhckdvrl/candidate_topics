@@ -1,219 +1,169 @@
 # 19 — Do Robot Foundation Policies Learn Task-Structured Feedback?
 
-**Status: CANDIDATE / FROZEN G0 READY**
+> **ARCHIVED / PRIMARY METRIC IDENTIFICATION FAILURE (2026-08-24).**
+>
+> Read [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md) and [`G0_RESULTS.md`](./G0_RESULTS.md) first. The original scientific question remains interesting, but the frozen G0 scalar did not identify task-space correction once Psi0 responded through joint-space directions orthogonal to the injected perturbation.
 
-## The natural question
+## Final status
 
-A robot can reach the same task goal with many different body configurations. Classical optimal feedback control predicts a **minimal intervention principle**: correct deviations that threaten the task, but do not waste control effort restoring deviations that live in redundant/task-null dimensions.
+The frozen scalar on the observed configs was a very tight numerical null:
 
-That gives a simple question for modern robot foundation policies:
+| quantity | result |
+| --- | ---: |
+| `R_task` | `0.9632` |
+| `R_null` | `0.9671` |
+| `DeltaR` | **`-0.0038`** |
+| 8-config bootstrap 95% CI | **`[-0.0275,+0.0178]`** |
 
-> **When the robot body is perturbed, does a foundation policy correct the perturbation according to task geometry, or does it simply pull the body back toward a familiar demonstrated configuration?**
+This lies inside the preregistered numerical KILL region. **It is not interpreted as a clean falsification of task-structured feedback.**
 
-The first experiment does not inspect hidden states, train probes, or add a learned metric. It changes the physical robot state in two matched ways and asks the frozen policy what absolute target it now commands.
+The reason is empirical, not philosophical: most of Psi0's action-target response was orthogonal to the injected joint-space direction. The frozen score only measured how much of the new target moved *along that exact direction*.
 
-## Why this is worth testing
+A redundant arm can correct an end-effector error with a different joint coordination. Therefore the same score can correspond to opposite task-space behaviors.
 
-The minimal-intervention principle is a classic property of competent feedback control, not an LLM/VLA-specific construct. A generalist VLA trained mainly from demonstrations is not explicitly told that many body configurations are equivalent for the task. If task-structured feedback emerges anyway, that is a meaningful control property of foundation policies. If it does not, the failure exposes a direct training target: teach policies invariance/accommodation along task-equivalent body directions while preserving correction in task-sensitive directions.
+## Original natural question
 
-The method opening is therefore concrete: **task-structured feedback regularization / body-redundancy augmentation**, not just another diagnostic plot.
+A robot can reach the same task goal with many body configurations. Classical optimal feedback control motivates the minimal-intervention question:
 
-## Exact G0 platform
+> **When the robot body is perturbed, does a foundation policy selectively correct deviations that threaten the task while tolerating task-equivalent redundant variation?**
 
-- **Policy:** released Ψ₀.
+This remains a natural question. Topic 19 is archived because its first measurement did not identify that question cleanly enough, not because the question was shown false.
+
+## Frozen G0 design
+
+- **Policy:** released Psi0 `ckpt_40000`.
 - **Simulator/evaluation:** SIMPLE.
 - **Task:** `G1WholebodyCloseDoorTeleop-v0`.
 - **Robot:** G1 Sonic, seven-DoF right arm.
-- **End effector:** `right_hand_palm_link`.
+- **Physical intervention:** equal joint-norm (`epsilon=0.08 rad`) right-arm perturbations from the same MuJoCo state.
+- **Task branch:** top singular direction of the 3x7 wrist-position Jacobian.
+- **Null branch:** one-dimensional null direction of the full 6x7 wrist geometric Jacobian.
+- **Observation:** physically perturb qpos, preserve the rest of the snapshot, `mj_forward`, re-render and rebuild proprio.
+- **Inference:** common-random-number base/task/null queries, using the first absolute right-arm target.
 
-This is not a competence gamble. SIMPLE reports Ψ₀ at **10/10, 10/10, 10/10** on CloseDoor across its three reported DR levels. The task source defines success from the door joint state, while the demonstration decomposition explicitly uses the right hand. Thus task completion and a particular whole-body realization are not the same variable.
+The source and identifiability audit is in [`VALIDATION_AUDIT.md`](./VALIDATION_AUDIT.md). The pre-run config-cluster amendment is in [`PROTOCOL_AMENDMENT_2026-08-23.md`](./PROTOCOL_AMENDMENT_2026-08-23.md).
 
-Upstream contracts frozen during design audit:
+## Prerequisites that passed
 
-- SIMPLE commit `b49c1aea2dd57309bb533219d0d34d6020f3d943`
-- Ψ₀ commit `9ad917526394c1cacc72dba08562629936505987`
+The experimental object itself was alive:
 
-Relevant source:
+- official-path CloseDoor P0: **10/10**;
+- paired stochastic inference: same state + same seed reproduced exactly (`diff=0.0`), while a different seed changed the action;
+- finite geometry: **48/48** selected states passed;
+- typical task wrist translation about **31 mm**;
+- typical null wrist translation about **0.29 mm**;
+- typical null wrist rotation about **0.09 deg**;
+- task/null translation ratio about **109**.
 
-- SIMPLE CloseDoor task: `src/simple/tasks/g1_wholebody_close_door_teleop.py`
-- G1 Sonic joint/EE definitions: `src/simple/robots/g1_sonic.py`
-- Ψ₀ SIMPLE agent: `src/simple/baselines/psi0_decoupled_wbc.py`
-- Ψ₀ dataset/action layout: `scripts/postprocess_psi0.py`
-- Ψ₀ server: `src/psi/deploy/psi0_serve_simple.py`
+Thus the stop is not explained by a dead policy, weak perturbation, stochastic noise, or failed kinematics.
 
-## The one clean contrast
+## Frozen primary metric
 
-At one real on-policy state with right-arm joint state `q`, compute the geometric Jacobian of `right_hand_palm_link` restricted to the seven right-arm joints.
+Psi0 emits absolute right-arm joint targets, so the G0 defined
 
-Construct equal joint-norm perturbations:
+```text
+A(d) = <a(q+d)-a(q), d> / ||d||^2
+R(d) = 1 - A(d)
+DeltaR = R_task - R_null
+```
 
-### 1. Task-space perturbation
+The intended interpretation was:
 
-`δ_task` is the top right singular vector of the **3×7 wrist-position Jacobian**, scaled to joint-space norm `ε=0.08 rad`.
+- `A≈1`: the target follows the body perturbation, so the deviation is accommodated;
+- `A≈0`: the target stays near its original value, so downstream WBC tends to restore the body;
+- task-structured feedback should give `DeltaR > 0`.
 
-It is the parameter-free local direction that moves the wrist position most for that joint-space perturbation budget.
+## Why that interpretation failed
 
-### 2. Full-pose null perturbation
+The raw target response was not small:
 
-`δ_null` is the one-dimensional null direction of the **6×7 wrist geometric Jacobian**, with the same joint-space norm.
+| branch | `||Delta a||` | along `d` | orthogonal to `d` | alignment |
+| --- | ---: | ---: | ---: | ---: |
+| task | `0.0334 rad` | `0.0049` | `0.0328` | `15.3%` |
+| null | `0.0198 rad` | `0.0069` | `0.0177` | `36.0%` |
 
-To first order it changes the redundant body configuration while preserving both wrist position and orientation.
+Most of the response therefore lived outside the injected joint-space axis.
 
-We do not trust the linearization blindly. After applying each perturbation to the real MuJoCo state and calling `mj_forward`, the state is accepted only if the finite-FK checks pass:
+Let `J` be the end-effector Jacobian. It is possible to have
 
-- task wrist translation ≥ 5 mm;
-- null wrist translation ≤ 2 mm;
-- null wrist rotation ≤ 1 degree;
-- task/null translation ratio ≥ 5;
-- joint limits and simulator validity must hold.
+```text
+Delta a perpendicular to d
+J Delta a = -J d
+```
 
-If too few ordinary on-policy states satisfy this fixed construction, the platform fails; we do not tune `ε`, pick a convenient joint, or search perturbation directions.
+which represents task-space correction through a different joint coordination while the frozen metric still gives `A=0, R=1`.
 
-## Crucial action-semantics correction
+An orthogonal response with a different task-space consequence can receive the same scalar. So `R` is not a generic correction fraction once this response geometry appears.
 
-Ψ₀ does **not** output a right-arm delta. Its SIMPLE action dimensions `21:28` are **absolute right-arm joint targets** that are passed to the downstream WBC.
+The result that is actually supported is narrower:
 
-Therefore raw `a(q+δ)-a(q)` is not itself a correction signal.
+> **On the observed CloseDoor states, Psi0 did not show differential restoration along the exact injected joint-space perturbation axes.**
 
-Let `a0 = a(q)` and `aδ = a(q+δ)` be the first returned right-arm absolute targets. Define the **accommodation fraction**
+It does not establish that Psi0 lacks a task-space minimal-intervention response.
 
-`A(δ) = <aδ-a0, δ> / ||δ||²`
+## Second construct problem
 
-and the corresponding **implied correction fraction**
+The G0 used the wrist-position Jacobian's largest singular direction as the `task` perturbation. That guarantees a large wrist displacement, but CloseDoor task relevance depends on hand-door relative geometry, contact, hinge direction, and phase.
 
-`R(δ) = 1 - A(δ)`.
+Therefore:
 
-Interpretation:
+```text
+end-effector-changing != automatically task-relevant
+```
 
-- `A≈0, R≈1`: Ψ₀ leaves the absolute target near the original target; WBC will tend to erase the perturbation.
-- `A≈1, R≈0`: Ψ₀ moves the target one-for-one with the perturbation; WBC will tend to preserve/accommodate it.
+A fresh future formulation should define perturbation relevance and correction directly in task/contact/outcome space.
 
-The primary paired statistic is
+## Sample deviation
 
-`ΔR = R_task - R_null = A_null - A_task`.
+The final G0a sample contained:
 
-**Task-structured feedback predicts `ΔR > 0`: the policy asks for more correction of wrist-changing deviations than of wrist-pose-preserving redundant deviations.**
+- **16 successful rollouts**;
+- **8 distinct level-0 configs**;
+- **48 selected states**;
+- four frozen pair seeds per state.
 
-This statistic is not guaranteed by how the Jacobian constructs the perturbations. A policy whose absolute target ignores both perturbations gets `ΔR≈0`; a policy that accommodates both equally also gets `ΔR≈0`.
+Configs `1` and `7` failed both collector attempts although official-path P0 was 10/10. The remaining eight configs succeeded in both repeats. This indicates a residual collector-vs-official-eval difference and systematic missingness.
 
-## Physical observation intervention, not proprio spoofing
+The pre-run amendment had intended 10 config-level bootstrap units. The reported 8-config CI is preserved as the data actually obtained, but the intended 10-config primary analysis was not fully realized.
 
-For every branch:
+No rerun-until-success procedure was used to force the missing configs into the sample.
 
-1. restore the exact same MuJoCo snapshot;
-2. physically change only the seven right-arm qpos values;
-3. preserve qvel, controller state, time, and every other simulator field from the same snapshot;
-4. call `mj_forward` without integrating time;
-5. re-render the observation and rebuild proprio from that physical state;
-6. query Ψ₀ while preserving the same deployed previous-height/context values across branches.
+## Important implementation correction
 
-The camera image is **not** held fixed while proprio changes. The intervention is a consistent physical robot state, and the only intended state difference is right-arm configuration.
+`right_hand_palm_link` is authored through a fixed joint and is folded in the MuJoCo body representation. The collector therefore used `mj_jac` at `right_wrist_yaw_link` plus the authored palm offset `[0.0415,-0.003,0]`, with a runtime frame verification check.
 
-No branch rollout is needed for the first gate. We measure the next high-level target before downstream WBC can create its own recovery behavior.
+This preserved the intended physical palm point rather than silently measuring a point about 4.15 cm away.
 
-## Stochastic inference and RTC
+## No post-hoc rescue
 
-Official SIMPLE deployment runs Ψ₀ with RTC and `action_exec_horizon=24`. The server is stateful, so naively issuing three HTTP requests would contaminate the paired comparison through `previous_action` and action history.
+After the frozen result, Topic 19 did **not**:
 
-The frozen G0 therefore has two stages:
+- tune epsilon;
+- choose another joint subset or EE;
+- select time points by response;
+- replace the metric with a task-space/Jacobian-output metric;
+- fit nonlinear response models;
+- probe hidden states;
+- run G0b to rescue G0a.
 
-### G0a — clean policy-map test
+Those would be redesigns after observing the failure.
 
-At a saved deployed on-policy state, query the **reset-mode ordinary `predict_action` mapping** for `base / task / null`. Before each of the three model calls, run Ψ₀'s own `seed_everything(pair_seed)` with the same pair seed. Use only the **first returned action target**.
+## Reusable lesson
 
-This removes diffusion/flow sampling noise and RTC history as confounds while testing the learned mapping from the current physical observation to action target.
+> **For redundant control systems, joint-axis restoration is not the same thing as task-space correction. If the scientific claim is about task-space feedback, define the dependent variable in task/outcome space before collecting data.**
 
-Before using G0a, an exact-repeat contract test must show that two identical state + identical pair-seed queries agree numerically. Failure is an engineering/identification stop.
+And:
 
-### G0b — deployment confirmation, only after a positive G0a
+> **A kinematically large end-effector perturbation is not automatically a task-relevant perturbation. Manipulation relevance should be grounded in contact/object/outcome geometry.**
 
-Freeze the same `previous_action` / RTC history snapshot and perform the paired query through `predict_action_with_training_rtc_flow`, again with common random numbers and without mutating history between branches.
-
-G0b is confirmation, not a rescue route. If G0a is weak, we stop.
-
-## State sampling
-
-First verify the exact released checkpoint succeeds on at least **8/10** level-0 CloseDoor evaluation episodes under the audited official stack. Otherwise this platform is not a valid object for the question.
-
-For G0a:
-
-- run **20 successful level-0 episodes**;
-- use the **last three fresh-policy query states before success** from each episode;
-- one episode remains the independent bootstrap unit;
-- skip only states that fail the fixed kinematic validity checks above or violate joint limits/simulator validity;
-- use four fixed common-random-number pair seeds per state: `20260823, 20260824, 20260825, 20260826`;
-- average seeds/states within episode before inference.
-
-This focuses the audit on actual door-manipulation decisions without choosing frames after seeing the response metric.
-
-## Frozen G0 gate
-
-Bootstrap the episode-level mean `ΔR` over episodes.
-
-- **GO:** mean `ΔR >= 0.20` and 95% bootstrap CI lower bound `> 0`.
-- **KILL:** 95% CI upper bound `<= 0.10`.
-- **Otherwise:** `INCONCLUSIVE_DO_NOT_TUNE`.
-
-A 0.20 effect means twenty percentage points more implied correction for task-space than null-space deviations. It is large enough to be a meaningful feedback-structure effect rather than microscopic sensitivity.
-
-### What a positive G0 proves
-
-At late successful CloseDoor decision states, the frozen foundation policy's immediate absolute target response is selectively structured by local end-effector task geometry: it accommodates wrist-pose-preserving body deviations more than wrist-moving deviations.
-
-### What it does not prove
-
-A positive result does **not** prove:
-
-- optimal feedback control globally;
-- that Ψ₀ represents an explicit Jacobian or task manifold internally;
-- that every null perturbation is irrelevant over long horizons;
-- that a negative result uniquely means "demonstration replay".
-
-A negative result supports the narrower statement that this policy does not show a meaningful local minimal-intervention signature under the clean test.
-
-## Why this avoids Topic 08's failure
-
-Topic 08's original planar-arm gate became circular because the same Jacobian geometry helped define both the predictor and the measured "functional risk". Here the Jacobian is used **only to create two matched physical interventions**. The dependent variable is an independent frozen-model response: Ψ₀'s absolute target.
-
-Nothing in the construction forces `A_null > A_task` or `R_task > R_null`.
-
-## Collision audit
-
-The closest classical line is Todorov & Jordan's minimal-intervention/optimal-feedback-control work: task-irrelevant deviations should be allowed to vary rather than actively corrected.
-
-Recent adjacent VLA work found during the 2026-08-23 audit includes:
-
-- **BYOVLA / Run-time Observation Interventions** — tests sensitivity to task-irrelevant **visual regions** and edits images at runtime (`arXiv:2410.01971`).
-- **ProbeAct (2026)** — detects VLA failures and minimally filters actions with a CBF (`arXiv:2606.09740`).
-- representation/action-steering work — intervenes on latent spatial features or action variables.
-- classical robot redundancy/null-space control — explicitly engineers null-space behavior in controllers.
-
-We did **not** find a recent paper that uses paired **same-state physical body perturbations, split into end-effector task-space vs Jacobian-null directions, to audit whether an off-the-shelf foundation VLA itself has learned a minimal-intervention feedback law**. This is a scoped collision statement, not a claim that no related paper exists anywhere.
-
-## If G0 is positive: the paper-sized path
-
-Do not immediately search hidden states. First establish external validity:
-
-1. repeat the identical intervention on at least one additional foundation policy available in SIMPLE (e.g. π0.5 / GR00T-family if competent on the same task);
-2. test another redundant manipulation task;
-3. characterize whether training recipe/model family predicts the feedback signature.
-
-Then the natural method contribution is to train **task-structured feedback consistency**:
-
-- for task-null body augmentations, shift the target consistently with the null displacement rather than forcing the demonstration posture;
-- for task-space perturbations, preserve corrective behavior.
-
-The diagnostic gives a direct before/after mechanism metric, while task success under body perturbations gives the behavioral metric.
+If this scientific question is revisited, register it as a new topic with those definitions frozen from the start rather than repairing Topic 19.
 
 ## Files
 
-- `g0_core.py` — frozen perturbation construction, absolute-target response metric, episode bootstrap, verdict.
-- `g0_simple_psi0.py` — audited SIMPLE/MuJoCo integration primitives and JSONL analyzer.
-- `VALIDATION_AUDIT.md` — source, collision, identifiability, failure-mode audit.
-- `tests/test_g0_core.py` — logic tests.
-
-## Local engineering rule
-
-Paths, launcher flags, device placement, rendering plumbing, and checkpoint locations may be adjusted to the actual machine. The scientific contrast may not:
-
-**same physical state, equal-norm task/null right-arm perturbations, physically re-rendered observations, common-random-number Ψ₀ queries, first absolute right-arm target, frozen `ΔR` gate.**
+- [`G0_RESULTS.md`](./G0_RESULTS.md) — complete result, diagnostics, and deviations.
+- [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md) — concise final interpretation and transferable lesson.
+- [`PROTOCOL_AMENDMENT_2026-08-23.md`](./PROTOCOL_AMENDMENT_2026-08-23.md) — pre-score config-cluster amendment.
+- [`VALIDATION_AUDIT.md`](./VALIDATION_AUDIT.md) — source/collision/identifiability audit before the run.
+- `g0_core.py` — frozen original metric and perturbation logic.
+- `g0_simple_psi0.py` — SIMPLE/Psi0 integration primitives.
+- `tests/test_g0_core.py` — original frozen logic tests.
