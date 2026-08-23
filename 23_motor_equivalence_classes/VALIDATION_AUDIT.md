@@ -56,7 +56,7 @@ task-effect / motor-equivalence abstraction
 
 SIMPLE already provides the separation needed by the hypothesis:
 
-1. success is defined in the environment/object state;
+1. reward/success is grounded in an environment/object-state predicate and its persistence;
 2. automated demonstrations explicitly privilege the right hand and lock the left.
 
 No learned probe, SAE, latent distance, or trajectory similarity is required for the primary endpoint.
@@ -69,13 +69,13 @@ At SIMPLE commit:
 
 `g1_wholebody_close_door_teleop.py`:
 
-- success requires `articulate_joint_1 < -0.16`;
+- the raw task predicate is `articulate_joint_1 < -0.16`; while it remains true, reward accumulates until the official success criterion is reached;
 - demonstration decomposition uses `hand_uid="dex3_right"`;
 - demonstration decomposition locks `left_hand_palm_link`.
 
 `g1_wholebody_open_faucet_teleop.py`:
 
-- success requires `articulate_joint_0 > 0.7 or < -0.7`;
+- the raw task predicate is `articulate_joint_0 > 0.7 or < -0.7`, likewise feeding the persistent reward/success logic;
 - same right-hand / left-lock demonstration asymmetry.
 
 At Psi0 commit:
@@ -90,7 +90,7 @@ Topic 19 failed because joint-axis restoration was used as a proxy for task-spac
 
 Topic 23 does not reuse that proxy.
 
-The primary endpoint is the exact object state that defines task success. The actuator intervention only removes one motor route; it is not itself the dependent variable.
+The primary endpoint is the official upstream episode success, with the exact object coordinate/predicate logged alongside it. The actuator intervention only removes one motor route; it is not itself the dependent variable.
 
 ### Remaining confound and how it is handled
 
