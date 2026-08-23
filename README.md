@@ -39,6 +39,7 @@ The current topic-selection rule is deliberately stricter than simple "paper + a
 
 | Topic | Final decision | Why it was stopped | Summary |
 | --- | --- | --- | --- |
+| [23 — Do Robot Foundation Policies Learn Motor Equivalence Classes?](./23_motor_equivalence_classes/) | **ARCHIVED / FROZEN PANEL PREREQUISITES FAIL** | The frozen Psi0 + SIMPLE panel never supplied the required intersection. CloseDoor was fully competent (`30/30`) but freezing the right arm cost only `0.033` and disabling both arms still gave `30/30`, so there was no canonical arm motor program to substitute. OpenFaucet genuinely used the right arm but canonical success was only `11/30 = 0.367` against the frozen `0.70` competence bar. Crucially, the original four-condition CloseDoor design would have produced an overwhelming false positive: paired `right_disabled-full_hold = 0.967`, 95% CI `[0.90,1.00]`, with 29 apparent substitution events. | [Archive summary](./23_motor_equivalence_classes/ARCHIVE_SUMMARY.md) |
 | [19 — Do Robot Foundation Policies Learn Task-Structured Feedback?](./19_task_structured_feedback/) | **ARCHIVED / PRIMARY METRIC IDENTIFICATION FAILURE** | The frozen joint-axis score was a tight numerical null on 8 observed configs (`ΔR=-0.0038`, 95% CI `[-0.0275,+0.0178]`), but raw Psi0 target responses were mostly orthogonal to the injected joint-space direction. A redundant arm can correct the same task-space error through a different joint coordination, so the frozen projection metric cannot identify task-space correction. In addition, wrist-moving was not guaranteed to be CloseDoor-task-relevant, and two configs were systematically missing under the collector. The scientific question remains unresolved; no post-hoc task-space metric rescue was run. | [Archive summary](./19_task_structured_feedback/ARCHIVE_SUMMARY.md) |
 | [20 — Representation or Access?](./20_numeracy_representation_access/) | **ARCHIVED / ROBUST PHENOMENON, FROZEN CAUSAL ROUTES FAILED** | Same-prompt numerical ranking remained highly decodable when generation failed, and a scientific-notation wrong-answer attractor replicated on two untouched seeds. But G1 stopped at its frozen fresh prerequisite and G2's perfectly decodable, rank-orthogonal notation coordinate produced exactly `0/32` rescues with `ΔR=0`, CI `[0,0]`. Continuing would require post-hoc layer/token/subspace search; the remaining format-bias observation alone is too narrow for the intended paper scale. | [Archive summary](./20_numeracy_representation_access/ARCHIVE_SUMMARY.md) |
 | [17 — Can a Cited Method Actually Be Reconstructed?](./17_shortcut_method_fidelity/) | **ARCHIVED / G0 INVALID, MEASUREMENT FAILURE** | The corrected open-full-text preflight inspected 21 lineages and flagged 14, but direct evidence review found 7 definite ontology/retrieval false positives, 7 unresolved multi-hop/supplement cases, and 0 confirmed documentary failures. Universal critical-unit templates, one-hop citation resolution and incomplete supplement recovery made the apparent effect non-identifiable. | [Archive summary](./17_shortcut_method_fidelity/ARCHIVE_SUMMARY.md) |
@@ -73,6 +74,14 @@ Topic 19 adds two important identification rules:
 Topic 20 adds a particularly useful distinction:
 
 > **A behavioral phenomenon can be extremely stable while the most obvious decodable representation is causally inert. Readability and behavioral alignment are not a license for open-ended mechanism search.**
+
+Topic 23 adds three related intervention-design rules:
+
+> **Before interpreting successful behavior after “removing” a mechanism or route, first show that the mechanism is causally used in the canonical behavior. A treatment label is not proof that the named causal object was actually removed.**
+
+> **A perfect negative control does not rescue a non-identifying treatment. `full_hold = 0` ruled out accidental environment success, but it did not prove that `right_disabled` removed a right-arm motor program.**
+
+> **Statistical strength cannot compensate for construct failure. Topic 23 produced a paired effect of `0.967` with 95% CI `[0.90,1.00]` and 29/30 apparent events, yet the scientific interpretation was false because the canonical arm program did not exist.**
 
 Several lessons recur strongly across the archive:
 
