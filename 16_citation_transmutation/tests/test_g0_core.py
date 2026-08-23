@@ -38,6 +38,7 @@ def test_primary_filter_requires_no_new_support_and_complete_audit():
         edge(edge_id="c", evidence_audit_complete=False, evidence_status="UNKNOWN"),
         edge(edge_id="d", same_core_proposition=False),
         edge(edge_id="e", directly_supported_by_source=False),
+        edge(edge_id="f", certainty_shift="UNKNOWN"),
     ]
     groups = classify_rows(rows)
     assert [e.edge_id for e in groups["primary_no_new_support"]] == ["a"]
