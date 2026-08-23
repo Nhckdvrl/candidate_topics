@@ -49,8 +49,11 @@ python g0_bias_trap_screen.py \
 python - <<'PY'
 import json
 from pathlib import Path
-s=json.loads(Path('artifacts/g0_behavior_direct/summary.json').read_text())
-if s['verdict']!='DIRECT_MODE_MECHANISM_OBJECT_READY':
+cot=json.loads(Path('artifacts/g0_behavior_cot/summary.json').read_text())
+direct=json.loads(Path('artifacts/g0_behavior_direct/summary.json').read_text())
+if cot['sample_case_ids'] != direct['sample_case_ids']:
+    raise SystemExit('STOP: CoT and direct modes did not evaluate the identical fixed pair set')
+if direct['verdict']!='DIRECT_MODE_MECHANISM_OBJECT_READY':
     raise SystemExit('STOP: published phenomenon may be real, but the fixed-position direct mechanism object is too weak')
 print('ALL TOPIC22 G0 GATES PASSED')
 PY
