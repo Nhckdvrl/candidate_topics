@@ -1,6 +1,13 @@
 # 23 — Do Robot Foundation Policies Learn Motor Equivalence Classes?
 
-> **ACTIVE / REGISTERED 2026-08-24**
+> **G0 COMPLETE — BOTH FROZEN PANEL TASKS FAIL PREREQUISITES.**
+> Registered 2026-08-24; condition panel revised the same day (revision 2); G0 run
+> and reported the same day. See [G0_RESULTS.md](G0_RESULTS.md).
+>
+> CloseDoor: `PREREQUISITE_FAIL_NO_CANONICAL_ARM_PROGRAM` (canonical 30/30, but
+> freezing the right arm costs 0.033 and removing both arms costs nothing).
+> OpenFaucet: `PREREQUISITE_FAIL_CANONICAL` (canonical 11/30 measured, 10/30
+> published, against a 0.70 bar).
 >
 > Source search candidate: [`embodied_topic_search/candidates/do_robot_foundation_policies_learn_motor_equivalence_classes.md`](../embodied_topic_search/candidates/do_robot_foundation_policies_learn_motor_equivalence_classes.md)
 >
@@ -33,7 +40,15 @@ The important open-source asymmetry is already present in SIMPLE:
 
 - `G1WholebodyCloseDoorTeleop`: the reward/success logic is grounded in an **object-state predicate** (`articulate_joint_1 < -0.16`), which must remain satisfied long enough for the reward accumulator to reach the official success criterion;
 - `G1WholebodyOpenFaucetTeleop`: likewise, its task effect is grounded in `|articulate_joint_0| > 0.7`, again with persistence through the official reward/success logic;
-- yet both automated demonstration decompositions explicitly use `hand_uid="dex3_right"` and `lock_links=["left_hand_palm_link"]`.
+- yet the policy's own canonical solution is strongly right-lateralized.
+
+> **Corrected 2026-08-24.** The registration originally cited
+> `Task.decompose()`'s `hand_uid="dex3_right"` / `lock_links=["left_hand_palm_link"]`
+> as evidence of a right-handed demonstrator. That is wrong for these two tasks:
+> `decompose()` drives the CuRobo datagen path used by the `*MP` tasks, while both
+> of these are `*Teleop` tasks whose data was human teleoperated. The laterality
+> evidence is now the measured `right_frozen` vs `left_disabled` contrast instead.
+> See [VALIDATION_AUDIT.md](VALIDATION_AUDIT.md#r28--decompose-is-not-evidence-about-the-teleop-demonstrations).
 
 Thus the benchmark itself separates:
 
@@ -84,49 +99,79 @@ The arm/hand/body-pose groups are absolute action targets in the audited modalit
 
 ## G0: canonical-route removal
 
-Start with **CloseDoor**, because Topic 19 already established that the released Psi0 checkpoint can solve the official-path task reliably.
+> **Revised 2026-08-24 (revision 2).** The original four-condition panel
+> (`canonical` / `oracle_right_disabled` / `right_disabled` / `full_hold`) was
+> replaced after the intervention was implemented against the real upstream stack
+> and a contact-level route probe was run. See
+> [VALIDATION_AUDIT.md](VALIDATION_AUDIT.md#revision-2-2026-08-24) for the evidence.
+> In short: a `right_disabled` success is consistent with three different worlds,
+> and the original panel could not tell them apart.
 
-Use a fixed panel of at least **20 matched SIMPLE configurations**. Every configuration is evaluated under all four conditions below.
+```text
+W1  the policy re-planned the task onto another effector        <- the claim
+W2  the arm was never articulating; the hand was a passive
+    bumper carried into the object by locomotion
+W3  no arm was needed at all; the torso/base does the work
+```
+
+Every configuration is evaluated under all seven conditions.
 
 ### A. `canonical`
 
-Unmodified policy rollout.
+Unmodified policy rollout. Verifies the task is alive.
 
-Purpose: verify that the task is alive.
+### B. `right_frozen` — is there a right-arm motor program at all?
 
-### B. `oracle_right_disabled`
+The right arm and hand are held at the configuration they already had, so the limb
+loses its **articulation** but stays where it is. This is the locked-joint fault
+model used in the VLA fault literature.
 
-A scripted / teleoperated **alternative** solution under the exact same right-side intervention used in C.
+If freezing the arm in place costs the policy nothing, the canonical solution
+contains no right-arm motor program and there is nothing for an equivalent route
+to substitute for. This kills W2.
 
-Purpose: prove that the intervention did not make the task physically impossible.
+### C. `right_disabled` — effector removal
 
-This prerequisite must be demonstrated before interpreting a policy failure.
+The right arm and hand are ramped to the robot's neutral at-side pose during
+stabilization and PD-held there for the whole episode, so the limb is unavailable
+as an effector before the policy is ever engaged. Left arm/hand, torso and
+locomotion remain available. This is the scientific condition.
 
-### C. `right_disabled`
+### D. `left_disabled` — laterality control
 
-Run the policy normally, then **after inference and before controller execution**, hold:
+The same retract-and-hold applied to the *left* side. Separates "removing the
+demonstrator's hand hurts" from "removing any arm hurts".
 
-```text
-right_arm  := current right_arm state
-right_hand := current right_hand state
-```
+### E. `both_arms_disabled` — body-only route probe
 
-The policy still receives the real observation on the next step, including the consequences of the blocked right side.
+Both arms retracted, locomotion free. If the task survives losing both arms, any
+`right_disabled` success is a body/base route and says nothing about one arm
+standing in for the other. This kills W3.
 
-Left arm/hand, torso and locomotion remain available.
+### F. `full_hold` — accidental success control
 
-This is the scientific condition.
+Both arms retracted, waist frozen, `(vx, vy, vyaw)` zeroed and heading/height held
+at their stabilized values. Estimates environment-only success and catches broken
+interventions.
 
-### D. `full_hold`
+### G. `oracle_right_disabled` — feasibility prerequisite
 
-Remove intentional whole-body motion:
+A scripted / teleoperated **alternative** solution under exactly condition C's
+constraint. Proves the intervention did not make the task physically impossible.
+This must be demonstrated before any policy failure is interpreted.
 
-- hold both arm/hand groups at current state;
-- hold `rpy` and `height`;
-- set torso velocities to zero;
-- hold target yaw.
+### Where the intervention is applied
 
-Purpose: estimate accidental/environment-only success and catch broken interventions.
+At the **actuator boundary**, after the GR00T whole-body controller, on
+`target_q` / `left_hand_q` / `right_hand_q`. The `*Teleop` tasks run through
+`eval_decoupled_wbc`, where a WBC sits between the policy action and the
+simulator; editing the policy's action groups before the WBC lets the controller
+re-solve around the constraint. Only `full_hold`'s base freeze is applied
+pre-WBC, on the queued `vla_cmd`, because the lower-body RL policy consumes it.
+
+The clamp is verified per episode: `right_arm_clamp_leak_rad` is the largest
+realized deviation from the held target, and a leaking clamp is a prerequisite
+failure rather than a result.
 
 ## Primary endpoint
 
@@ -177,14 +222,28 @@ The code records `route_verified` separately so this cannot silently become part
 
 ## Frozen G0 gates
 
-Defaults in `g0_core.py`:
+Defaults in `g0_core.py`, evaluated in this order:
 
-- matched configurations: `>= 20`;
-- canonical success: `>= 0.70`;
-- oracle-right-disabled success: `>= 0.70`;
-- full-hold success: `<= 0.10`;
-- right-disabled substitution rate: `>= 0.20`;
-- at least `5` paired substitution events.
+| # | gate | verdict on failure |
+| --- | --- | --- |
+| 0 | matched configurations `>= 20` | `INSUFFICIENT_MATCHED_CONFIGS` |
+| 1 | canonical success `>= 0.70` | `PREREQUISITE_FAIL_CANONICAL` |
+| 2 | `canonical - right_frozen >= 0.20` | `PREREQUISITE_FAIL_NO_CANONICAL_ARM_PROGRAM` |
+| 3 | canonical right-side contact rate `>= 0.70` | `PREREQUISITE_FAIL_ROUTE_NOT_RIGHT_SIDE` |
+| 4 | clamp leak `<= 0.20 rad` | `PREREQUISITE_FAIL_INTERVENTION_LEAK` |
+| 5 | `both_arms_disabled <= 0.10` | `PREREQUISITE_FAIL_BODY_ONLY_ROUTE` |
+| 6 | `oracle_right_disabled >= 0.70` | `PREREQUISITE_FAIL_ALTERNATIVE_FEASIBILITY` |
+| 7 | `full_hold <= 0.10` | `PREREQUISITE_FAIL_NEGATIVE_CONTROL` |
+
+Gate 2 is deliberately a **behavioural** criterion, not a kinematic threshold: it
+asks whether removing the arm's articulation costs the policy task success, so it
+needs no tuned cut on joint excursion.
+
+Only if every gate passes is the substitution test evaluated:
+
+- right-disabled substitution rate `>= 0.20`;
+- at least `5` paired substitution events;
+- paired `right_disabled - full_hold` bootstrap mean `>= 0.20`.
 
 A positive first-pass verdict is:
 

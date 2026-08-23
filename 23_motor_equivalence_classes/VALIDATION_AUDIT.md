@@ -122,3 +122,170 @@ Related work on whole-body redundancy, fault-tolerant control, cross-embodiment 
 ## Registration consequence
 
 Topic 23 should start with **one clean task-level behavioral G0**. Do not add representation analysis unless the constrained substitution event first exists at useful density.
+
+---
+
+## Revision 2 (2026-08-24)
+
+The G0 design registered earlier the same day was revised after it was implemented
+against the real upstream stack and a contact-level route probe was run on
+`simple/G1WholebodyCloseDoorTeleop-v0` with the released Psi0 `ckpt_40000`.
+
+Nothing here was learned from an outcome comparison. All of it came from reading
+upstream source and from a single canonical rollout instrumented at the MuJoCo
+contact level.
+
+### R2.1 — The intervention was applied above the whole-body controller
+
+`*Teleop` tasks do **not** run through `simple/cli/eval.py`. The upstream entry
+point is `eval_decoupled_wbc.py` with agent `psi0_decoupled_wbc`, in which the
+decoded Psi0 action becomes an `ActionCmd("vla_cmd", ...)` that a GR00T whole-body
+controller then re-solves into joint targets.
+
+The registered design held the arm by rewriting the policy's action groups, i.e.
+*before* the WBC. The WBC is free to re-solve around that, so the limb is not
+reliably held. Measured on one config: commanded right-arm deviation from the hold
+target was `0.32 rad` while the realized deviation was `0.15 rad` — the clamp was
+partially, not fully, effective.
+
+The clamp now runs at the actuator boundary (`target_q`, `left_hand_q`,
+`right_hand_q`) and every episode records `right_arm_clamp_leak_rad`. A leaking
+clamp is a prerequisite failure, not a result.
+
+Only `full_hold`'s base freeze stays pre-WBC, on the queued `vla_cmd`, because the
+lower-body RL policy is what consumes `navigate_cmd` / `base_height_command`. With
+that fixed, `full_hold` behaves as a negative control should: door stays at its
+initial `0.792 rad`, no robot–door contact, total arm path length `0.003 rad`.
+
+### R2.2 — `navigate_cmd` semantics
+
+`navigate_cmd = pred_action[32:36]` is `(vx, vy, vyaw_flag, target_yaw)`, where the
+fourth element is an **absolute world-frame heading**, integrated upstream, and the
+third is a raw turning flag rather than a yaw rate
+(`decoupled_wbc/control/policy/g1_gear_wbc_policy.py`). The registered `full_hold`
+held `target_yaw` at the *waist joint* yaw, which is a different frame. It is now
+held at the measured base yaw captured after stabilization.
+
+### R2.3 — Matched configs are genuinely matched
+
+`Task.reset` reassigns `articulate_init_joint_qpos` from an unseeded
+`random.uniform` on every reset, which looked like it would desynchronise the
+conditions. It does not: the eval path passes `options["state_dict"]` and
+`DRManager.load_state_dict` is called with `dr_level=None`, restoring every
+randomizer. Two resets on the same eval episode produced bit-identical `qpos`
+across all 80 DoF and an identical `ngeom`. The runner additionally seeds
+`random` / `numpy` per config, which costs nothing.
+
+### R2.4 — The killer: CloseDoor's canonical solution has no right-arm motor program
+
+A canonical rollout was instrumented for per-step MuJoCo contact attribution
+between robot bodies and the door subtree. Under the official `mujoco_isaac`
+sim mode:
+
+```text
+right_shoulder_pitch  range 0.053 rad
+right_shoulder_roll   range 0.046 rad
+right_elbow           range 0.077 rad
+right_wrist_yaw       range 0.309 rad
+left arm              ranges <= 0.24 rad
+base xy travel        0.734 m
+only contact part ever touching the door: right_hand
+contact ends at step 258; the door coasts from -0.062 to -0.166 unaided
+official success at step 269
+```
+
+Psi0 solves CloseDoor by **walking into the door with the hand that already hangs
+at its side**. The shoulder and elbow move less than 5 degrees. The right arm is
+not executing a motor program; it is a passive bumper transported by locomotion.
+
+The same probe under `sim_mode=mujoco` gives the same picture (wrist ranges
+`0.231 / 0.126`, base travel `0.720 m`, `right_hand` the only contact), so this is
+not an artifact of degraded rendering.
+
+Consequences for the registered design:
+
+1. `right_disabled` as originally specified (hold the arm where it is) removes
+   nothing, because the arm was not moving. Measured: `canonical`,
+   `right_frozen` and `right_disabled` all succeed, all with `right_hand` as the
+   door contact.
+2. Retracting the arm to the neutral at-side pose does not help either — that pose
+   *is* where the arm already is.
+3. `both_arms_disabled` also succeeds, with `right_hand` still the contact.
+
+So the registered "cleanest event" —
+
+```text
+canonical succeeds / oracle succeeds / right_disabled succeeds / full_hold fails
+```
+
+— would have been observed on CloseDoor **for reasons that have nothing to do with
+motor equivalence**. The original panel could not have detected this.
+
+### R2.5 — New conditions and gates
+
+Two conditions were added to separate the three worlds a `right_disabled` success
+is consistent with:
+
+- `right_frozen` — locked-joint fault; tests whether the arm's *articulation*
+  matters at all;
+- `both_arms_disabled` — tests whether any arm matters at all.
+
+Plus `left_disabled` as a laterality control. The gate order is in
+[README.md](README.md#frozen-g0-gates). Gate 2
+(`canonical - right_frozen >= 0.20`) is behavioural, so it needs no tuned cut on
+joint excursion.
+
+### R2.6 — Dead code removed
+
+`intervene_absolute_action` and `apply_motor_condition` implemented the pre-WBC
+action-group intervention and are no longer on any execution path. They were
+deleted rather than left in place, so nothing in the repository looks like a wired
+intervention that is not.
+
+### R2.7 — Sample plan
+
+Published SIMPLE Table 7 reports Psi0 at `10/10/10` on CloseDoor across DR levels
+0/1/2, and each level ships 10 eval episodes. The frozen panel is therefore all
+three levels, 30 matched configs per task, decided before any panel outcome was
+seen. Config ids are namespaced by level so they cannot collide.
+
+The frozen task panel was two tasks from the start (`close_door`, `open_faucet`),
+so running OpenFaucet after CloseDoor fails a prerequisite is completing the
+preregistered panel, not shopping for a better task.
+
+### R2.8 — `decompose()` is not evidence about the *Teleop* demonstrations
+
+The registration argued that the benchmark separates task effect from motor
+realization because both tasks' `Task.decompose()` use
+`hand_uid="dex3_right", lock_links=["left_hand_palm_link"]`.
+
+That argument does not hold for these two tasks. `decompose()` drives the CuRobo
+motion-planning datagen path used by the `*MP` tasks. `G1WholebodyCloseDoorTeleop`
+and `G1WholebodyOpenFaucetTeleop` are `*Teleop` tasks: their data was human
+teleoperated (`pico_decoupled_agent`), so `decompose()` describes a code path that
+did not generate the demonstrations.
+
+Nor can the claim be checked against the shipped eval data. The
+`simple-eval/*.zip` LeRobot datasets contain **one frame per episode** (10 frames
+for 10 episodes, action dim 43) — they are reset configurations, not trajectories.
+Measuring demonstrator laterality would require the full training split.
+
+This does not damage the experiment, because the panel already measures the
+relevant quantity in outcome space and on the policy itself:
+
+```text
+right_frozen fails  AND  left_disabled succeeds
+```
+
+is a direct behavioural demonstration that the policy's solution depends on the
+right arm specifically rather than on having *an* arm. That contrast replaces the
+`decompose()` argument as the laterality evidence, and it is stronger, because it
+is about the object under study rather than about how the data was collected.
+
+### R2.9 — `min_dist_*_palm_m` is measured to the articulated root body
+
+The palm-distance diagnostics are distances to the origin of the body that owns
+the effect joint, which for CloseDoor is the hinge root rather than the panel
+surface (observed canonical values cluster near `1.18 m` while the hand is in
+contact). Use it as a within-task relative signal — did this condition approach
+the object as closely as canonical did — not as an absolute clearance.

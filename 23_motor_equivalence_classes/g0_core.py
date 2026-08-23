@@ -9,7 +9,6 @@ joint space. This is deliberate after the Topic 19 identification failure.
 from __future__ import annotations
 
 import argparse
-import copy
 import json
 from dataclasses import dataclass
 from enum import Enum
@@ -20,89 +19,74 @@ import numpy as np
 
 
 class Condition(str, Enum):
+    """The frozen condition panel.
+
+    Revised 2026-08-24 after reading the upstream task and running a route probe.
+    The original four-condition panel could not identify motor substitution, because
+    a `right_disabled` success is consistent with three different worlds and only one
+    of them is motor equivalence:
+
+      W1  the policy re-planned the task onto another effector       (the claim)
+      W2  the right arm was never articulating; the hand was a passive
+          bumper carried into the object by locomotion               (RIGHT_FROZEN)
+      W3  no arm was needed at all; the torso/base does the work     (BOTH_ARMS_DISABLED)
+
+    RIGHT_FROZEN and BOTH_ARMS_DISABLED are the conditions that separate them.
+    """
+
     CANONICAL = "canonical"
+    # Locked-joint fault: right arm+hand held at the pose it already had. Removes the
+    # arm's *articulation* but not the arm as an effector.
+    RIGHT_FROZEN = "right_frozen"
+    # Effector removal: right arm+hand retracted to the neutral at-side pose and held.
     RIGHT_DISABLED = "right_disabled"
+    LEFT_DISABLED = "left_disabled"
+    BOTH_ARMS_DISABLED = "both_arms_disabled"
     FULL_HOLD = "full_hold"
     ORACLE_RIGHT_DISABLED = "oracle_right_disabled"
 
 
-STATE_MATCH_GROUPS = ("left_hand", "right_hand", "left_arm", "right_arm", "rpy", "height")
-RIGHT_GROUPS = ("right_hand", "right_arm")
-ZERO_VELOCITY_GROUPS = ("torso_vx", "torso_vy", "torso_vyaw")
+#: Conditions that define a matched unit. The oracle is deliberately excluded.
+POLICY_CONDITIONS = (
+    Condition.CANONICAL,
+    Condition.RIGHT_FROZEN,
+    Condition.RIGHT_DISABLED,
+    Condition.LEFT_DISABLED,
+    Condition.BOTH_ARMS_DISABLED,
+    Condition.FULL_HOLD,
+)
+
+
 
 
 @dataclass(frozen=True)
 class GateConfig:
     min_matched_configs: int = 20
     canonical_min_success: float = 0.70
+    # Freezing the right arm in place must actually cost the policy something.
+    # If it does not, the canonical route contains no right-arm motor program and
+    # there is nothing for an equivalent route to substitute for.
+    min_arm_program_cost: float = 0.20
+    # The canonical route must run through the right side in the first place.
+    canonical_right_route_min: float = 0.70
     oracle_min_success: float = 0.70
     full_hold_max_success: float = 0.10
+    # If the task survives removing both arms, success is a body/base route and
+    # says nothing about substituting one arm for another.
+    both_arms_disabled_max_success: float = 0.10
+    # The retract-and-hold clamp must actually hold (max joint deviation, rad).
+    max_clamp_leak_rad: float = 0.20
     min_substitution_rate: float = 0.20
     min_substitution_events: int = 5
     bootstrap_samples: int = 10_000
     bootstrap_seed: int = 20260824
 
 
-def _copy_value(x: Any) -> Any:
-    if isinstance(x, np.ndarray):
-        return x.copy()
-    return copy.deepcopy(x)
-
-
-def intervene_absolute_action(
-    action: Mapping[str, Any],
-    state: Mapping[str, Any],
-    condition: Condition | str,
-) -> dict[str, Any]:
-    """Apply a transparent post-policy motor intervention.
-
-    Psi0/GR00T G1 loco-manip action groups are absolute for arm/hand/body pose
-    groups. RIGHT_DISABLED holds the canonical right arm+hand at the observed
-    state while leaving left arm, torso and locomotion available. FULL_HOLD
-    removes all intentional body motion and is a negative control.
-
-    This function intentionally operates *after* policy inference. The policy
-    still sees the real constrained state/consequences on subsequent steps.
-    """
-    c = Condition(condition)
-    out = {k: _copy_value(v) for k, v in action.items()}
-
-    if c in (Condition.CANONICAL, Condition.ORACLE_RIGHT_DISABLED):
-        if c is Condition.CANONICAL:
-            return out
-        # Oracle trajectories are evaluated under the same physical right-side
-        # intervention as the policy; fall through to RIGHT_DISABLED behavior.
-        c = Condition.RIGHT_DISABLED
-
-    if c is Condition.RIGHT_DISABLED:
-        for key in RIGHT_GROUPS:
-            if key not in out:
-                raise KeyError(f"action missing required group {key!r}")
-            if key not in state:
-                raise KeyError(f"state missing required group {key!r}")
-            out[key] = _copy_value(state[key])
-        return out
-
-    if c is Condition.FULL_HOLD:
-        for key in STATE_MATCH_GROUPS:
-            if key in out:
-                if key not in state:
-                    raise KeyError(f"state missing group {key!r} required by FULL_HOLD")
-                out[key] = _copy_value(state[key])
-        for key in ZERO_VELOCITY_GROUPS:
-            if key in out:
-                out[key] = np.zeros_like(np.asarray(out[key], dtype=float))
-        if "target_yaw" in out:
-            if "rpy" not in state:
-                raise KeyError("state missing 'rpy' needed to hold target_yaw")
-            rpy = np.asarray(state["rpy"]).reshape(-1)
-            if rpy.size < 3:
-                raise ValueError("state['rpy'] must contain roll, pitch, yaw")
-            target = np.asarray(out["target_yaw"])
-            out["target_yaw"] = np.full_like(target, rpy[-1], dtype=float)
-        return out
-
-    raise AssertionError(c)
+# NOTE: the pre-controller action-group intervention that used to live here was
+# removed on 2026-08-24. The clamp is now applied at the actuator boundary, after
+# the GR00T whole-body controller, in `topic23_runner.MotorClamp`. Editing the
+# policy's action groups before the WBC let the controller re-solve around the
+# constraint, so the limb was not reliably held.
 
 
 def task_effect_success(task: str, effect_qpos: float) -> bool:
@@ -148,9 +132,11 @@ def analyze_records(rows: list[dict[str, Any]], cfg: GateConfig = GateConfig()) 
     Required row fields:
       config_id, task, condition, success
     Optional:
-      effect_qpos, route_verified, left_arm_motion_l2, torso_motion_l2
+      effect_qpos, route_verified, canonical_right_route, right_arm_clamp_leak_rad,
+      left_arm_motion_l2, torso_motion_l2
 
-    Only configs present in all four frozen conditions are primary units.
+    Only configs present in all six frozen *policy* conditions are primary units;
+    the scripted oracle is a separate prerequisite and may be absent.
     """
     required = {"config_id", "task", "condition", "success"}
     for i, row in enumerate(rows):
@@ -167,20 +153,55 @@ def analyze_records(rows: list[dict[str, Any]], cfg: GateConfig = GateConfig()) 
             raise ValueError(f"duplicate row for {key} / {cond}")
         by_cfg[key][cond] = row
 
-    needed = {c.value for c in Condition}
+    # Matched units are defined by the *policy* conditions. The oracle is a
+    # scripted feasibility prerequisite that is run separately and later, so a
+    # missing oracle must not silently zero out the matched-config count.
+    needed = {c.value for c in POLICY_CONDITIONS}
     matched = {k: v for k, v in by_cfg.items() if needed <= set(v)}
     n = len(matched)
 
     cond_success: dict[str, float] = {}
-    for c in Condition:
+    for c in POLICY_CONDITIONS:
         cond_success[c.value] = _mean(
             [float(bool(v[c.value]["success"])) for v in matched.values()]
         )
 
     canonical = cond_success[Condition.CANONICAL.value]
-    oracle = cond_success[Condition.ORACLE_RIGHT_DISABLED.value]
+    oracle_rows = [
+        v[Condition.ORACLE_RIGHT_DISABLED.value]
+        for v in matched.values()
+        if Condition.ORACLE_RIGHT_DISABLED.value in v
+    ]
+    oracle = (
+        _mean([float(bool(r["success"])) for r in oracle_rows]) if oracle_rows else None
+    )
     full_hold = cond_success[Condition.FULL_HOLD.value]
     right_disabled = cond_success[Condition.RIGHT_DISABLED.value]
+    right_frozen = cond_success[Condition.RIGHT_FROZEN.value]
+    both_arms = cond_success[Condition.BOTH_ARMS_DISABLED.value]
+
+    # How much does removing only the right arm's *articulation* cost?
+    arm_program_cost = canonical - right_frozen
+
+    # Among canonical successes, did the right side actually touch the object when
+    # the task predicate was first satisfied?
+    canonical_hits = [
+        v[Condition.CANONICAL.value] for v in matched.values()
+        if bool(v[Condition.CANONICAL.value]["success"])
+    ]
+    right_route_flags = [
+        bool(r.get("canonical_right_route")) for r in canonical_hits
+        if r.get("canonical_right_route") is not None
+    ]
+    canonical_right_route_rate = (
+        _mean([float(x) for x in right_route_flags]) if right_route_flags else None
+    )
+
+    leaks = [
+        float(v[Condition.RIGHT_DISABLED.value].get("right_arm_clamp_leak_rad", 0.0))
+        for v in matched.values()
+    ]
+    max_clamp_leak = max(leaks) if leaks else 0.0
 
     paired_sub = np.asarray(
         [
@@ -215,6 +236,25 @@ def analyze_records(rows: list[dict[str, Any]], cfg: GateConfig = GateConfig()) 
         verdict = "INSUFFICIENT_MATCHED_CONFIGS"
     elif canonical < cfg.canonical_min_success:
         verdict = "PREREQUISITE_FAIL_CANONICAL"
+    elif arm_program_cost < cfg.min_arm_program_cost:
+        # Locking the right arm in place changes nothing, so the canonical solution
+        # does not contain a right-arm motor program. Nothing to substitute.
+        verdict = "PREREQUISITE_FAIL_NO_CANONICAL_ARM_PROGRAM"
+    elif (
+        canonical_right_route_rate is not None
+        and canonical_right_route_rate < cfg.canonical_right_route_min
+    ):
+        verdict = "PREREQUISITE_FAIL_ROUTE_NOT_RIGHT_SIDE"
+    elif max_clamp_leak > cfg.max_clamp_leak_rad:
+        verdict = "PREREQUISITE_FAIL_INTERVENTION_LEAK"
+    elif both_arms > cfg.both_arms_disabled_max_success:
+        # The task survives losing both arms, so any right_disabled success is a
+        # body/base route, not one arm standing in for the other.
+        verdict = "PREREQUISITE_FAIL_BODY_ONLY_ROUTE"
+    elif oracle is None:
+        # Everything the policy conditions can decide has passed; the scripted
+        # feasibility oracle has not been run yet, so no verdict is available.
+        verdict = "PREREQUISITE_PENDING_ALTERNATIVE_FEASIBILITY"
     elif oracle < cfg.oracle_min_success:
         verdict = "PREREQUISITE_FAIL_ALTERNATIVE_FEASIBILITY"
     elif full_hold > cfg.full_hold_max_success:
@@ -236,6 +276,11 @@ def analyze_records(rows: list[dict[str, Any]], cfg: GateConfig = GateConfig()) 
         "n_input_rows": len(rows),
         "n_matched_configs": n,
         "success_rate": cond_success,
+        "oracle_success_rate": oracle,
+        "n_oracle_rows": len(oracle_rows),
+        "arm_program_cost": arm_program_cost,
+        "canonical_right_route_rate": canonical_right_route_rate,
+        "max_clamp_leak_rad": max_clamp_leak,
         "paired_right_disabled_minus_full_hold": {
             "mean": diff_mean,
             "bootstrap_95_ci": [diff_lo, diff_hi],

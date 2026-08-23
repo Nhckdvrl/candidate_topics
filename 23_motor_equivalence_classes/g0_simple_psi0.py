@@ -7,18 +7,19 @@ Frozen upstream references:
 This module does not reimplement the upstream evaluator. It supplies the pieces
 that should be inserted into a local SIMPLE rollout:
   1) read the task-defining object effect directly from MuJoCo;
-  2) intervene on decoded absolute action groups after inference, before env.step;
-  3) record the *official upstream episode success* separately from the raw effect.
+  2) record the *official upstream episode success* separately from the raw effect.
 
-Keep the policy observation untouched. On later closed-loop steps it naturally sees
-the consequences of the constrained body through vision/proprioception.
+The motor intervention itself lives in `topic23_runner.MotorClamp`, applied at the
+actuator boundary after the whole-body controller. Keep the policy observation
+untouched: on later closed-loop steps it naturally sees the consequences of the
+constrained body through vision and proprioception.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-from g0_core import Condition, intervene_absolute_action, task_effect_success
+from g0_core import Condition, task_effect_success
 
 
 SIMPLE_COMMIT = "b49c1aea2dd57309bb533219d0d34d6020f3d943"
@@ -65,37 +66,6 @@ def read_effect_state(mujoco_env: Any, env_id: str) -> EffectState:
         qpos=qpos,
         predicate_reached=task_effect_success(spec["short_name"], qpos),
     )
-
-
-def apply_motor_condition(
-    decoded_action: Mapping[str, Any],
-    decoded_state: Mapping[str, Any],
-    condition: Condition | str,
-) -> dict[str, Any]:
-    """Apply the frozen intervention after policy inference."""
-    return intervene_absolute_action(decoded_action, decoded_state, condition)
-
-
-def assert_g1_locomanip_contract(
-    decoded_action: Mapping[str, Any],
-    decoded_state: Mapping[str, Any],
-) -> None:
-    """Fail loudly if the local adapter no longer exposes the audited groups."""
-    required_state = {"left_hand", "right_hand", "left_arm", "right_arm", "rpy", "height"}
-    required_action = required_state | {
-        "torso_vx",
-        "torso_vy",
-        "torso_vyaw",
-        "target_yaw",
-    }
-    missing_state = required_state - set(decoded_state)
-    missing_action = required_action - set(decoded_action)
-    if missing_state or missing_action:
-        raise RuntimeError(
-            "Psi0/SIMPLE modality contract changed: "
-            f"missing_state={sorted(missing_state)}, "
-            f"missing_action={sorted(missing_action)}"
-        )
 
 
 def make_record(

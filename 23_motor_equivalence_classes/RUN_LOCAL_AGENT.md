@@ -6,186 +6,138 @@ You are running the first behavioral identification test for:
 
 Do not redesign the scientific question while running it.
 
-## Frozen upstream
+> **Revision 2, 2026-08-24.** The condition panel and the intervention seam changed
+> after the first implementation pass. See
+> [VALIDATION_AUDIT.md](VALIDATION_AUDIT.md#revision-2-2026-08-24). The runner is
+> now checked in as `topic23_runner.py`; you should not need to write rollout code.
 
-Use:
+## Frozen upstream
 
 ```text
 SIMPLE b49c1aea2dd57309bb533219d0d34d6020f3d943
 Psi0   9ad917526394c1cacc72dba08562629936505987
 ```
 
-Start with:
+Frozen task panel (both, decided before any outcome was seen):
 
 ```text
 simple/G1WholebodyCloseDoorTeleop-v0
+simple/G1WholebodyOpenFaucetTeleop-v0
 ```
 
-and the released Psi0 checkpoint that already passes the canonical SIMPLE evaluation.
+Released Psi0 SIMPLE checkpoints, `ckpt_40000`, one per task.
 
-## What to implement
+`*Teleop` tasks run through the **decoupled-WBC** entry point
+(`simple/cli/eval_decoupled_wbc.py`, agent `psi0_decoupled_wbc`). Do not use
+`eval.py` / `psi0`; that is the path for `*MP` tasks.
 
-Reuse the official Psi0 SIMPLE server/evaluator path as much as possible.
+## Serve the policy
 
-The only required custom hook is between:
-
-```text
-decoded policy action
-        ↓
-[Topic 23 motor intervention]
-        ↓
-SIMPLE controller/env step
+```bash
+cd $PSI0 && ./.venv-psi/bin/python serve_psi0_g0.py --host 0.0.0.0 --port 22085 \
+  --policy psi0 --run-dir=$RUN_DIR --ckpt-step=40000 --action-exec-horizon=24 --rtc
 ```
 
-Import:
+One client per server. `psi0_decoupled_wbc` sends no session id, so two concurrent
+SIMPLE clients would corrupt each other's RTC state. Use a separate port and GPU
+per task.
 
-```python
-from g0_core import Condition, realized_motion_l2
-from g0_simple_psi0 import (
-    apply_motor_condition,
-    assert_g1_locomanip_contract,
-    make_record,
-    read_effect_state,
-)
+## Run the panel
+
+```bash
+cd $SIMPLE && MUJOCO_GL=egl CUDA_VISIBLE_DEVICES=1 ./.venv/bin/python \
+  /path/to/23_motor_equivalence_classes/topic23_runner.py \
+  --env-id simple/G1WholebodyCloseDoorTeleop-v0 \
+  --data-dir $EVAL/G1WholebodyCloseDoorTeleop-v0/dr-level-0 \
+  --out records/close_door_panel.jsonl \
+  --port 22085 --sim-mode mujoco_isaac \
+  --conditions canonical right_frozen right_disabled left_disabled both_arms_disabled full_hold \
+  --num-episodes 10 --resume
 ```
 
-Do not alter the image/language observation to make the policy "know" the condition. The physical/proprioceptive consequence of the held right arm must appear naturally on subsequent closed-loop observations.
+Repeat for `dr-level-1` and `dr-level-2` into the same JSONL. Config ids are
+namespaced by DR level, so the three levels pool into one matched-config table of
+30 per task.
 
 ## Conditions
 
-For every fixed config/episode seed, run all of:
+| condition | what it does | what it rules out |
+| --- | --- | --- |
+| `canonical` | nothing | — |
+| `right_frozen` | right arm+hand held at the pose they already had | the arm has no motor program to substitute for |
+| `right_disabled` | right arm+hand retracted to the neutral at-side pose and held | — (this is the scientific condition) |
+| `left_disabled` | same, left side | any-arm-loss degradation |
+| `both_arms_disabled` | both arms retracted, locomotion free | body/base-only route |
+| `full_hold` | both arms retracted, waist frozen, base motion zeroed | accidental / environment-only success |
+| `oracle_right_disabled` | scripted alternative under `right_disabled`'s constraint | the intervention made the task impossible |
 
-```text
-canonical
-oracle_right_disabled
-right_disabled
-full_hold
-```
+The clamp is applied **after** the whole-body controller, on `target_q` /
+`left_hand_q` / `right_hand_q`, and ramps in during stabilization so the policy's
+first observation already contains the constraint. Only `full_hold`'s base freeze
+is applied pre-WBC on the queued `vla_cmd`.
 
-Use identical environment initialization for the four conditions.
-
-### canonical
-
-No action intervention.
-
-### oracle_right_disabled
-
-A separately constructed left-hand / alternative-body oracle is run under the exact same right-side hold as `right_disabled`.
-
-This is a feasibility prerequisite. Do not substitute a verbal argument that "the left hand should reach."
-
-### right_disabled
-
-After policy inference:
-
-```python
-action = apply_motor_condition(action, state, "right_disabled")
-```
-
-This holds `right_arm` and `right_hand` at current state but leaves the rest of the body controllable.
-
-### full_hold
-
-After inference:
-
-```python
-action = apply_motor_condition(action, state, "full_hold")
-```
-
-This removes intentional body motion and estimates accidental/environment-only task completion.
+Do not alter the image/language observation. The physical consequence of the held
+limb must reach the policy naturally through vision and proprioception.
 
 ## Record format
 
-Write one terminal JSON object per condition/config:
+One JSON object per config/condition. `success` is always
+`env.unwrapped._success`, the unmodified upstream evaluator. It is **not** derived
+from a terminal qpos sample: these tasks require the object predicate to persist
+while the upstream reward accumulator reaches `success_criteria`.
+
+Route attribution is measured, not asserted: the runner scans MuJoCo contact pairs
+each step and records which robot part touched the task object in the window
+around the moment the task predicate is first satisfied.
 
 ```json
 {
-  "task": "close_door",
-  "env_id": "simple/G1WholebodyCloseDoorTeleop-v0",
-  "config_id": "0",
-  "condition": "right_disabled",
-  "success": true,
-  "effect_qpos": -0.21,
-  "effect_predicate_reached": true,
-  "route_verified": true,
-  "left_arm_motion_l2": 1.73,
-  "torso_motion_l2": 0.44
+  "task": "close_door", "config_id": "dr-level-0:3", "condition": "right_disabled",
+  "success": true, "effect_qpos": -0.177, "effect_predicate_reached": true,
+  "route_verified": true, "canonical_right_route": false,
+  "contact_parts_at_close": ["left_hand"], "contact_parts_ever": ["left_hand", "torso"],
+  "right_arm_clamp_leak_rad": 0.03, "right_arm_excursion_rad": 0.02,
+  "left_arm_motion_l2": 1.73, "torso_motion_l2": 0.44, "first_closed_step": 269
 }
 ```
-
-There are **two distinct task signals** and they must not be conflated:
-
-1. `success` = the official unmodified SIMPLE evaluator/check-success result for the episode;
-2. `effect_qpos` / `effect_predicate_reached` = the raw door/faucet object-state predicate read from MuJoCo.
-
-The audited SIMPLE tasks accumulate reward while the object predicate remains satisfied before declaring official success. Therefore **do not** derive `success` from one terminal qpos sample.
-
-Use:
-
-```python
-effect = read_effect_state(mujoco_env, env_id)
-row = make_record(
-    env_id=env_id,
-    config_id=config_id,
-    condition=condition,
-    effect=effect,
-    official_success=official_upstream_success,
-    ...
-)
-```
-
-For successful `right_disabled` rollouts, save video/contact information and set `route_verified` only after confirming a non-canonical physical route actually caused the object effect.
-
-## Sample
-
-Use at least **20 matched configs** that have all four conditions.
-
-Do not rerun only failed constrained episodes until they become successes.
 
 ## Analyze
 
 ```bash
-python g0_core.py records.jsonl --out g0_result.json
-```
-
-Run unit tests first:
-
-```bash
 pytest -q tests/test_g0_core.py
+python g0_core.py records/close_door_panel.jsonl --out g0_result.json
 ```
 
 ## Stop rules
 
-Stop and report without tuning if any prerequisite fails:
+Stop and report without tuning on any prerequisite failure:
 
 ```text
+INSUFFICIENT_MATCHED_CONFIGS
 PREREQUISITE_FAIL_CANONICAL
+PREREQUISITE_FAIL_NO_CANONICAL_ARM_PROGRAM
+PREREQUISITE_FAIL_ROUTE_NOT_RIGHT_SIDE
+PREREQUISITE_FAIL_INTERVENTION_LEAK
+PREREQUISITE_FAIL_BODY_ONLY_ROUTE
 PREREQUISITE_FAIL_ALTERNATIVE_FEASIBILITY
 PREREQUISITE_FAIL_NEGATIVE_CONTROL
-INSUFFICIENT_MATCHED_CONFIGS
 ```
 
-If the result is:
+A prerequisite failure on one task is a result about **that task**, not about the
+hypothesis. Run the other frozen panel task and report both. Do not add a third.
 
-```text
-NO_EVIDENCE_IN_PSI0_G0
-```
-
-do not change thresholds, choose convenient configs, alter the right-side hold, or search for a better task after seeing the result.
-
-Return the raw JSONL, aggregate report, exact commit/checkpoint, and videos/contact traces for any constrained successes.
+If the result is `NO_EVIDENCE_IN_PSI0_G0`, do not change thresholds, select
+configs, weaken the clamp, or look for a new task after seeing the number.
 
 ## What counts as the first real signal
 
-The cleanest event is:
-
 ```text
 canonical succeeds
+right_frozen fails            <- the arm was actually doing something
 oracle_right_disabled succeeds
 right_disabled succeeds
+both_arms_disabled fails
 full_hold fails
 ```
 
-plus verified non-canonical realized motion/contact.
-
-That is a behavior-level motor-equivalence event. Everything else is secondary until this exists.
+plus a verified non-right-side contact route on the constrained successes.
