@@ -139,6 +139,8 @@ def main() -> None:
     ap.add_argument("--n-pairs", type=int, default=256)
     ap.add_argument("--seed", type=int, default=20260823)
     ap.add_argument("--mode", choices=["cot", "direct"], default="cot")
+    ap.add_argument("--cot-max-new-tokens", type=int, default=1024)
+    ap.add_argument("--direct-max-new-tokens", type=int, default=64)
     ap.add_argument("--outdir", default="artifacts/g0_behavior_cot")
     args = ap.parse_args()
 
@@ -164,7 +166,7 @@ def main() -> None:
         trust_remote_code=True,
     ).eval()
 
-    max_new_tokens = 512 if args.mode == "cot" else 64
+    max_new_tokens = args.cot_max_new_tokens if args.mode == "cot" else args.direct_max_new_tokens
     recs = []
     for control, trap in tqdm(pairs, desc=f"MedEinst G0 {args.mode}"):
         control_text = generate(model, tok, prompt(tok, control, args.mode), max_new_tokens)
@@ -235,6 +237,7 @@ def main() -> None:
         "mode": args.mode,
         "seed": args.seed,
         "sampled_pairs": n,
+        "max_new_tokens": max_new_tokens,
         "sample_case_ids": [row["case_id"] for row in recs],
         "control_accuracy": control_acc,
         "trap_accuracy": trap_acc,
