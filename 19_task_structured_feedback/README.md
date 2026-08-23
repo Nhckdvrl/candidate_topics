@@ -101,13 +101,13 @@ This statistic is not guaranteed by how the Jacobian constructs the perturbation
 For every branch:
 
 1. restore the exact same MuJoCo snapshot;
-2. physically change the seven right-arm qpos values;
-3. zero the corresponding instantaneous qvel values;
-4. call `mj_forward`;
+2. physically change only the seven right-arm qpos values;
+3. preserve qvel, controller state, time, and every other simulator field from the same snapshot;
+4. call `mj_forward` without integrating time;
 5. re-render the observation and rebuild proprio from that physical state;
-6. query Ψ₀.
+6. query Ψ₀ while preserving the same deployed previous-height/context values across branches.
 
-The camera image is **not** held fixed while proprio changes. The intervention is a consistent physical robot state.
+The camera image is **not** held fixed while proprio changes. The intervention is a consistent physical robot state, and the only intended state difference is right-arm configuration.
 
 No branch rollout is needed for the first gate. We measure the next high-level target before downstream WBC can create its own recovery behavior.
 
