@@ -4,10 +4,11 @@ Frozen upstream references:
   SIMPLE b49c1aea2dd57309bb533219d0d34d6020f3d943
   Psi0   9ad917526394c1cacc72dba08562629936505987
 
-This module does not reimplement the upstream evaluator. It supplies the two pieces
+This module does not reimplement the upstream evaluator. It supplies the pieces
 that should be inserted into a local SIMPLE rollout:
-  1) read the task effect directly from MuJoCo;
-  2) intervene on decoded absolute action groups after inference, before env.step.
+  1) read the task-defining object effect directly from MuJoCo;
+  2) intervene on decoded absolute action groups after inference, before env.step;
+  3) record the *official upstream episode success* separately from the raw effect.
 
 Keep the policy observation untouched. On later closed-loop steps it naturally sees
 the consequences of the constrained body through vision/proprioception.
@@ -44,11 +45,17 @@ TASKS = {
 class EffectState:
     task: str
     qpos: float
-    success: bool
+    predicate_reached: bool
 
 
 def read_effect_state(mujoco_env: Any, env_id: str) -> EffectState:
-    """Read the task-defining object coordinate from SIMPLE's MuJoCo state."""
+    """Read the raw object-state predicate underlying SIMPLE's task reward.
+
+    This is deliberately *not* called official success. In the audited tasks,
+    SIMPLE's `check_success` requires the object predicate to remain true long
+    enough for an internal reward accumulator to reach `success_criteria`.
+    The rollout runner must therefore report upstream episode success separately.
+    """
     if env_id not in TASKS:
         raise KeyError(f"env_id not in frozen Topic 23 panel: {env_id}")
     spec = TASKS[env_id]
@@ -56,7 +63,7 @@ def read_effect_state(mujoco_env: Any, env_id: str) -> EffectState:
     return EffectState(
         task=spec["short_name"],
         qpos=qpos,
-        success=task_effect_success(spec["short_name"], qpos),
+        predicate_reached=task_effect_success(spec["short_name"], qpos),
     )
 
 
@@ -97,19 +104,25 @@ def make_record(
     config_id: str | int,
     condition: Condition | str,
     effect: EffectState,
+    official_success: bool,
     route_verified: bool | None = None,
     left_arm_motion_l2: float | None = None,
     torso_motion_l2: float | None = None,
 ) -> dict[str, Any]:
-    """Create one terminal row consumable by g0_core.py."""
+    """Create one terminal row consumable by g0_core.py.
+
+    `official_success` must come from the unmodified upstream SIMPLE evaluator,
+    not from `effect.predicate_reached`.
+    """
     c = Condition(condition)
     row = {
         "task": TASKS[env_id]["short_name"],
         "env_id": env_id,
         "config_id": str(config_id),
         "condition": c.value,
-        "success": bool(effect.success),
+        "success": bool(official_success),
         "effect_qpos": float(effect.qpos),
+        "effect_predicate_reached": bool(effect.predicate_reached),
         "route_verified": route_verified,
     }
     if left_arm_motion_l2 is not None:
