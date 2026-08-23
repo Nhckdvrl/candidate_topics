@@ -2,11 +2,13 @@
 
 Implement the environment-specific collector around the already-frozen logic in `g0_core.py` and `g0_simple_psi0.py`. Do not redesign the scientific test.
 
+**Protocol amendment:** read [`PROTOCOL_AMENDMENT_2026-08-23.md`](./PROTOCOL_AMENDMENT_2026-08-23.md) before scoring. The released level-0 eval set has only 10 distinct configs, so the primary independence unit is the **environment config**, not the rollout.
+
 ## Phase P0 — exact stack qualification
 
 1. Checkout the audited SIMPLE / Psi0 revisions or document any necessary newer revision and diff the touched files.
 2. Start the released Psi0 checkpoint through the official SIMPLE stack.
-3. Run 10 fixed level-0 `G1WholebodyCloseDoorTeleop-v0` episodes.
+3. Run the 10 fixed level-0 `G1WholebodyCloseDoorTeleop-v0` configs once each.
 4. Require >=8/10 success. If not, report `PLATFORM_PREREQUISITE_FAIL` and stop.
 5. Verify action shape/order from source and runtime: right arm must be action dims `21:28` and absolute joint targets.
 
@@ -25,9 +27,11 @@ Failure: `PAIRED_INFERENCE_NOT_IDENTIFIED`; stop.
 
 ## Phase P2 — collect deployed states
 
-Run 20 successful level-0 episodes using the official RTC policy. Record every *fresh policy query* state (not every 200-Hz WBC step), including a restorable MuJoCo snapshot and the policy-side previous-height/context values needed to rebuild exactly the same Ψ₀ state input. Retain the last three fresh-policy query states before success from each episode.
+Use all **10 released level-0 configs** and obtain **2 independent successful RTC rollouts per config**, for 20 successful rollouts total. Record every *fresh policy query* state (not every 200-Hz WBC step), including a restorable MuJoCo snapshot and the policy-side previous-height/context values needed to rebuild exactly the same Ψ₀ state input. Retain the last three fresh-policy query states before success from each rollout.
 
 No response-based frame selection.
+
+Record both `config_id` and `rollout_id`. For the primary analyzer, set `episode_id = config_id` so rows from the two rollouts sharing one released environment config remain in the same bootstrap cluster.
 
 ## Phase P3 — construct physical pairs
 
@@ -51,7 +55,7 @@ query `base`, `task`, `null` in reset-mode ordinary `predict_action`. Before eve
 
 Write one JSONL row per state × pair seed with at least:
 
-- `episode_id`, `state_id`, `pair_seed`
+- `config_id`, `rollout_id`, `episode_id`, `state_id`, `pair_seed`
 - `delta_task`, `delta_null`
 - `base_right_arm_target`, `task_right_arm_target`, `null_right_arm_target`
 - finite geometry diagnostics
@@ -67,11 +71,15 @@ python g0_simple_psi0.py records.jsonl --out g0_result.json
 
 Primary score: `DeltaR = R_task - R_null = A_null - A_task`.
 
-- GO: mean >=0.20 and episode-bootstrap 95% CI low >0.
-- KILL: CI high <=0.10.
+Primary hierarchy:
+
+`pair seeds -> states -> rollout -> config -> bootstrap across 10 configs`.
+
+- GO: mean >=0.20 and **config-cluster bootstrap** 95% CI low >0.
+- KILL: **config-cluster bootstrap** CI high <=0.10.
 - else: `INCONCLUSIVE_DO_NOT_TUNE`.
 
-Seeds/states are nested; bootstrap episodes.
+The 20-rollout bootstrap may be reported only as a secondary diagnostic. It does not affect the verdict.
 
 ## Only if GO — G0b
 
@@ -91,7 +99,9 @@ In `G0_RESULTS.md`, explicitly answer:
 
 1. Did local Psi0 competence pass?
 2. Did deterministic paired inference pass?
-3. How many episodes/states passed the fixed kinematic construction?
-4. What are `R_task`, `R_null`, `DeltaR`, and episode-bootstrap CI?
-5. Frozen verdict?
-6. Any engineering deviation from the preregistered contrast?
+3. How many configs/rollouts/states passed the fixed kinematic construction?
+4. What are `R_task`, `R_null`, `DeltaR`, and the **10-config bootstrap CI**?
+5. What is the secondary 20-rollout diagnostic CI?
+6. Frozen verdict?
+7. Record the two environment-only deviations from the protocol amendment: Git SSH->HTTPS submodule transport and cu126->cu128 execution backend compatibility.
+8. Any other engineering deviation from the preregistered contrast?
