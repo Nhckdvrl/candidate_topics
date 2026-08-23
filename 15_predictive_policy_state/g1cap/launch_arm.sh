@@ -14,6 +14,7 @@ T=/home/xiang/candidate_topics/15_predictive_policy_state
 LW=/home/xiang/projects/Light-WAM
 PY=/home/xiang/miniconda3/envs/lightwam/bin/python
 export LIGHTWAM_LORA_ACTION_ONLY=1
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 CUDA_VISIBLE_DEVICES="$GPU" $PY -m accelerate.commands.launch \
   --num_processes 1 --mixed_precision bf16 \
   "$T/g1_train.py" \

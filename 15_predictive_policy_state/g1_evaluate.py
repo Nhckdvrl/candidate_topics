@@ -119,8 +119,11 @@ def main() -> None:
     cfg.data.train.pretrained_norm_stats = str(args.dataset_stats.expanduser().resolve())
     cfg.data.train.val_set_proportion = 0.0
     cfg.data.train.is_training_set = True
-    if bool(cfg.model.wam_adapter.use_backbone_lora):
-        raise ValueError("matched evaluation expects the LoRA-free matched config")
+    # The capacity-restored pair keeps LoRA, identical in both arms and action-trained only.
+    # Note the consequence for interpretation: with LoRA present the two arms no longer collapse
+    # to a bit-identical frozen backbone under adapter bypass, so bypass_r2 may differ slightly
+    # between arms. That is expected and does not affect the paired per-sample statistics.
+    lora_present = bool(cfg.model.wam_adapter.use_backbone_lora)
     os.chdir(root)
 
     from hydra.utils import instantiate
@@ -215,6 +218,7 @@ def main() -> None:
             "one_window_per_episode": True,
             "episode_disjoint_probe_split": True,
             "same_samples_for_both_arms": True,
+            "backbone_lora_present": lora_present,
             "min_relative_effect": args.min_relative_effect,
             "bootstrap": args.bootstrap,
             "seed": args.seed,

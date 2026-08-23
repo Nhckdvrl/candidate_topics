@@ -1,5 +1,5 @@
 output_dir: /home/xiang/candidate_topics/15_predictive_policy_state/g1cap/runs/future_off
-batch_size: 32
+batch_size: 24
 num_workers: 6
 lr_scheduler_type: cosine
 learning_rate: 0.0002

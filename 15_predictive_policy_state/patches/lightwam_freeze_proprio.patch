@@ -62,3 +62,79 @@ disables. This mirrors it into the console log so both arms leave an auditable r
                              global_loss,
 +                            global_grad_norm,
                          )
+
+
+Capacity-restored G1 requirement (README §"one further experiment" the user authorized after
+the isolated G1 negative): LoRA must be restored identically in both arms but receive
+ACTION-loss gradient only, so it gives the action path non-shared capacity while the WAM
+adapters remain the sole route from future supervision into the deployed policy. This cannot be
+done with a config flag because the video branch's forward pass also runs through LoRA; it
+requires routing at backward time.
+
+--- a/src/lightwam/models/wan22/lightwam.py
++++ b/src/lightwam/models/wan22/lightwam.py
+@@
+         loss_total = self.loss_lambda_video * loss_video + self.loss_lambda_action * loss_action
++        # Exposed so a trainer can route the two objectives to different parameter subsets
++        # (capacity-restored matched run: LoRA must receive action gradient only).
++        self._last_loss_components = {
++            "video": self.loss_lambda_video * loss_video,
++            "action": self.loss_lambda_action * loss_action,
++        }
+         loss_dict = self._build_loss_dict(loss_video=loss_video, loss_action=loss_action)
+         self._timing_end("training_loss_total", total_timing)
+
+--- a/src/lightwam/trainer.py
++++ b/src/lightwam/trainer.py
+@@
++        self._lora_action_only = os.environ.get("LIGHTWAM_LORA_ACTION_ONLY", "0") == "1"
++        self._lora_routing_checked = False
+@@
+                 backward_start = self._timing_start()
+-                self.accelerator.backward(loss)
++                if self._lora_action_only:
++                    self._backward_with_lora_action_only(train_model, loss)
++                else:
++                    self.accelerator.backward(loss)
+                 self._accumulate_timing(
+                     {"timing/trainer/backward_ms": self._timing_end_ms(backward_start)}
+                 )
+@@
++    def _collect_lora_parameters(self, model):
++        """Trainable LoRA parameters of the frozen backbone, by name."""
++        target = model if hasattr(model, "named_parameters") else self.accelerator.unwrap_model(model)
++        return [
++            (name, param)
++            for name, param in target.named_parameters()
++            if param.requires_grad and ".lora_" in f".{name}"
++        ]
++
++    def _backward_with_lora_action_only(self, train_model, loss):
++        """Backward such that LoRA receives gradient from the action loss ONLY.
++
++        The action and video branches are separate forward passes that share parameters but
++        no activations (verified on the real model), so neither backward needs retain_graph.
++        """
++        components = getattr(train_model, "_last_loss_components", None)
++        if not components:
++            raise RuntimeError(
++                "LIGHTWAM_LORA_ACTION_ONLY=1 requires the model to expose _last_loss_components"
++            )
++        lora_params = self._collect_lora_parameters(train_model)
++        if not lora_params:
++            raise RuntimeError("LIGHTWAM_LORA_ACTION_ONLY=1 but no trainable LoRA parameters exist")
++
++        self.accelerator.backward(components["action"])
++        action_only = {
++            name: (None if param.grad is None else param.grad.detach().clone())
++            for name, param in lora_params
++        }
++        self.accelerator.backward(components["video"])
++        for name, param in lora_params:
++            saved = action_only[name]
++            if saved is None:
++                if param.grad is not None:
++                    param.grad.zero_()
++            else:
++                param.grad.copy_(saved)
++        self._lora_routing_checked = True

@@ -1,61 +1,280 @@
-# Topic 15 — G0 results
+# Topic 15 — Final results
 
 **Question.** Does training-time world modeling act through a predictive policy state?
 
-**Stage run.** G0 only — the pre-registered released-checkpoint screen of the native
-Light-WAM WAM-adapter route, exactly as defined in [README.md](README.md) and
-[VALIDATION_AUDIT.md](VALIDATION_AUDIT.md).
+**Stages run.** G0 (released-checkpoint screen) → isolated G1 (matched future-on/future-off
+training, LoRA off) → capacity-restored G1 (matched training, LoRA restored but restricted to
+action-loss gradient). All three stages executed to their pre-registered or user-authorized
+stopping points. No stage was cut short favorably and no stage was extended past its rule.
 
-**Headline.** The native route is **strongly action-causal but not more future-predictive**.
-Pre-registered verdict: `ADAPTER_ACTION_EFFECT_WITHOUT_FUTURE_GAIN`.
-Per the pre-registered decision table this is a **negative** for the topic's mechanism and a
-**kill of this Light-WAM route**. G1 was therefore not run.
-
----
-
-## 0. What was actually executed
-
-The topic had never been executed before this session: no Light-WAM checkout, checkpoint,
-dataset or latent cache existed on this machine. The scientific contrast was not modified.
-Only the engineering environment was built:
-
-| item | value |
-| --- | --- |
-| Light-WAM | `https://github.com/L1ziang/Light-WAM` @ `b2785f66e13fd9987e94ae1ecc1c441d5059c9ae` |
-| released checkpoints | `l1ziang/lightwam-checkpoints` |
-| datasets | `yuanty/LIBERO-fastwam` |
-| latent / text caches | `l1ziang/lightwam-offline-cache` |
-| backbone | `Wan-AI/Wan2.1-T2V-1.3B` (frozen) |
-| env | conda `lightwam`, python 3.10, torch 2.7.1+cu128 |
-| hardware | 1 GPU per run, no training, no simulator |
-
-The only change to `g0_lightwam.py` was one engineering line that defaults
-`DIFFSYNTH_MODEL_BASE_PATH` to `<lightwam-root>/checkpoints`, because upstream resolves
-`model_id` against that variable. No scientific parameter was touched.
-
-The architecture audit inside the script passed against the real released checkpoint and
-confirmed every assumption the README makes:
+**Final verdict.**
 
 ```text
-adapter layers                       = [8, 16, 24]
-action readout feature sources       = [adapted] on all three layers
-video hidden dim                     = 1536   (pooled probe feature = 3 x 1536 = 4608)
-video_latent_spatial_downsample_factor = 2
-backbone LoRA                        = enabled (layers 0..29, rank 64)
+MECHANISM NOT SUPPORTED — ARCHIVE
 ```
 
-Design as pre-registered: 256 samples, **one non-padded window per episode**,
-**episode-disjoint** split (192 train episodes / 64 test episodes, intersection empty),
-parameter-free per-layer token mean (the trained learned-query pooler is *not* used for the
-probe), one fixed linear ridge probe, future target = future-minus-first clean VAE latent
-change **after the checkpoint's own future-training spatial downsampling** (12,544 dims, no PCA),
-and a full second backbone pass with **every** adapter scale set to 0.
+Training-time future/video supervision reliably makes the shared WAM-adapter state carry more
+linearly decodable future information. That predictive state does not help, and in the two
+matched-training experiments where it was cleanly isolated, it either provided no significant
+benefit or made the deployed policy measurably worse. The reversed mediation sign — action
+depending on the adapters *more* when future supervision is off, not on — held from the very
+first matched run, survived removing the shared-adapter-bottleneck confound, and had not
+reversed direction by the last authorized checkpoint of the last authorized experiment.
 
 ---
 
-## 1. G0 part A — future-predictability effect
+## 1. Timeline
 
-`libero_spatial`, held-out episodes:
+| Experiment | Design | Steps | Outcome |
+| --- | --- | --- | --- |
+| G0 | Released Light-WAM checkpoints, adapter bypass, held-out episode-disjoint probe | n/a (inference only) | `libero_spatial`: adapters cause +135% action loss on bypass, 0 future gain. `libero_object`: same pattern, +8.8% / 0 future gain. `libero_10`: never completed — HF cache download stalled indefinitely and was abandoned; does not change the verdict, since two suites already independently replicated the same pattern. |
+| Isolated G1 | Matched future-on/off training. Backbone frozen, **LoRA disabled**, WAM adapters (2.37M) the only trainable module shared by future and action losses, proprio frozen, clipping inactive, shared init checkpoint | 30,000 (both arms) | Action-loss gap and ΔC both stably wrong-signed at every one of 4 evaluation points (2.5k/10k/20k/30k). Relative action penalty grows monotonically 2.0%→27.6%. |
+| Capacity-restored G1 | Same matched design, **LoRA restored** to the released spec (30 layers, rank 64) and given exact-gradient routing so it receives action-loss gradient only — the WAM adapters remain the sole route by which future supervision can reach the deployed policy | 30,000 (both arms) | Oscillated at 10k/20k, but by 30k all three gates fail again: no policy gain, no significant predictive-state gain in either arm, ΔC wrong-signed. |
+
+---
+
+## 2. G0 — released-checkpoint screen
+
+Full detail in the G0 section retained below (§9). Summary: on two independently downloaded
+released checkpoints (`libero_spatial` step 55000, `libero_object` step 12500), the explicit
+WAM-adapter pathway has a large, statistically clear causal effect on action prediction, but
+adds no measurable held-out future-predictive information relative to full adapter bypass.
+Verdict both times: `ADAPTER_ACTION_EFFECT_WITHOUT_FUTURE_GAIN`.
+
+This screen alone could not settle the training-time question, because the released
+checkpoint's bypass condition still contains backbone LoRA, itself trained by the future
+objective — a second, unidentified route. That is why G1 was run rather than archiving at G0.
+
+---
+
+## 3. Isolated G1 — matched training, LoRA off
+
+### Design
+
+Two runs from one shared initialization checkpoint, differing in exactly one hyperparameter:
+
+```text
+future-on:   lambda_video = 1.0
+future-off:  lambda_video = 0.0
+```
+
+Held fixed in both arms: frozen pretrained video backbone, **backbone LoRA disabled**
+(`use_backbone_lora=false`), proprio encoder frozen (`LIGHTWAM_FREEZE_PROPRIO=1`), global
+gradient clipping threshold set to `1e9` (never activates; observed grad norms ~0.6–10),
+identical seed/batch/LR/schedule/data order, identical action-expert and adapter
+initialization (verified by state-dict hash). Under this configuration the 2.37M-parameter
+WAM adapters are the **only** trainable representation module shared by the future loss and
+the action loss.
+
+Evaluated at four checkpoints on 256 held-out, episode-disjoint samples (same protocol as G0:
+fixed per-layer token-mean probe, full adapter bypass, checkpoint-native future-training latent
+space).
+
+### Result
+
+| step | L_on | L_off | gap (on−off) | gap 95% CI | relative penalty | pg_on | pg_off | C_on | C_off | ΔC | ΔC 95% CI |
+| ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 2500 | 0.04855 | 0.04757 | +0.00097 | [−0.0084, +0.0083] | 2.0% | +4.28% | +1.93% | 0.070 | 0.340 | −0.270 | [−0.348, −0.190] |
+| 10000 | 0.03206 | 0.02744 | +0.00462 | [+0.0010, +0.0093] | 16.8% | +5.69% | +2.70% | 0.087 | 0.287 | −0.200 | [−0.258, −0.143] |
+| 20000 | 0.01849 | 0.01482 | +0.00367 | [+0.0018, +0.0060] | 24.7% | +5.18% | +2.25% | 0.103 | 0.308 | −0.205 | [−0.267, −0.144] |
+| 30000 | 0.01727 | 0.01353 | +0.00373 | [+0.0021, +0.0056] | 27.6% | +5.02% | +2.36% | 0.105 | 0.317 | −0.212 | [−0.274, −0.150] |
+
+(`gap`, `L_on`, `L_off` are the checkpoint's demonstration action loss; `pg` is the relative
+MSE gain in held-out future decodability from enabling adapters; `C` is the mean paired
+adapter-bypass action-loss cost; `ΔC = C_on − C_off`.)
+
+**What held at every point:**
+
+1. **Predictive-state gate passed cleanly and stably.** `pg_on` was consistently about **2×**
+   `pg_off` (≈5% vs ≈2–3%), with the interaction CI excluding zero throughout. Future
+   supervision reliably made the shared adapter state carry more decodable future information
+   — this is the one link in the causal chain (`T → M`) that this project set out to test and
+   that actually replicated.
+2. **Policy gate failed and got worse, not better.** The relative action penalty from future
+   supervision rose monotonically from 2.0% to 27.6% and never came close to reversing. By
+   10,000 steps the gap's CI had already left zero and stayed there.
+3. **Interaction gate failed in the wrong direction.** `ΔC` was negative at all four points
+   with a CI that never touched zero: the future-**off** policy depended on the shared
+   adapters *more* than the future-on policy did, the opposite of the mediation prediction.
+   The sharpest single number: under full adapter bypass, future-on's disadvantage of
+   −0.0037 (worse than off) flips to an **advantage of +0.208** (better than off). The shared
+   adapters are a net burden to the future-on policy, not the source of any benefit.
+
+**Interpretation at this point.** The isolated design cleanly confirmed `T → M` and cleanly
+falsified `M → Y` in the direction the topic requires — but with an unresolved confound: LoRA
+disabled meant the 2.37M adapters were the *only* trainable representation, forcing future and
+action objectives to compete for one small bottleneck. That confound alone could produce this
+exact pattern (predictive state formed, but action starved of capacity) without saying anything
+about whether a predictive adapter state is *ever* useful to the policy. This is why the user
+authorized one further experiment rather than archiving here.
+
+---
+
+## 4. Capacity-restored G1 — the decisive experiment
+
+### Design
+
+Same matched-training design as §3, with one addition: backbone LoRA is restored to the
+released specification (30 layers, rank 64, alpha 128, **identical in both arms**) and given
++87.5M parameters of action-only capacity via exact gradient routing implemented in the
+trainer:
+
+```text
+per step:
+  action_loss.backward()                    # populates LoRA + adapter grads from action only
+  snapshot LoRA grads
+  video_loss.backward()                     # adds future grads to adapter AND LoRA
+  restore LoRA grads to the action-only snapshot   # strip future's contribution from LoRA
+```
+
+This gives the action path non-shared capacity while the WAM adapters remain the **sole** route
+by which future supervision can reach the deployed policy representation. The routing was
+verified twice:
+
+1. **Algorithmically**, in `tests/test_lora_gradient_routing.py`, on a toy graph where a
+   "shared" module and an "action-only" module are both present; confirms LoRA-equivalent
+   gradient equals a pure action-loss backward, differs from a naively combined backward, and
+   that the shared module still receives both objectives. A second test confirms the routing is
+   a no-op when the video loss weight is zero (the future-off arm's code path).
+2. **On the real model**, before launch: `LoRA: routed vs action_only maxdiff = 0.000e+00`,
+   `LoRA: routed vs combined maxdiff = 2.168e-01` (confirms the two differ, i.e. the test is not
+   trivially passing), `WAM adapters: routed vs combined maxdiff = 0.000e+00` (adapters still
+   see both objectives).
+
+Everything else matched §3: frozen backbone, frozen proprio, clipping threshold `1e9` (observed
+grad norms ~0.6–10.3), shared initialization checkpoint (rebuilt for this LoRA-present
+architecture), identical seed/data order. Only `lambda_video` differs between arms. Batch size
+was reduced from 32 to 24 for memory (LoRA adds ~87.5M parameters and their activations);
+matched identically across both arms, so pairing is unaffected.
+
+### Result
+
+| step | L_on | L_off | gap (on−off) | gap 95% CI | pg_on | pg_on 95% CI | pg_off | pg_off 95% CI | C_on | C_off | ΔC | ΔC 95% CI |
+| ---: | ---: | ---: | ---: | --- | ---: | --- | ---: | --- | ---: | ---: | ---: | --- |
+| 10000 | 0.03224 | 0.03328 | −0.00104 | [−0.0058, +0.0029] | −1.01% | [−0.0027, −0.0002] | +0.84% | [+0.0003, +0.0018] | 0.0007 | 0.0004 | +0.0003 | [−0.0008, +0.0015] |
+| 20000 | 0.01600 | 0.01405 | +0.00195 | [+0.0002, +0.0039] | −0.50% | [−0.0015, +0.0003] | −0.38% | [−0.0016, +0.0005] | 0.0012 | 0.0046 | −0.0034 | [−0.0058, −0.0014] |
+| 30000 | 0.01304 | 0.01125 | +0.00179 | [+0.0005, +0.0032] | −0.72% | [−0.0020, +0.0000] | −0.40% | [−0.0016, +0.0005] | 0.0016 | 0.0051 | −0.0035 | [−0.0056, −0.0016] |
+
+At step 30000 (the last authorized checkpoint):
+
+```text
+gates:
+  policy_gain              = false   (gap +0.00179, CI [+0.0005,+0.0032]; on is WORSE)
+  predictive_state_gain    = false   (pg_on −0.72% CI crosses zero; pg_off −0.40% CI crosses zero)
+  adapter_dependence_gate  = false   (ΔC −0.0035, CI [−0.0056,−0.0016]; wrong-signed)
+verdict: NO_POLICY_GAIN_FROM_FUTURE_SUPERVISION
+future_on advantage under normal adapters:  −0.00179  (worse)
+future_on advantage under adapter bypass:   +0.00169  (better)
+```
+
+**Reading the trend.** The 10k point oscillated to the opposite sign on both `gap` and `ΔC`,
+but every one of those 10k values had a CI crossing zero, and — tellingly — the
+predictive-state gate itself was internally inconsistent at 10k (`pg_on` significantly
+*negative*, `pg_off` significantly positive), the opposite of the stable pattern seen
+throughout §3. That is early-training noise from a freshly restored representation, not a
+different regime: by 20k and 30k the pattern converges back to the same failure mode as the
+isolated run — `gap` significant and positive (future-on worse), `ΔC` significant and negative
+(future-off depends on the adapters more), and by 30k neither arm shows a significant adapter
+future-gain at all.
+
+**What this rules out.** The capacity-restored design gives the action path 87.5M parameters of
+non-shared capacity — roughly 37× the size of the shared adapter bottleneck it was competing
+for in §3. If the isolated-G1 negative had been an artifact of forcing future and action to
+share a 2.37M-parameter bottleneck, restoring dedicated action capacity should have let a
+useful predictive-state effect emerge. It did not. The predictive-state effect that was so
+stable in §3 (pg_on ≈ 2× pg_off, CI excluding zero at every point) essentially **disappeared**
+here — both arms show statistically insignificant, slightly negative adapter future-gain by
+20k–30k. Restoring LoRA did not just fail to produce a policy benefit; it appears to have
+displaced most of what little future-predictive signal the adapters had been carrying under the
+bottlenecked configuration, plausibly because LoRA's larger, unconstrained action-relevant
+capacity now does more of the representational work the adapters used to be forced into,
+leaving the adapters comparatively undertrained on both objectives.
+
+---
+
+## 5. Engineering notes retained for any future reader
+
+- Multi-GPU NCCL failed with an unrecoverable illegal-memory-access / `SIGABRT` on this host's
+  Blackwell cards, reproduced under four separate NCCL environment-variable configurations
+  (default, `NCCL_P2P_DISABLE`, `+NCCL_SHM_DISABLE`, `NCCL_P2P_LEVEL=SYS`). All isolated and
+  capacity-restored arms therefore ran single-GPU (`world_size=1`), which is scientifically
+  immaterial to a paired comparison but capped wall-clock throughput to ~0.9–1.15 step/s.
+- Upstream applies `cfg.seed` inside `Wan22Trainer.__init__`, **after** `instantiate(cfg.model,
+  ...)`; matched initialization therefore used one shared checkpoint built by seeding before
+  model construction (`g1_make_init.py`), loaded into both arms via upstream `resume=`.
+- Upstream's global grad-clip threshold was set to `1e9` (functionally inactive) rather than
+  disabled outright, and `grad_norm` was mirrored into the console log (a one-line trainer
+  patch) specifically so the "clipping never activates" claim is auditable from the run logs
+  rather than assumed. Observed values (0.6–10.3) never approached the threshold.
+- `LIGHTWAM_FREEZE_PROPRIO=1` (an opt-in trainer flag, default off) freezes `proprio_encoder`;
+  required because upstream `build_inputs` appends the proprio token to context consumed by
+  both the future and action branches, otherwise a second, unidentified trainable route.
+- The exact-gradient LoRA routing (`_backward_with_lora_action_only` in
+  `src/lightwam/trainer.py`, opt-in via `LIGHTWAM_LORA_ACTION_ONLY=1`) initially used
+  `retain_graph=True` for the action backward; this caused an OOM once LoRA's ~87.5M parameters
+  and activations were added. Verifying that the action and video forward passes build fully
+  disjoint computation graphs (they share only parameters, no activations) let `retain_graph`
+  be dropped, which resolved the OOM without changing the routing semantics (re-verified against
+  the real model afterward).
+- G0 on the third LIBERO suite (`libero_10`) was never completed: the required 15.7GB offline
+  latent-cache shard stalled indefinitely on the HF Xet backend. Two independently completed G0
+  suites (`libero_spatial`, `libero_object`) already agreed, so this was not chased further; it
+  does not affect the final verdict, which rests on the two matched-training experiments.
+
+---
+
+## 6. What this project now supports, and does not
+
+**Supported, with reasonably strong evidence across two independent matched-training designs
+and 4+3 evaluation checkpoints:**
+
+> Training-time future/video supervision, when forced through a small dedicated adapter
+> pathway, reliably makes that pathway's state more linearly predictive of the real future.
+> "Future information is decodable" and "future information is useful to the deployed policy"
+> are different claims, and the gap between them is not a measurement artifact — it survives a
+> parameter-free probe, an episode-disjoint held-out split, a real module-level bypass
+> intervention, and a second design that removes a specific confound (shared-capacity
+> competition) the first design could not rule out.
+
+**Not supported, despite being given two clean chances:**
+
+> That predictive state is used by the deployed policy for better action. In both matched
+> designs tested, the opposite held: the future-off policy depended on the shared adapter
+> pathway *more*, and in the design with the bottleneck confound removed, giving action extra
+> non-shared capacity, if anything, weakened the residual future-predictive signal rather than
+> letting it become useful.
+
+**Explicitly not addressed by anything in this project:**
+
+- Whether some other architecture, adapter width, layer placement, or supervision schedule
+  would produce a different result. Per the project's stated principle, that space was not
+  searched — no SAE, no PCA/CCA, no learned projector, no rank/layer/threshold sweep, no
+  additional λ values, no different probe.
+- Whether an action-conditioned world model exists anywhere in Light-WAM. This project never
+  attempted to identify that stronger claim.
+- Closed-loop success. All action measurements here are offline demonstration action loss.
+
+---
+
+## 7. Verdict
+
+```text
+KILL — ARCHIVE TOPIC 15
+```
+
+Both the required matched-training tests were run to their authorized stopping points. Neither
+supported the mediation claim; the second, more permissive design (extra non-shared action
+capacity) did not rescue the first. Per the project's standing rule, no further representation
+machinery, architecture variant, or hyperparameter sweep will be added to try to recover a
+positive result. See `ARCHIVE_SUMMARY.md` for the short-form record.
+
+---
+
+# Appendix — G0 detail (retained from the original screen)
+
+## G0 part A — future-predictability effect
+
+`libero_spatial`, held-out episodes (256 samples, 192 train / 64 test, episode-disjoint):
 
 | condition | probe R² | probe MSE |
 | --- | --- | --- |
@@ -64,157 +283,24 @@ and a full second backbone pass with **every** adapter scale set to 0.
 | mean-target baseline | — | 0.142300 |
 
 ```text
-relative MSE gain from adapters = +0.077 %
-paired episode bootstrap mean   = +9.1e-05
-95 % CI                         = [-7.9e-04, +1.05e-03]      <- crosses zero
-continuation floor              = +5 %
+relative MSE gain from adapters = +0.077 %,  95% CI [-7.9e-04, +1.05e-03]  (crosses zero)
 ```
 
-**The trained WAM adapters add essentially no linearly decodable future information.**
-The future *is* partly decodable — R² ≈ 0.166 against a real 12,544-dim future-change target —
-but that decodability is already present without the adapters, i.e. it lives in the frozen
-Wan backbone (plus its LoRA), not in the adapter residual.
-
-The effect is not merely below the 5 % floor; it is ~65× smaller than the floor and its
-confidence interval contains zero.
-
-### Validity of the negative
-
-A null part-A result would be meaningless if the fixed token-mean summary were blind to the
-adapters. It is not. `g0_feature_delta_check.py` measures how far the adapters move the exact
-feature the probe consumes (`results/libero_spatial_g0/feature_delta_check.json`):
+`libero_object` (step 12500, weaker checkpoint):
 
 ```text
-relative ||normal - bypass|| / ||normal||   = 0.103   (test split)
-per-layer:  layer8 0.100   layer16 0.101   layer24 0.110
-across-sample variance carried by the delta = 32.8  of  703.8   (~4.7 %)
+relative MSE gain from adapters = +0.36 %,  95% CI [-2.4e-04, +9.2e-04]  (crosses zero)
 ```
 
-The adapters visibly and consistently change the measured state at every adapter layer. The
-probe simply finds no *additional future information* in that change.
+A fit-free validity check (`g0_feature_delta_check.py`) confirms the null is a property of the
+adapters, not the measurement: adapters move the exact pooled probe feature by ~10% relative
+norm at every layer, carrying ~4.7% of across-sample variance.
 
----
+## G0 part B — adapter causal action effect
 
-## 2. G0 part B — adapter causal action effect
+| checkpoint | normal action loss | bypass action loss | relative increase | 95% CI |
+| --- | ---: | ---: | ---: | --- |
+| `libero_spatial` | 0.002528 | 0.005948 | +135.3% | [+2.50e-03, +4.46e-03] |
+| `libero_object` | 0.009590 | 0.010435 | +8.8% | [+1.5e-04, +1.7e-03] |
 
-Same two forward passes, same unchanged deployed action expert, same checkpoint action-loss
-definition and temporal weighting, same held-out episodes:
-
-| condition | demonstration action loss |
-| --- | --- |
-| normal | 0.0025284 |
-| full adapter bypass | 0.0059484 |
-
-```text
-relative action-loss increase   = +135.3 %
-paired episode bootstrap mean   = +3.42e-03
-95 % CI                         = [+2.50e-03, +4.46e-03]     <- far from zero
-action RMS shift                = 0.0899
-```
-
-**Bypassing the explicit WAM adapters more than doubles action error.** This is a genuine
-module-level intervention in the computation graph, and the dependence is large and
-unambiguous.
-
----
-
-## 3. Is G0 worth taking to G1?
-
-**No.** The pre-registered decision table gives:
-
-| future predictability improves? | bypass hurts action? | verdict |
-| --- | --- | --- |
-| **no** | **yes** | `ADAPTER_ACTION_EFFECT_WITHOUT_FUTURE_GAIN` |
-
-README §"G0 decision table" and the project principle "G0 弱 → 停" both resolve this to stop.
-The matched `lambda_video = 1` vs `lambda_video = 0` training was **not** launched.
-
-The reason this is the right call and not premature: the adapters matter enormously for
-action, so the route is not weak in general — it is weak *in the specific way the topic
-requires*. The topic's causal chain is
-
-```text
-training-time future supervision -> predictive policy state -> better action
-```
-
-G0 finds a large `adapter state -> action` link and no `adapter state -> future information`
-link. The middle term of the chain is the thing that failed to appear.
-
----
-
-## 4. What these results DO establish
-
-1. The released Light-WAM deployed action state carries real, non-trivial future information
-   (held-out R² ≈ 0.166 in the checkpoint's own future-training latent space, on
-   episode-disjoint data with one window per episode).
-2. That future information is **not** contributed by the explicit WAM-adapter pathway; it is
-   already present when all adapter scales are zero.
-3. The explicit WAM-adapter pathway is nevertheless **strongly causal for action**: removing
-   it (including all downstream propagation through later layers) more than doubles
-   demonstration action error.
-4. Therefore the adapters carry something the action expert depends on heavily, and that
-   something is not captured by linear future-change decodability from the state.
-
----
-
-## 5. What these results explicitly DO NOT establish
-
-- **Not** a proof that no predictive state exists anywhere in Light-WAM. The bypass condition
-  still contains the trained backbone LoRA, which is also updated by the future objective.
-  G0 isolates the explicit adapter route only — by design, as stated in the README.
-- **Not** a statement that future supervision is useless during Light-WAM training. G0 never
-  manipulated `lambda_video`; it inspects one released checkpoint.
-- **Not** a statement that the adapters contain no future information in any form. It shows
-  they add none that a fixed linear probe can read from a fixed token-mean summary — the
-  pre-registered measurement.
-- **Not** a claim about closed-loop success. The action effect is an offline demonstration
-  action loss.
-- **Not** mediation. Even the part-B positive would not have licensed a mediation claim; the
-  README removed `PROMISING_NATIVE_MEDIATOR` for exactly this reason.
-
-The negative is a **project-level kill of the clean Light-WAM adapter route**, not a universal
-scientific falsification. That distinction was pre-registered and is preserved here.
-
----
-
-## 6.–9. G1 (matched future-on / future-off training)
-
-**Not triggered.** G0 did not license it, so there is nothing to report for:
-
-6. whether future-on/off were truly matched;
-7. whether future supervision produced a policy gain;
-8. whether predictive state strengthened with future supervision;
-9. whether an adapter-bypass interaction supported mediation.
-
-The matched-training design in README §"The decisive next experiment" remains correct and was
-verified against the real upstream code during this session (all three implementation hazards
-it names are real in `Light-WAM@b2785f6`):
-
-- `Wan22Trainer.__init__` calls `set_global_seed(self.seed)` **after** `instantiate(cfg.model, ...)`
-  in `runtime.run_training`, so equal CLI seeds do not guarantee equal initialization.
-  Upstream `resume=<weights.pt>` loads weights without optimizer/step state, so it is a usable
-  common-init mechanism.
-- `trainer.py` clips the gradient norm over `self.model.parameters()` with `max_grad_norm=1.0`,
-  i.e. globally, exactly the confound the README describes.
-- `configure_trainable_modules` leaves `proprio_encoder` trainable, and `build_inputs` appends
-  the proprio token to the context used by **both** the future and action branches.
-
-These notes are recorded so a future project does not have to re-derive them. They are not a
-plan to continue this topic.
-
----
-
-## 10. Final verdict
-
-```text
-KILL THIS LIGHT-WAM MECHANISM ROUTE
-```
-
-No rescue was attempted and none should be. Per README §"Do not rescue a weak result", the
-following were **not** run and should not be run to revive this topic: SAE feature search,
-PCA / CCA / Procrustes, learned causal projectors, rank search, layer search, threshold search,
-or substituting the trained learned-query pooler into the probe.
-
-The one thing that *was* added is a validity diagnostic (`g0_feature_delta_check.py`) whose
-only purpose is to confirm that the negative is a property of the adapters and not of the
-measurement. It reports magnitudes; it fits nothing and searches nothing.
+Both: `ADAPTER_ACTION_EFFECT_WITHOUT_FUTURE_GAIN`.
