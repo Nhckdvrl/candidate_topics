@@ -106,13 +106,33 @@ Write one terminal JSON object per condition/config:
   "condition": "right_disabled",
   "success": true,
   "effect_qpos": -0.21,
+  "effect_predicate_reached": true,
   "route_verified": true,
   "left_arm_motion_l2": 1.73,
   "torso_motion_l2": 0.44
 }
 ```
 
-`success` should be computed from the environment effect using `read_effect_state`, not inferred from videos or reward heuristics added here.
+There are **two distinct task signals** and they must not be conflated:
+
+1. `success` = the official unmodified SIMPLE evaluator/check-success result for the episode;
+2. `effect_qpos` / `effect_predicate_reached` = the raw door/faucet object-state predicate read from MuJoCo.
+
+The audited SIMPLE tasks accumulate reward while the object predicate remains satisfied before declaring official success. Therefore **do not** derive `success` from one terminal qpos sample.
+
+Use:
+
+```python
+effect = read_effect_state(mujoco_env, env_id)
+row = make_record(
+    env_id=env_id,
+    config_id=config_id,
+    condition=condition,
+    effect=effect,
+    official_success=official_upstream_success,
+    ...
+)
+```
 
 For successful `right_disabled` rollouts, save video/contact information and set `route_verified` only after confirming a non-canonical physical route actually caused the object effect.
 
