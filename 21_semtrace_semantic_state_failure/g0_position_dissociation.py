@@ -34,6 +34,7 @@ class ContextPair:
     start_target_center_fraction: float
     middle_target_center_fraction: float
     distractor_sha256: str
+    local_neighbor_sha256: str
 
 
 def build_target_program(rng: random.Random, sample_id: int, n_steps: int) -> TargetProgram:
@@ -75,13 +76,13 @@ def token_len(tok, text: str) -> int:
     return len(tok(text, add_special_tokens=False).input_ids)
 
 
-def _compose_context(tok, header: str, target: str, blocks: list[str], split: int) -> tuple[str, int, float]:
-    parts = blocks[:split] + [target] + blocks[split:]
+def _compose_parts(tok, header: str, parts: list[str], target_idx: int) -> tuple[str, int, float]:
     text = header + "\n\n".join(parts)
-    if split:
-        prefix = header + "\n\n".join(blocks[:split]) + "\n\n"
+    if target_idx:
+        prefix = header + "\n\n".join(parts[:target_idx]) + "\n\n"
     else:
         prefix = header
+    target = parts[target_idx]
     target_start = token_len(tok, prefix)
     target_end = token_len(tok, prefix + target)
     total = token_len(tok, text)
@@ -91,7 +92,7 @@ def _compose_context(tok, header: str, target: str, blocks: list[str], split: in
 
 def make_context_pair(tok, target: str, rng: random.Random, target_tokens: int) -> ContextPair:
     header = "# Synthetic code repository\n\n"
-    budget = max(256, target_tokens - token_len(tok, target) - token_len(tok, header) - 128)
+    budget = max(512, target_tokens - token_len(tok, target) - token_len(tok, header) - 128)
     blocks, used, i = [], 0, 0
     while used < budget:
         block = build_distractor(rng, i)
@@ -102,11 +103,37 @@ def make_context_pair(tok, target: str, rng: random.Random, target_tokens: int) 
         used += n_tok
         i += 1
 
-    start_text, start_tokens, start_center = _compose_context(tok, header, target, blocks, 0)
-    candidates = [_compose_context(tok, header, target, blocks, split) + (split,) for split in range(len(blocks) + 1)]
+    if len(blocks) < 4:
+        raise RuntimeError("Context budget produced fewer than four distractor blocks")
+
+    # Preserve the target's immediate lexical neighborhood across positions.
+    # Only the amount of distant prefix/suffix context changes.
+    guard_before, guard_after = blocks[0], blocks[1]
+    mobile = blocks[2:]
+    package = [guard_before, target, guard_after]
+
+    start_parts = package + mobile
+    start_text, start_tokens, start_center = _compose_parts(tok, header, start_parts, target_idx=1)
+
+    candidates = []
+    for split in range(len(mobile) + 1):
+        parts = mobile[:split] + package + mobile[split:]
+        target_idx = split + 1
+        candidates.append(_compose_parts(tok, header, parts, target_idx) + (split,))
     middle_text, middle_tokens, middle_center, _ = min(candidates, key=lambda x: abs(x[2] - 0.5))
-    digest = hashlib.sha256("\n\n".join(blocks).encode("utf-8")).hexdigest()
-    return ContextPair(start_text, middle_text, start_tokens, middle_tokens, start_center, middle_center, digest)
+
+    distractor_digest = hashlib.sha256("\n\n".join(blocks).encode("utf-8")).hexdigest()
+    neighbor_digest = hashlib.sha256((guard_before + "\n\n" + guard_after).encode("utf-8")).hexdigest()
+    return ContextPair(
+        start=start_text,
+        middle=middle_text,
+        start_tokens=start_tokens,
+        middle_tokens=middle_tokens,
+        start_target_center_fraction=start_center,
+        middle_target_center_fraction=middle_center,
+        distractor_sha256=distractor_digest,
+        local_neighbor_sha256=neighbor_digest,
+    )
 
 
 def chat(tok, user: str) -> str:
@@ -195,6 +222,8 @@ def main() -> None:
                 "start_target_center_fraction": pair.start_target_center_fraction,
                 "middle_target_center_fraction": pair.middle_target_center_fraction,
                 "distractor_sha256": pair.distractor_sha256,
+                "local_neighbor_sha256": pair.local_neighbor_sha256,
+                "local_neighbors_preserved": True,
             },
             "conditions": {},
         }
@@ -225,7 +254,8 @@ def main() -> None:
         c = row["conditions"]
         contract = row["context_contract"]
         row["context_contract_ok"] = (
-            contract["token_length_delta"] <= 16
+            contract["local_neighbors_preserved"]
+            and contract["token_length_delta"] <= 16
             and contract["start_target_center_fraction"] <= 0.12
             and 0.40 <= contract["middle_target_center_fraction"] <= 0.60
         )
