@@ -1,8 +1,8 @@
 # 2026-08-24 — B/C/D promotion audit
 
-This note supersedes the 2026-08-23 provisional-shortlist status in this search directory. It records the decision taken **before** running the new experiment.
+This note records the pre-G0 promotion decision and the same-day post-G0 outcome.
 
-## Decision
+## Pre-G0 decision
 
 ```text
 B — KEEP PROVISIONAL
@@ -52,29 +52,26 @@ A cleaner causal decomposition could still be publishable in isolation, but the 
 
 ## D — Do Robot Foundation Policies Learn Motor Equivalence Classes?
 
-**Promoted to [`../23_motor_equivalence_classes/`](../23_motor_equivalence_classes/).**
+**Promoted to [`../23_motor_equivalence_classes/`](../23_motor_equivalence_classes/) before G0, then archived after G0.**
 
-The decisive reason is identification simplicity.
+The pre-run reason for promotion was the apparent identification simplicity: SIMPLE exposes task success in environment/object state, so the experiment could measure the task effect directly rather than through a joint-space proxy.
 
-SIMPLE provides tasks where success is defined by an environment effect while demonstrations use one canonical motor realization:
+### Correction to the original promotion rationale
+
+The original audit incorrectly treated the `Task.decompose()` entries
 
 ```text
-CloseDoor:
-  success -> door joint state
-  demo    -> dex3_right, left hand locked
-
-OpenFaucet:
-  success -> faucet joint state
-  demo    -> dex3_right, left hand locked
+hand_uid="dex3_right"
+lock_links=["left_hand_palm_link"]
 ```
 
-Therefore we can keep robot/task/world/language fixed, remove the canonical right-side route, first verify an alternative solution with an oracle, and then directly ask whether the frozen policy preserves the task effect using a different body solution.
+as evidence that the CloseDoor/OpenFaucet `*Teleop` demonstrations were generated with that right-hand decomposition. They were not: `decompose()` belongs to the CuRobo datagen path used by the `*MP` tasks, while these panel tasks use human teleoperation data.
 
-This avoids the Topic 19 failure mode because the dependent variable is **task/outcome space from the start**, not a joint-space projection.
+The laterality/canonical-route premise therefore had to be established behaviorally from the released policy itself, not inherited from `decompose()`.
 
-## New registered experiment
+## What G0 discovered
 
-Topic 23 freezes four matched conditions:
+The first registered four-condition panel was:
 
 ```text
 canonical
@@ -83,10 +80,72 @@ right_disabled
 full_hold
 ```
 
-and scores the exact task-defined object effect.
+On CloseDoor, the observed policy conditions looked like an overwhelming positive result:
 
-No hidden-state analysis, action-manifold metric, or post-hoc trajectory-similarity search is part of G0.
+```text
+canonical       30/30
+right_disabled  29/30
+full_hold        0/30
+paired diff      0.967, 95% CI [0.90, 1.00]
+substitution events 29
+```
 
-## Status bookkeeping
+But contact/kinematic inspection showed this was a false positive. Psi0 closes the door mainly by locomotion, carrying the already-low right hand into the door; shoulder and elbow articulation are tiny. The original intervention had not removed a causal right-arm motor program, so no substitution was required.
 
-The older D candidate file is preserved as a historical search artifact even though its header says provisional. **This promotion note is the newer status record**, and the root Topic 23 directory is now authoritative.
+Revision 2 added:
+
+```text
+right_frozen
+left_disabled
+both_arms_disabled
+```
+
+before the substitution claim could be evaluated.
+
+### CloseDoor final gate
+
+```text
+canonical                 30/30
+right_frozen              29/30
+canonical-right_frozen    0.033   < 0.20  FAIL
+both_arms_disabled        30/30   > 0.10  FAIL
+full_hold                  0/30
+```
+
+Verdict: `PREREQUISITE_FAIL_NO_CANONICAL_ARM_PROGRAM`.
+
+### OpenFaucet final gate
+
+OpenFaucet does contain a genuine arm program, but released Psi0 canonical success was only:
+
+```text
+5/10 + 2/10 + 4/10 = 11/30 = 0.367
+```
+
+which reproduces the published `10/30` regime and fails the frozen `>=0.70` competence prerequisite.
+
+Verdict: `PREREQUISITE_FAIL_CANONICAL`.
+
+## Final status
+
+```text
+B — KEEP PROVISIONAL
+C — DOWNGRADED / OUT OF ACTIVE SHORTLIST
+D — PROMOTED AS TOPIC 23, THEN ARCHIVED
+```
+
+Topic 23's broad scientific question is not falsified. The frozen Psi0 + SIMPLE panel simply contains no task that is simultaneously:
+
+```text
+policy competent
+AND
+causally dependent on the motor program being removed
+```
+
+Searching a third task after these two frozen failures would be post-hoc task shopping.
+
+The most important reusable lesson is:
+
+> **Before interpreting preserved task success as motor substitution, verify that the intervention actually removes a causal motor program used by the canonical behavior. Statistical confidence cannot rescue a non-identifying intervention.**
+
+See [`../23_motor_equivalence_classes/ARCHIVE_SUMMARY.md`](../23_motor_equivalence_classes/ARCHIVE_SUMMARY.md) and [`../23_motor_equivalence_classes/G0_RESULTS.md`](../23_motor_equivalence_classes/G0_RESULTS.md).
