@@ -4,358 +4,211 @@
 >
 > `ROUND_*.md` 保存搜索历史与完整审计；本文件只回答：**现在到底哪些题还活着，下一步做什么？**
 >
-> 每轮结束后必须同步更新。已经 KILL 的题不能因为换模型、换数据、换 probe 偷偷复活；若复活必须写明新的 scientific reason。
+> 已经 KILL 的题不能因为换模型、换数据、换 probe 偷偷复活；若复活必须写明新的 scientific reason。
 
-Last updated: 2026-08-23
-Source of current ranking: `ROUND_07_2026-08-23.md`
-
----
-
-# A. ACTIVE — 可以直接进入 prerequisite / G0
-
-## A1. SemTrace — lexical retrieval survives, semantic execution fails in the middle
-
-**Seed**: ACL 2026 main, *Sense and Sensitivity: Examining the Influence of Semantic Recall on Long Context Code Understanding*.
-
-**Research question**:
-
-> **Why does context position selectively destroy operational state transition while lexical access to the same code remains available?**
-
-**Why alive**:
-
-- ACL main seed;
-- same model / same synthetic program / move only relevant code position;
-- huge reported semantic middle-position failure;
-- lexical recall provides an intact control on the same content;
-- official reproduction package complete;
-- 7B/8B open models;
-- intermediate program states are exactly computable;
-- no manual annotation / paid API prerequisite.
-
-**Frozen critical cell**:
-
-```text
-same program + same model
-edge:   semantic correct
-middle: semantic wrong
-edge:   lexical correct
-middle: lexical correct
-```
-
-**First G0**:
-
-1. reproduce edge-vs-middle semantic drop on one seed-listed 7B/8B model;
-2. verify lexical recall remains intact on the same instances;
-3. measure `edge-correct / middle-wrong / lexical-intact` density;
-4. only then localize exact intermediate program-state failure / causal patching.
-
-**Kill line**:
-
-- critical cell sparse;
-- lexical and semantic failures collapse together;
-- result reduces to generic position degradation;
-- mechanism requires broad layer/token fishing.
-
-**Collision boundary**: not generic state tracking, binding, or lost-in-the-middle. Novelty must be **selective operational-computation collapse under intact lexical access**.
-
-**Status**: `SURVIVAL_TOP / #1 / CODE_NEXT`
+Last updated: 2026-08-24
+Source of current ranking: `ROUND_10_2026-08-24.md`
 
 ---
 
-## A2. ChronoScope — reference-time state loss or failure to use it?
+# 0. Current advisor-fit override
 
-**Seed**: ACL 2026 main, *Evaluating Temporal Consistency in Multi-Turn Language Models*.
+Generic reasoning / CoT / test-time compute / reasoning RL / multi-hop reasoning mechanism is now **advisor-low-priority**, even if the paper-scale science is otherwise strong.
 
-Official repo: `yashkumaratri/ChronoScope`.
+Preferred advisor-facing objects are:
 
-**Research question**:
+- learning dynamics / developmental trajectories;
+- knowledge acquisition and retention;
+- memory / interference / storage-vs-access distinctions;
+- representation and internal organization after a behavioral object exists;
+- semantic organization / model development;
+- old learning- or memory-science questions made testable by checkpoints and causal intervention.
 
-> **When a model drifts from an established historical scope back to a present-day answer, has the conversational reference-time state been lost, or is it still represented but unable to override present-day parametric knowledge?**
-
-**Why alive**:
-
-- ACL main seed;
-- >1.4M deterministically generated temporal chains;
-- classic reference-time / discourse-state question;
-- Gold Context removes previous-answer error propagation;
-- official evaluator explicitly stores historical gold and `present_day_answer`;
-- official `drift` error means wrong historical answer exactly matches valid present-day truth;
-- open models directly supported: Qwen2.5-7B, Qwen3-4B, Llama-3.1-8B, Mistral-7B, Gemma-7B, GPT-OSS-20B, etc.;
-- local HF inference and automatic scoring already implemented;
-- no new annotation / closed API dependency.
-
-**Frozen prerequisite cell**:
-
-```text
-Gold Context
-same chain + same model
-initial explicit temporal turn = correct
-later implicit-scope turn = wrong
-wrong answer = official present_day_answer
-```
-
-Existing screen:
-
-```text
-advisor_topic_search/g0/chronoscope_drift_g0.py
-```
-
-The screen consumes the official evaluator JSON and reports chain/turn drift density by family and position.
-
-**Mechanism only after G0**:
-
-1. freeze one model and one/two clean families, starting with carryover;
-2. make a matched explicit-year-restatement version of the same follow-up;
-3. compare explicit-correct vs implicit-drift temporal-scope representation;
-4. bounded natural counterfactual activation patching;
-5. test whether the intervention specifically changes present-day substitution back to historical gold.
-
-**Kill line**:
-
-- first-correct → later-present-drift sparse on accessible models;
-- drift disappears in Gold Context;
-- explicit year restatement does not rescue the same instances;
-- probe only decodes lexical year tokens, not maintained implicit state;
-- result reduces to generic context-vs-parametric conflict already explained elsewhere;
-- rescue depends on layer/strength fishing.
-
-**Collision boundary**: not generic temporal QA, generic multi-turn memory, or generic RAG conflict. The object is **implicit conversational reference-time state and its causal competition with the present-day prior**.
-
-**Status**: `SURVIVAL_TOP / #2 / RUN_DRIFT_G0`
+Mother-topic policy remains mandatory after reproduction receipt.
 
 ---
 
-## A3. MedEinst — encoding failure or failed belief update under Einstellung?
+# A. CURRENT TOP SCIENCE — not yet executable
 
-**Seed**: ACL 2026 main, *MedEinst: Benchmarking the Einstellung Effect in Medical LLMs through Counterfactual Differential Diagnosis*.
+## A1. Does Knowledge Arbitration Have a Training History?
 
-**Research question**:
+**Seed:** ACL 2026 Main, *How Training Data Shapes the Use of Parametric and In-Context Knowledge in Language Models*.
 
-> **When decisive counterevidence is introduced, does the model fail to encode it, or is it encoded but unable to update the already-formed diagnostic state?**
+**Research question:**
 
-**Why alive**:
+> **If two models consume exactly the same training examples and end with exactly the same empirical data distribution, can different histories of when reliable vs conflicting evidence appeared leave them with persistently different parametric-vs-context knowledge-use policies?**
 
-- classic Einstellung / mental-set scientific question;
-- 5,383 control–trap pairs;
-- seed already defines the Bias-Trap critical failure;
-- open models show substantial trap behavior;
-- diagnosis labels automatic;
-- no need to re-prove the existence of Einstellung.
+This is a path-dependence / hysteresis question about learning, not a reasoning benchmark question.
 
-**Mandatory prerequisite**:
+**Why it is currently #1:**
 
-Verify control→trap is genuinely local discriminative-evidence editing, not diffuse narrative rewrite.
+- ACL Main seed;
+- seed already establishes a surprising, controlled learning object: balanced PK/ICK arbitration requires repetition + moderate inconsistency + a skewed knowledge distribution;
+- exact next question is different from the seed's static-data-statistics question;
+- same exact training multiset can be held fixed while only temporal organization changes;
+- automatic synthetic labels, no paid API, no annotation;
+- strong mother-topic branching: behavioral hysteresis, critical window/development, mechanism, schedule intervention, continual-pretraining/post-training generalization;
+- no exact 2025–2026 collision found for fixed-multiset history dependence of this particular learned policy.
 
-Existing G0:
+**Blocking issue:** no trustworthy accessible official reproduction repository was verified. Under the receipt-first policy, do not reimplement from the paper merely to force promotion.
 
-```text
-advisor_topic_search/g0/medeinst_pair_structure.py
-```
-
-**Promotion condition**:
-
-- edits local;
-- control accuracy high enough;
-- Bias-Trap critical cell dense;
-- decisive evidence span can be located reproducibly without large expert annotation.
-
-**Kill line**:
-
-- edit diffuse;
-- critical cell sparse;
-- key evidence requires manual clinical judgment item-by-item;
-- explanation starts requiring many clinical confound controls.
-
-**Status**: `SURVIVAL_TOP / #3 / RUN_PAIR_LOCALITY_G0`
+**Status:** `SCIENCE_TOP / #1 NON-REASONING / HOLD_FOR_OFFICIAL_ARTIFACT`.
 
 ---
 
-# B. HOLD / DEEP AUDIT — strong science, prerequisite/resource not cleared
+## A2. Parametric Encoding Specificity Across Input Structures
 
-## B1. In-context representation deployment bottleneck
+**Seed:** ACL 2026 Findings, *SParK-Eval: Evaluating Structure-Aware Knowledge Acquisition in LLMs for Domain Adaptation to Industrial Records*.
 
-**Seed**: ACL 2026 main, *Language Models Struggle to Use Representations Learned In-Context*.
+**Research question:**
 
-**Research question**:
+> **When a fact trained from a table/list fails natural-language QA, was it truly not stored, or is access cue-dependent on the structure in which it was encoded?**
 
-> **What deployment-specific routing/readout computation makes an already learned in-context representation inert under one interface but usable under another?**
+**Why alive:**
 
-Seed directly reports latent novel semantics despite poor downstream deployment, so the dissociation is not invented by us.
+- natural old-memory distinction: storage vs access / encoding specificity;
+- same facts can be crossed with encoding format × retrieval-cue format;
+- positive or null result is interpretable;
+- branches into development, representation, mixed-format intervention, and domain generalization.
 
-**Blocking issue**: no trustworthy complete official reproduction package found. Rebuilding generator + prompts + probe regime would reintroduce too much prerequisite risk.
+**Risks:**
 
-**Promotion gate**:
+- Findings rather than ACL Main;
+- no complete official reproduction package verified;
+- EMNLP 2025 formatting-generalization work already shows that format-diverse training improves QA extraction, narrowing novelty.
 
-1. official code/data appears; or
-2. appendix enables exact untuned critical-cell reproduction on one open model.
+Novelty survives only if the object is **cue-dependent recovery of already-trained structured facts**, not `format matters` or `format augmentation helps`.
 
-**Status**: `SCIENCE_TOP / HOLD_FOR_ARTIFACT`
-
----
-
-## B2. Table DRE — structural understanding vs value referencing
-
-**Seed**: ACL 2026 main, *When LLMs Read Tables Carelessly: Measuring and Reducing Data Referencing Errors*.
-
-**Research question**:
-
-> **When table structure is understood but the model cites the wrong value, is the failure localization, entity–value binding, or late readout substitution?**
-
-Pros: structured/exact labels, programmatic perturbations, small/open models.
-
-Main risk: generic entity/positional binding mechanism is already crowded. Need a dense `structure-correct / reference-wrong` cell that cannot be reduced to generic retrieval/binding.
-
-**Status**: `DEEP_AUDIT / ARTIFACT_AND_COLLISION_GATE`
+**Status:** `SCIENCE_HOLD / #2 / VENUE+ARTIFACT+COLLISION_GATE`.
 
 ---
 
-## B3. Context-shaped truth geometry → source choice
+# B. PREVIOUS ACTIVE OBJECTS — retained, but ranking is no longer authoritative
 
-**Seed**: ACL 2026 main, *How Context Shapes Truth: Geometric Transformations of Statement-level Truth Representations in LLMs*.
+These objects predate the new advisor-fit reset. They are not deleted because their exact prerequisites/G0s remain useful, but they no longer outrank A1 merely because code already exists.
 
-**Research question**:
+## B1. SemTrace — lexical access survives while long-context semantic execution fails
 
-> **Do context-induced transformations of truth representations causally determine whether context or parametric memory controls behavior under conflict?**
+Seed: ACL 2026 Main, *Sense and Sensitivity: Examining the Influence of Semantic Recall on Long Context Code Understanding*.
 
-Seed already reports geometry changes; next step must establish specific source-selection causality, not another truth-vector plot/steer.
+Existing object: same program / same model; edge semantic success, lexical success at edge+middle, parseable middle semantic failure.
 
-Risks: knowledge-conflict/truth-vector literature crowded; official reproduction artifact not verified.
+Existing implementation: numbered Topic 21 plus upstream receipt/G0 scripts.
 
-**Status**: `DEEP_AUDIT / HOLD_FOR_ARTIFACT`
+**Current status:** `EXECUTABLE / ADVISOR-FIT_REVIEW_REQUIRED`.
 
----
+Reason: the phenomenon is concrete and artifact-complete, but the downstream framing can easily drift into generic reasoning/computation mechanism. Do not automatically keep it #1 under the new advisor constraint.
 
-# C. WATCH — scientifically useful, currently not worth first bet
+## B2. ChronoScope — historical reference-time drift
 
-## C1. Belief consistency — stability vs correctness
+Seed: ACL 2026 Main, *Evaluating Temporal Consistency in Multi-Turn Language Models*.
 
-**Seed**: ACL 2026 main, *Assessing Belief Consistency on the Logical Conversation Process*.
+Object: under Gold Context, a chain begins correct under an explicit historical scope and later substitutes the valid present-day answer under implicit scope.
 
-Interesting dissociation: some code/math post-training families improve belief consistency while logical failure increases.
+Existing G0: `advisor_topic_search/g0/chronoscope_drift_g0.py`.
 
-Question:
+**Current status:** `EXECUTABLE / MEMORY-DISCOURSE OBJECT / ADVISOR-FIT_REVIEW`.
 
-> does training improve belief-state persistence, or merely increase stubborn commitment even when the state is wrong?
+This is less exposed to the generic-reasoning objection than SemTrace, but it still requires the frozen prerequisite cell before mechanism work.
 
-Why WATCH: no clean official artifact found, sampling-heavy evaluation, model-family comparison confounds, prompt sensitivity.
+## B3. MedEinst — failed update under decisive counterevidence
 
-**Status**: `WATCH / STABILITY_VS_CORRECTNESS`
+Seed: ACL 2026 Main, *MedEinst: Benchmarking the Einstellung Effect in Medical LLMs through Counterfactual Differential Diagnosis*.
 
-## C2. GSM-Infinite — computation cliff
+Object: classic mental-set / belief-update question with control–trap pairs.
 
-ICML 2025 synthetic exact reasoning resource.
+Existing G0: `advisor_topic_search/g0/medeinst_pair_structure.py`.
 
-Potential question: around the complexity cliff, are correct intermediate node values still represented but failing to propagate through the next dependency edge?
+**Current status:** `EXECUTABLE / OLD-COGNITIVE-QUESTION / ADVISOR-FIT_REVIEW`.
 
-Why WATCH: very executable, but generic state-tracking / propagation mechanism may not be scientifically distinct from SemTrace and adjacent work.
-
-**Status**: `WATCH+ / BACKUP_RESOURCE`
-
-## C3. Correct trace → wrong final answer
-
-ACL 2026 reports very dense cells where an intermediate trace is correct but final answer is wrong in small open models.
-
-Why WATCH: CoT faithfulness / hidden computation / reasonless-token space is crowded. Need sharper causal distinction than “why doesn’t correct CoT control answer?”
-
-**Status**: `WATCH+ / COLLISION_HEAVY`
-
-## C4. Emergent response planning — commitment vs rewrite
-
-ICML 2025 shows pre-output hidden states predict future response properties.
-
-Potential question:
-
-> is the pre-output answer plan a commitment or a provisional state that is rewritten as reasoning unfolds?
-
-Why WATCH: latent planning/steering follow-ups are moving fast; no exact paired plan-reversal object yet.
-
-**Status**: `WATCH+ / NEED_EXACT_TRANSITION_OBJECT`
-
-## C5. Illusions of Confidence — stable answer vs robust belief
-
-Perfect self-consistency can coexist with severe vulnerability to social/authority interference.
-
-Why WATCH: nice old metacognition distinction, but natural follow-up currently looks too much like robust-vs-brittle probe/steering rather than a forced computation bottleneck.
-
-**Status**: `WATCH+`
-
-## C6. Temporal Forgetting — storage loss vs access loss
-
-Same problem can be correct at an earlier checkpoint and wrong later.
-
-Why WATCH: cross-checkpoint basis changes and open-ended CoT path changes make storage-vs-access mechanism identification assumption-heavy; adjacent forgetting work is increasingly crowded.
-
-**Status**: `WATCH / LOWER_PRIORITY`
-
-## C7. Description–History Gap
-
-Classic risky-decision old question, but reasoning-vs-conversation post-training comparison changes too many factors at once.
-
-**Status**: `WATCH / LOWER_PRIORITY`
-
-## C8. ImplicitMemBench — non-declarative memory
-
-Classic procedural memory / priming / conditioning framing is attractive, but current benchmark does not give a single clean representation-level storage/access dissociation. Directly adding hidden-state analysis risks becoming benchmark + mechanism-tool work.
-
-**Status**: `WATCH / OLD_QUESTION_REFERENCE`
-
-## C9. Agent memory experience-following — proactive interference
-
-Retrieved similar past experiences can bias current agent behavior and propagate errors.
-
-Potential question: corrupt current task state vs hijack action readout.
-
-Why WATCH: agent-memory / ICL retrieval behavior crowded; generic similar-example following is a strong alternative explanation.
-
-**Status**: `WATCH`
+The main unresolved gate remains whether edits are local enough and critical cells dense enough without medical expert annotation/control proliferation.
 
 ---
 
-# D. RECENTLY KILLED / REFERENCE ONLY — do not recycle next round
+# C. HOLD / WATCH
+
+## C1. In-context representation deployment bottleneck
+
+Seed: ACL 2026 Main, *Language Models Struggle to Use Representations Learned In-Context*.
+
+Strong science, but no trustworthy complete reproduction package was found and the object can drift toward generic `represented != used` mechanism work.
+
+**Status:** `HOLD_FOR_ARTIFACT / LOWER_AFTER_ADVISOR_RESET`.
+
+## C2. Table DRE — structural understanding vs value referencing
+
+Potentially exact and structured, but generic localization/binding literature is crowded.
+
+**Status:** `DEEP_AUDIT / ARTIFACT_AND_COLLISION_GATE`.
+
+## C3. Context-shaped truth geometry → source choice
+
+Knowledge-conflict/truth-vector space is crowded; artifact not verified.
+
+**Status:** `DEEP_AUDIT / HOLD_FOR_ARTIFACT`.
+
+## C4. Temporal Forgetting — storage loss vs access loss
+
+Checkpoint-rich and scientifically attractive, but the prior storage-vs-access mechanism design was assumption-heavy and cross-checkpoint alignment is not itself a scientific answer.
+
+**Status:** `WATCH / DO_NOT_RESCUE_WITH_NEW_PROBE`.
+
+## C5. ImplicitMemBench — non-declarative memory
+
+Classic memory framing is attractive, but current benchmark does not yet provide one clean storage/access mother contradiction.
+
+**Status:** `WATCH / OLD-QUESTION_REFERENCE`.
+
+---
+
+# D. DOWNGRADED / KILLED — do not recycle
 
 | Candidate | Verdict | Main reason |
 |---|---|---|
-| BOULDER generic multi-turn degradation | KILL | Lost-in-Conversation / intent-mismatch / rolling-memory space already crowded |
-| code→CoT training-order advantage | KILL | teacher forcing / gradient path / exposure bias etc. create too many competing explanations |
-| AR-Bench generic information-gain mechanism | KILL | active task disambiguation / information-gain selection already directly studied |
-| Reasoning Trap tool hallucination | KILL AS FOLLOW-UP | seed already provides representation-collapse + late-residual mechanism |
-| EMNLP Decision Boundary / SCE | KILL | exact question crowded; hidden-state extension insufficient novelty |
-| MathIF reasoning-loses-control | KILL / watch only | overlaps CoT trajectory / correctness-signal / steering work |
-| IFEval++ reliability mechanism | KILL | likely paraphrase robustness + probe |
-| Instruction tuning → misinformation | KILL | base→instruct changes too many factors; role/context mechanisms already studied |
-| RFC-Bench reference-free misinformation | KILL | reference vs no-reference conditions differ in available information |
-| Fact mutability → source routing | KILL | mutability highly confounded with relation family |
-| Numeracy representation→generation | OUT OF PRIMARY POOL | seed venue outside current primary policy |
-| general parametric-vs-context reconciliation | REFERENCE ONLY | NeurIPS 2025 already traces entity flow and performs intervention |
-| generic metacognitive activation monitoring | REFERENCE ONLY | already directly studied with neurofeedback-style paradigms |
-| LAD / MP-STRUCT | KILL | core explanation entangled with vocabulary/entropy; control tree grows |
-| reversal-curse semantics follow-up | KILL | seed already argues semantics exists and order bias drives failure |
-| personalization factuality mechanism | KILL AS FOLLOW-UP | seed already gives representational-entanglement account + steering |
-| new-knowledge hallucination mechanism | KILL AS FOLLOW-UP | seed already gives attention mechanism + mitigation |
-| general RAG context interference | KILL / CROWDED | many ACL/NeurIPS works already study conflict/interference mechanism |
+| Round-09 thinking helps/hurts context use | `DOWNGRADE / DO_NOT_REGISTER` | advisor-low-priority reasoning object + RecaLLM/Lost-in-Thought near-exact sign-structure collision |
+| source-level repetition → generalized source trust | `KILL` | frozen G0: mean transfer `-1.319 pp`, CI crosses 0, failed all paper-scale gates |
+| SMI residual → semantic/fan interference | `KILL AS NEW TOPIC` | CoNLL 2024 already studies LLM fan effect, including pretraining-induced fan |
+| Incomplete Learning follow-up | `KILL AS FOLLOW-UP` | seed already decomposes major causes and interventions |
+| generic Agentic-RL feedback internalization | `KILL` | direct 2026 collisions + prior internal kill |
+| Mem2Act recall→action gap | `KILL` | seed-owned + internal structural collision |
+| BOULDER generic multi-turn degradation | `KILL` | crowded lost-in-conversation / intent-mismatch space |
+| code→CoT training-order advantage | `KILL` | too many coupled explanations |
+| AR-Bench generic information-gain mechanism | `KILL` | directly studied |
+| Reasoning Trap tool hallucination follow-up | `KILL` | seed already provides mechanism |
+| MathIF reasoning-loses-control | `KILL / WATCH ONLY` | crowded reasoning trajectory space |
+| Instruction tuning → misinformation | `KILL` | base→instruct changes too many factors |
+| RFC-Bench reference-free misinformation | `KILL` | conditions differ in available information |
+| Fact mutability → source routing | `KILL` | relation-family confound |
+| general parametric-vs-context reconciliation | `REFERENCE ONLY` | adjacent work already traces entity flow/intervention |
+| LAD / MP-STRUCT | `KILL` | vocabulary/entropy entanglement; control tree grows |
+| reversal-curse semantics follow-up | `KILL` | seed already owns core explanation |
+| personalization factuality mechanism | `KILL` | seed already has representational account + steering |
+| new-knowledge hallucination mechanism | `KILL` | seed already has mechanism + mitigation |
+| general RAG context interference | `KILL / CROWDED` | heavily occupied |
 
 ---
 
-# E. Queue discipline
+# E. Current queue discipline
 
-Current execution order:
+There is **no new numbered-topic registration from Round 10**.
 
-```text
-1. SemTrace prerequisite / critical-cell G0
-2. ChronoScope Gold-Context present-drift G0
-3. MedEinst pair-locality + Bias-Trap G0
-4. continue searching for In-context-deployment official artifact
-5. DEEP_AUDIT only after the first three gates move
-6. WATCH candidates do not receive large mechanism implementations
-```
-
-The goal is not a large topic list. It is to move one object from:
+Current scientific search priority:
 
 ```text
-published anomaly
-→ dense local critical cell
-→ identifiable computation failure
-→ causal mechanism
+1. A1 PK/ICK training-history dependence — wait for / locate exact official artifact
+2. continue searching for a different artifact-complete, non-reasoning mother phenomenon
+3. A2 encoding specificity only if artifact and collision gates improve
+4. previous executable objects require advisor-fit re-review before receiving large mechanism work
 ```
 
-without adding rescue controls at every step.
+The current target shape is:
+
+```text
+classic learning / memory distinction
++ externally anchored LLM phenomenon
++ reproducible training/checkpoint object
+-> mother phenomenon
+-> independent behavioral / development / mechanism / intervention branches
+```
+
+Do not promote a topic merely because its code is complete, and do not promote a fashionable reasoning object merely because the result is interesting.
