@@ -4,8 +4,8 @@
 >
 > `ROUND_*.md` 是历史搜索记录；一旦和后来的本地实验冲突，必须以 numbered-topic 的实际 G0/G1 结果为准。
 
-Last updated: 2026-08-24
-Source of current ranking: `ROUND_14_2026-08-24.md`
+Last updated: 2026-08-25
+Source of current ranking: `ROUND_15_2026-08-25.md`
 
 ---
 
@@ -13,7 +13,7 @@ Source of current ranking: `ROUND_14_2026-08-24.md`
 
 1. **External overlap is normal.** 2026 年 AI/NLP 不追求“完全没人做过”。Collision audit 问的是：最接近工作都成立以后，是否仍剩下 ACL / EMNLP / NAACL 篇幅的独立主问题、主实验、主结论和后续机制/方法空间。
 2. **Internal scientific failure is evidence.** 已经在本仓库跑过并停止的 hypothesis / identification route，不能因为新一轮搜题忘记结果而重新升为 active。
-3. **Measurement failure和scientific failure必须分开。** 一个 scorer / parser / runtime 失败不能自动归档科学问题；但 repair 必须针对已定位的 measurement defect，而且不能借机换模型、换样本、松阈值或 outcome-driven tuning。
+3. **Measurement failure和scientific failure必须分开。** 一个 scorer / parser / runtime 失败不能自动判科学问题为假；但 repair 必须针对已定位 defect，而且不能借机换模型、换样本、松阈值或 outcome-driven tuning。
 4. Status precedence:
 
 ```text
@@ -29,7 +29,7 @@ ROUND search logs
 5. Before promoting any search candidate, audit `FAILURES_AND_LESSONS.md` and numbered-topic directories for internal collision.
 6. `REPRODUCTION_RECEIPT_POLICY.md` and `MOTHER_TOPIC_BRANCHING_POLICY.md` remain mandatory.
 7. Generic reasoning / CoT / test-time-compute mechanism remains advisor-low-priority.
-8. A second measurement repair is defensible only when the new failure mode is itself newly localized and the repair is **narrower, outcome-blind, and preferably output-preserving**. If that repair still fails support, stop the route.
+8. Measurement repair is defect-based but bounded: a newly localized defect may justify a narrower repair; if that bounded repair still leaves support unhealthy, stop the local route rather than search aliases/mappers/prompts/orders/models/thresholds.
 
 Detailed policy: `COLLISION_AND_INTERNAL_HISTORY_POLICY.md`.
 
@@ -89,58 +89,9 @@ Frozen prerequisite: `g0/POSITIONAL_IMPRINTING_RECEIPT.md`.
 
 ---
 
-# B. EXISTING NUMBERED ACTIVE OBJECTS
+# B. ACTIVE HOLD / SECONDARY SEARCH OBJECTS
 
-## B1. MedEinst / Topic 22 — evidence update
-
-This is **not a new advisor-search candidate**. It is an already-registered numbered topic with an active measurement repair.
-
-Scientific question:
-
-> In exact counterfactual Bias Trap pairs, was the decisive new evidence never encoded, or was it encoded but unable to update the old diagnosis?
-
-Repository truth:
-
-- G0a pair locality passed on all 5,383 released pairs;
-- G0b-v1 was measurement-invalid (`81.25%` invalid) because of known Qwen3 decoding/budget/marker defects;
-- G0b-v2 fixed those defects on the same 256 pairs/model/seed;
-- every substantive v2 Bias Trap gate passed on the resolvable outputs;
-- pair invalid rate remained `160/256 = 62.5%` against the frozen `<=10%` gate;
-- all thinking traces closed and no branch hit the 32,768-token ceiling;
-- failure localized to `unresolved_final`: free-form diagnosis wording could not be mapped by exact/sub-string parsing to the benchmark's closed 49-pathology vocabulary;
-- direct mode was not run.
-
-### Why Topic 22 is not terminal
-
-The previous Round-13 archive decision was too mechanical. V2 exposed a **newly localized label-interface defect**, not another failure of the same repaired runtime problem.
-
-G0b-v3 is therefore allowed as a strictly scoring-only, outcome-blind repair:
-
-- reuse the exact frozen v2 CoT outputs;
-- do not regenerate them;
-- same model/pairs/seed/decoding/gates;
-- semantic canonicalizer sees only post-thinking final-answer text + 49 closed labels;
-- no narrative, GT, case type, or control/trap identity;
-- explicit abstention;
-- two fixed label orders, accept only agreement;
-- 49/49 self-mapping preflight before benchmark rescoring.
-
-If v3 still has invalid rate `>10%`, stop the local measurement route. If v3 measurement is healthy but substantive gates fail, that is a real seed-reproduction stop. Only a full CoT pass authorizes direct-mode G0c.
-
-See:
-
-- `../22_medeinst_evidence_update/G0_RESULTS.md`
-- `../22_medeinst_evidence_update/VALIDATION_AUDIT.md`
-- `../22_medeinst_evidence_update/MEASUREMENT_FAILURE_V2.md`
-- `../22_medeinst_evidence_update/g0_recanonicalize_v3.py`
-
-**Status:** `NUMBERED_TOPIC_22 / ACTIVE / G0B_V3_READY / NO_SCIENTIFIC_VERDICT_YET`.
-
----
-
-# C. ACTIVE HOLD / SECONDARY SEARCH OBJECTS
-
-## C1. Parametric Encoding Specificity Across Input Structures
+## B1. Parametric Encoding Specificity Across Input Structures
 
 **Seed:** ACL 2026 Findings, SParK-Eval.
 
@@ -156,7 +107,7 @@ Neighboring format-diversity work consumes part of the intervention story but do
 
 **Status:** `ACTIVE_HOLD / ARTIFACT+CONSTRUCT_GATE`.
 
-## C2. ChronoScope — Temporal Scope Dynamics
+## B2. ChronoScope — Temporal Scope Dynamics
 
 **Seed:** ACL 2026 Main, *Evaluating Temporal Consistency in Multi-Turn Language Models*.
 
@@ -172,33 +123,33 @@ Existing screen: `g0/chronoscope_drift_g0.py`.
 
 ---
 
-# D. DEEP AUDIT / RESOURCE — not active top pool
+# C. DEEP AUDIT / RESOURCE — not active top pool
 
-## D1. Context-shaped truth geometry → source arbitration
+## C1. Context-shaped truth geometry → source arbitration
 
 Promotion requires a full independent story linking conflict behavior, geometry, causal source choice, and intervention—not another geometry plot.
 
 **Status:** `DEEP_AUDIT`.
 
-## D2. Table DRE
+## C2. Table DRE
 
 Could still support a main-conference mechanism paper if a clean, dominant referencing/binding bottleneck and causal rescue are established. Current mother framing is not yet strong enough.
 
 **Status:** `DEEP_AUDIT`.
 
-## D3. Memory Dial
+## C3. Memory Dial
 
 Useful controlled memorization-pressure knob. No sufficiently large next scientific question identified yet.
 
 **Status:** `RESOURCE`.
 
-## D4. Knowledge Entropy Decay
+## C4. Knowledge Entropy Decay
 
 Excellent learning-dynamics design reference with strong artifact, but the seed already spans phenomenon → interpretation → intervention.
 
 **Status:** `DESIGN_REFERENCE`.
 
-## D5. ImplicitMemBench
+## C5. ImplicitMemBench
 
 Interesting cognitive-memory inspiration, but construct validity remains unresolved.
 
@@ -206,9 +157,42 @@ Interesting cognitive-memory inspiration, but construct validity remains unresol
 
 ---
 
-# E. INTERNAL TERMINAL OBJECTS — do not accidentally resurrect
+# D. INTERNAL TERMINAL / PAUSED ROUTES — do not accidentally resurrect
 
-## E1. SemTrace / Topic 21
+## D1. MedEinst / Topic 22
+
+**Final local route result:** `MEASUREMENT_CANONICALIZATION_FAILURE / NO_SCIENTIFIC_VERDICT`.
+
+Repository truth:
+
+- G0a pair locality passed on all 5,383 released pairs;
+- G0b-v1 was measurement-invalid (`81.25%` invalid);
+- G0b-v2 repaired Qwen3 thinking/runtime defects on the same 256 pairs/model/seed;
+- every substantive v2 Bias Trap gate passed on resolvable outputs;
+- v2 invalid rate remained `62.5%`, localized to free-form diagnosis -> closed-label canonicalization;
+- G0b-v3 reused the exact frozen v2 CoT outputs and added an outcome-blind dual-order canonicalizer;
+- canonicalizer preflight passed on all 46 labels present in the cached test split;
+- v3 resolved 111 previously unresolved branch outputs;
+- all substantive v3 gates passed: control accuracy `0.4258`, `109` control-correct, `43` traps, BTR `0.3945`, Wilson lower `0.3078`, `14` transitions;
+- pair invalid rate improved to `32.42%` but still failed the frozen `<=10%` support gate;
+- direct G0c was not run;
+- no mechanism work was run.
+
+This archives the **local measurement route**, not the scientific distinction `encoding failure vs update failure`.
+
+No further local alias / canonicalizer model / prompt / label-order / threshold / behavior-regeneration tuning is authorized on these same outcomes.
+
+A future revisit requires a genuinely new external measurement object or evaluation interface whose validity is established independently of this run.
+
+See:
+
+- `../22_medeinst_evidence_update/G0_RESULTS.md`
+- `../22_medeinst_evidence_update/VALIDATION_AUDIT.md`
+- `../22_medeinst_evidence_update/ARCHIVE_SUMMARY.md`
+
+**Status:** `ARCHIVED_LOCAL_ROUTE / MEASUREMENT_CANONICALIZATION_FAILURE / NO_SCIENTIFIC_VERDICT`.
+
+## D2. SemTrace / Topic 21
 
 **Terminal local result:** `STOP_UPSTREAM_SEED_NOT_REPRODUCED`.
 
@@ -221,7 +205,7 @@ Custom mechanism G0 was never run.
 
 **Status:** `ARCHIVED / DO_NOT_RELIST_AS_EXECUTABLE`.
 
-## E2. Temporal Forgetting / Topic 05
+## D3. Temporal Forgetting / Topic 05
 
 The broad storage-vs-access question remains scientifically legitimate, but our registered Topic 05 failed conceptual identification because prefix rescue changes the task.
 
@@ -229,7 +213,7 @@ A future revisit requires a genuinely new identification strategy.
 
 **Status:** `INTERNAL_COLLISION / TOPIC_05_ARCHIVED / NEW_IDENTIFICATION_REQUIRED`.
 
-## E3. Temporal Spacing / Topic 13
+## D4. Temporal Spacing / Topic 13
 
 Repetition damage reproduced in 4/4 locked trials, but `clustered-even` changed sign:
 
@@ -246,7 +230,7 @@ Final verdict: `NO_EVIDENCE_SPACING_IN_LOCKED_TEST`.
 
 ---
 
-# F. Search-log kills / downgrades
+# E. Search-log kills / downgrades
 
 These remain historical search decisions. External collision kills only when the closest work leaves insufficient independent paper narrative—not merely because neighbors exist.
 
@@ -262,16 +246,17 @@ These remain historical search decisions. External collision kills only when the
 
 ---
 
-# G. Current queue
+# F. Current queue
 
 There is no Topic 25.
 
 ```text
 Existing numbered work:
-1. Topic 22 MedEinst
-   -> run frozen-output G0b-v3 canonicalization repair
-   -> if CoT passes, run direct G0c
-   -> only then consider mechanism
+1. Topic 24
+   -> frozen physical-disturbance attribution G0
+
+2. Topic 16
+   -> evidence-provenance G0
 
 Advisor topic search:
 1. Positional Imprinting
@@ -297,5 +282,5 @@ mature literature
 + a distinct scientific object
 + enough remaining ACL/EMNLP/NAACL narrative
 + exact reproducible experimental handle
-+ no contradiction with our own real scientific/identification failures
++ no contradiction with our own real scientific/identification/measurement-route failures
 ```
