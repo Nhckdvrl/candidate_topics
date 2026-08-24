@@ -1,8 +1,17 @@
 # Where Does Closed-Loop Robustness Actually Live in Hierarchical Robot Foundation Policies?
 
-> Status: **PROVISIONAL E — highest-confidence embodied candidate after Topic 23.**
+> Status: **PROMOTED — registered as [Topic 24](../../24_hierarchical_feedback_attribution/) on 2026-08-24.**
 >
-> Do **not** register as a numbered root Topic until the unperturbed replay-fidelity P0 passes. This is deliberate: Topic 23 showed that a nominal intervention can look perfect statistically while failing to remove the causal object it claims to remove.
+> The registration condition written here was "do not register until the unperturbed replay-fidelity P0 passes". It passed, and one more gate was added before registration after P0 exposed a gap this document had not anticipated.
+>
+> ```text
+> P0   replay fidelity     PASS   10/10 in all three conditions, 0.000 rad divergence
+> P0b  WBC seam liveness   PASS   D = 2.4e-02..4.6e-02 rad over an exactly zero floor
+> ```
+>
+> P0's perfect result was also its limit: with nothing driving the system off the recorded trajectory, a purely feedforward whole-body controller would have passed it identically, and then `delta_low` would have been structurally zero rather than informative. P0b closed that. It also found a hard limit on what `delta_low` can mean — below the VLA seam the arms and hands are open-loop interpolation, so that term can only carry locomotion/balance state feedback.
+>
+> See [`../prototypes/feedback_source_attribution/P0_RESULTS.md`](../prototypes/feedback_source_attribution/P0_RESULTS.md) and [`P0B_RESULTS.md`](../prototypes/feedback_source_attribution/P0B_RESULTS.md).
 
 ## Natural question
 
