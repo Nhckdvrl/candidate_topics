@@ -5,7 +5,7 @@
 > `ROUND_*.md` 是历史搜索记录；一旦和后来的本地实验冲突，必须以 numbered-topic 的实际 G0/G1 结果为准。
 
 Last updated: 2026-08-25
-Source of current ranking: `ROUND_15_2026-08-25.md`
+Source of current ranking: `ROUND_15_2026-08-25.md` + numbered Topic 25 registration decision
 
 ---
 
@@ -36,6 +36,32 @@ Detailed policy: `COLLISION_AND_INTERNAL_HISTORY_POLICY.md`.
 ---
 
 # A. TOP SCIENCE / TOP EXECUTABLE SEARCH OBJECTS
+
+## A0. Numbered Topic 25 — When Does Test-Time Reasoning Help Context Use, and When Does It Hurt?
+
+**Status precedence note:** the old Round-09 search downgrade was an advisor-fit / external-crowding ranking judgment, not a local frozen scientific negative. Topic 25 has now been explicitly registered as a **receipt-gated falsification project**, so the numbered README supersedes the old search-log downgrade.
+
+**Question:**
+
+> What computation requirement determines whether test-time reasoning improves or degrades a model's use of long-context evidence?
+
+**Frozen first path:**
+
+```text
+pinned Weakest-Link Qwen3-8B receipt
+-> if reproduced only
+same item + same 18-doc context + same evidence positions
+atomic decomposed query vs composed 2-hop query
+× thinking off/on
+```
+
+No mechanism work is authorized before the matched behavioral interaction passes.
+
+See `../25_reasoning_context_use_boundary/README.md` and `../25_reasoning_context_use_boundary/VALIDATION_AUDIT.md`.
+
+**Status:** `REGISTERED / RECEIPT NEXT / G0 BLOCKED ON RECEIPT`.
+
+---
 
 ## A1. Does Knowledge Arbitration Have a Training History?
 
@@ -236,7 +262,7 @@ These remain historical search decisions. External collision kills only when the
 
 | Candidate | Current reason not to promote |
 |---|---|
-| Round-09 thinking helps/hurts context use | advisor-low-priority reasoning object + closest work compresses the title-level story |
+| Round-09 thinking helps/hurts context use | **SUPERSEDED BY NUMBERED TOPIC 25**; registration is receipt-gated and does not erase the advisor-fit warning |
 | source-level repetition → generalized source trust | frozen local G0 failed (`-1.319 pp`, CI crosses 0) |
 | SMI residual → semantic/fan interference | closest literature occupies the main scientific question |
 | spaced repetition for CPT | direct method/story overlap plus internal Topic 13 negative on our spacing explanation |
@@ -248,14 +274,16 @@ These remain historical search decisions. External collision kills only when the
 
 # F. Current queue
 
-There is no Topic 25.
-
 ```text
 Existing numbered work:
 1. Topic 24
    -> frozen physical-disturbance attribution G0
 
-2. Topic 16
+2. Topic 25
+   -> exact Weakest-Link Qwen3-8B reproduction receipt
+   -> if reproduced, frozen matched atomic-vs-composed G0
+
+3. Topic 16
    -> evidence-provenance G0
 
 Advisor topic search:
