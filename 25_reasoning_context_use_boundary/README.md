@@ -11,7 +11,7 @@ The target is not generic `when should a model think?`, routing, prompt engineer
 - retrieval-heavy long-context evaluation can become worse with thinking;
 - noisy multi-hop evidence use can become substantially more robust with thinking.
 
-The project asks whether that tension can be localized inside one matched experimental object by changing only the requested computation while holding the evidence/context fixed.
+The project asks whether that tension can be localized inside one matched experimental object by changing the requested computation while holding the evidence/context fixed.
 
 ---
 
@@ -144,11 +144,11 @@ If the latter occurs, stop Topic 25. Do not change model, prompt, sampling, subs
 
 ---
 
-# G0 — matched atomic retrieval vs composed integration
+# G0 — matched one-step execution vs two-step composition
 
 G0 uses the same Weakest-Link 18-document MuSiQue bank and the same Qwen3-8B checkpoint.
 
-The source dataset `Shahar6000/MoreDocsSameLen` already exposes `question_decomposition`, including for each step:
+The source dataset `Shahar6000/MoreDocsSameLen` exposes `question_decomposition`, including for each step:
 
 ```text
 question
@@ -157,6 +157,57 @@ paragraph_support_idx
 ```
 
 The G0 code pins the source dataset revision and joins bank examples by exact ID, falling back only to unique exact question equality. No fuzzy matching is used.
+
+## Pre-run identification hardening: one shared query interface
+
+Static audit found an important confound **before any model outputs were produced**: MuSiQue decomposition strings are often relation-style (`entity >> relation`, `#1 >> relation`), while the original composed question is natural-language prose. Comparing those directly would mix computation depth with query format.
+
+The frozen G0 therefore does **not** use the original natural composed question as the primary composed query. Atomic and composed conditions share one canonical step-list wrapper built from the exact same released decomposition strings.
+
+For a released chain such as:
+
+```text
+step 1: ExampleCo >> founder        answer: Ada
+step 2: #1 >> birthplace            answer: London
+```
+
+G0 asks:
+
+```text
+atomic_0:
+Resolve the following evidence chain using the documents.
+Step 1: ExampleCo >> founder
+Return the answer to Step 1.
+
+atomic_1:
+Resolve the following evidence chain using the documents.
+Step 1: Ada >> birthplace
+Return the answer to Step 1.
+
+composed:
+Resolve the following evidence chain using the documents.
+Step 1: ExampleCo >> founder
+Step 2: #1 >> birthplace
+In Step 2, #1 denotes the answer to Step 1.
+Return the answer to Step 2.
+```
+
+Thus both sides have the same outer task style; the meaningful manipulation is one released evidence step versus executing the released two-step dependency.
+
+The natural final MuSiQue question is preserved only as metadata and as an exact source/bank join check where needed.
+
+## Exact eligible object
+
+A bank/source item is eligible only when all of the following hold before inference:
+
+- exactly two released decomposition steps;
+- step 1 contains no `#k` placeholder;
+- step 2 contains at least one placeholder and every placeholder is exactly `#1`;
+- each released `paragraph_support_idx` exact-normalizes to exactly one of the two Weakest-Link bank gold documents;
+- the two steps cover both gold documents;
+- the released second-step answer matches the bank final answer under a whitespace/case-only identity check.
+
+If fewer than 256 items satisfy this high-precision contract, G0 stops before model calls. Do not weaken matching to fill the panel.
 
 ## Matched object
 
@@ -169,26 +220,27 @@ same distractor order
 same two supporting documents
 same evidence positions
 same model checkpoint
-same prompt template
+same upstream MuSiQue prompt template
+same canonical step-list interface
 same decoder settings
 ```
 
 Only the requested computation changes:
 
 ```text
-atomic_0      first single-hop decomposed question
-atomic_1      second decomposed question with earlier #k placeholders
-              resolved using the released gold intermediate answer
-composed      original 2-hop final question
+atomic_0      execute released step 1 only
+atomic_1      execute released step 2 only, with #1 replaced by the
+              released gold intermediate answer
+composed      execute both released steps; #1 must be produced by step 1
 ```
 
 Thinking is independently toggled on/off using the upstream Qwen3 API contract.
 
-### Why resolve `#k` placeholders?
+### Why resolve `#1` only in the atomic second step?
 
-MuSiQue decompositions often encode a later step as e.g. `#1 >> headquarters location`. Leaving `#1` unresolved would make the atomic condition a malformed task; asking the model to infer `#1` would silently reintroduce composition.
+Leaving `#1` unresolved would make that atomic condition malformed. Asking the model to infer it would silently reintroduce the first hop.
 
-G0 therefore substitutes only the **released earlier intermediate answer** into later atomic questions. This defines the intended atomic/local-evidence task rather than a second hidden multi-hop task.
+Atomic therefore receives the released intermediate answer. Composed retains the original dependency and must derive the intermediate itself. No final-answer information is injected into either query.
 
 ---
 
@@ -196,10 +248,11 @@ G0 therefore substitutes only the **released earlier intermediate answer** into 
 
 ```text
 model               Qwen/Qwen3-8B
-items               256 exact eligible 2-hop items
+items               256 exact eligible 2-hop dependency items
 selection seed      20260825
 buckets             beginning, midsection, tail
 within-bucket dist  1
+query interface      shared_canonical_step_list_v1
 query types          atomic_0, atomic_1, composed
 thinking             off, on
 prompt id            22
@@ -211,7 +264,7 @@ think max out        10000
 
 Item selection is by a deterministic SHA-256 rank of `seed:item_id`, not first-N order and not outcome filtering.
 
-`atomic_both_correct` is the item-level atomic endpoint: both released decomposed steps must be answered correctly. This gives one paired binary endpoint per item, matching the composed endpoint's item-level granularity.
+`atomic_both_correct` is the item-level atomic endpoint: both released single-step queries must be answered correctly. This gives one paired binary endpoint per item, matching the composed endpoint's item-level granularity.
 
 ---
 
@@ -274,7 +327,7 @@ If G0 fails, do not select particular decomposition types, buckets, item familie
 
 A positive G0 supports:
 
-> Under matched long/noisy evidence, test-time reasoning benefits composed evidence integration substantially more than the corresponding atomic evidence queries.
+> Under matched long/noisy evidence and a shared query interface, test-time reasoning benefits two-step evidence integration substantially more than the corresponding single-step evidence executions.
 
 It does **not** establish:
 
