@@ -70,7 +70,55 @@ A replay condition must consume the same number of tape rows at the same cadence
 
 - `p0_replay_contract.py` — lossless command-tape schema and serialization checks.
 - `g0_core.py` — P0 fidelity scoring plus the later three-level feedback attribution statistics.
-- `tests/test_core.py` — pure-logic tests.
+- `p0_runner.py` — the executable P0: records both seams on a live rollout and
+  replays each seam from the same config. Runs inside the SIMPLE venv.
+- `p0_analyze.py` — the frozen gate plus the structural checks that cannot be tuned.
+- `tests/` — pure-logic tests for both the statistics and the gate.
+
+## How the two seams are actually cut
+
+Both interventions are the upstream data path, not a reimplementation of it.
+
+`vla_replay` pre-loads the recorded `vla_cmd` tape into
+`SonicDecoupledWbcAgent._action_queue`. `Psi0DecoupledWbcAgent.get_action` queries
+the policy server only when that queue is empty, so a pre-loaded queue removes the
+VLA from the loop while every downstream line — `_build_wbc_observation` on live
+proprioception, `set_goal`, `_wbc_policy.get_action` — still executes unchanged.
+`server_queries == 0` on every replay row is the recorded proof that this held.
+
+`actuator_replay` bypasses the agent entirely and steps the environment with the
+recorded `ActionCmd("decoupled_wbc", target_q, left_hand_q, right_hand_q)`.
+
+## The controller is a wall-clock interpolator
+
+`Psi0DecoupledWbcAgent.get_action` stamps `target_time = time.monotonic() + 1/control_freq`
+and samples the spline at the real time of the call
+(`third_party/decoupled_wbc/control/policy/interpolation_policy.py`). Policy-server
+latency is therefore part of the controller's input, and it is present in `fresh`
+and absent in both replay conditions. Left alone, that difference alone would move
+the WBC output and be misread as a replay-fidelity failure.
+
+`p0_runner.py --clock virtual` (default) substitutes a monotonic surrogate that
+advances exactly one control period per WBC invocation, in all three conditions —
+the nominal 50 Hz schedule the controller is written against. `--clock real` keeps
+upstream behaviour and is retained so the choice stays measurable. The gate below
+applies to whichever clock the run declares; the recorded rows carry the `clock`
+field.
+
+## Running P0
+
+```bash
+cd $SIMPLE && MUJOCO_GL=egl CUDA_VISIBLE_DEVICES=1 ./.venv/bin/python \
+  /path/to/feedback_source_attribution/p0_runner.py \
+  --env-id simple/G1WholebodyCloseDoorTeleop-v0 \
+  --data-dir $EVAL/G1WholebodyCloseDoorTeleop-v0/dr-level-0 \
+  --out records/p0_closedoor.jsonl --tape-dir tapes/p0_closedoor \
+  --port 22085 --sim-mode mujoco_isaac --clock virtual --num-episodes 10
+```
+
+```bash
+PYTHONPATH=. python p0_analyze.py records/p0_closedoor.jsonl --tape-dir tapes/p0_closedoor
+```
 
 ## Local logic tests
 
@@ -79,7 +127,7 @@ cd embodied_topic_search/prototypes/feedback_source_attribution
 PYTHONPATH=. pytest -q
 ```
 
-Current pre-push result: `6 passed`.
+Current result: `13 passed`.
 
 ## Only after P0 passes
 
