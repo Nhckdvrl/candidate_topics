@@ -33,6 +33,12 @@ Topic 23 归档后新增一条更强的识别规则：
 
 > **如果一个 intervention 声称“拿掉了某个能力/路线/程序”，先证明 canonical behavior 确实因这个 intervention 丢失了那个 causal program。仅仅 nominally clamp 某组 actuator 不够。统计显著性无法补救 construct invalidity。**
 
+Round 13（Topic 24 注册）把这条规则又推进了一步，而且这次是对着**我们自己的 instrument**：
+
+> **一个 intervention 在未扰动条件下完美复现原系统，并不证明它切开的 seam 承载了任何 feedback。必须单独证明 seam liveness：同 command、同 controller 内部状态、同 clock，只换 observation，输出是否确定性地改变。**
+
+原因是 P0 的“完美”本身就是它的上限：世界没有被扰动时，状态从未离开录制轨迹，所以任何 feedback 都不需要动作。一个纯前馈 controller 会给出一模一样的 10/10。这就是为什么 Topic 24 在 P0 之后又加了一道 P0b 才注册。
+
 ## 搜索日志
 
 1. [Round 1：VLA / WAM 机制选题搜索](./2026-08-22_vla_wam_mechanism_search.md)
@@ -46,9 +52,20 @@ Topic 23 归档后新增一条更强的识别规则：
 9. [Round 9：whole-body motor equivalence、physical prompting、padding missingness 与新模型异常](./2026-08-22_vla_wam_mechanism_search_round9.md)
 10. [Round 10：capability asymmetry、event transition、camera-role、MoE 与 human-video transfer audit](./2026-08-22_vla_wam_mechanism_search_round10.md)
 11. [Round 11：feedback law / task-space correction 搜索启动与今晚收尾](./2026-08-23_vla_wam_mechanism_search_round11.md)
-12. [2026-08-24 B/C/D promotion audit + Topic 23 outcome](./2026-08-24_candidate_promotion_audit.md)
+12. [Round 12：Topic 23 失败复盘与 feedback-source attribution 候选](./2026-08-24_vla_wam_mechanism_search_round12.md)
+13. [Round 13：E 通过 P0 / P0b，注册为 Topic 24](./2026-08-24_vla_wam_mechanism_search_round13.md)
+14. [2026-08-24 B/C/D promotion audit + Topic 23 outcome](./2026-08-24_candidate_promotion_audit.md)
 
 ## 当前 active provisional shortlist
+
+### E. [Where Does Closed-Loop Robustness Live in Hierarchical Robot Foundation Policies?](./candidates/where_does_closed_loop_robustness_live.md)
+
+**状态：已注册为 [Topic 24](../24_hierarchical_feedback_attribution/)（2026-08-24）。**
+
+先 P0、后注册的流程走完了：P0 replay fidelity `10/10` 三条件全过、轨迹偏离 `0.000 rad`；
+P0b WBC seam liveness `D = 2.4e-02..4.6e-02 rad`，repeatability floor 精确为 0。
+physical-disturbance G0 已冻结，尚未运行。详见
+[Round 13](./2026-08-24_vla_wam_mechanism_search_round13.md)。
 
 ### B. [How Do Robot Foundation Policies Generalize Actions?](./candidates/how_do_robot_foundation_policies_generalize_actions.md)
 
@@ -168,7 +185,7 @@ Fast-WAM、Faster-WAM、RIFT 已经覆盖 training-time world modeling、inferen
 
 ## 当前结论
 
-截至 2026-08-24，这一轮 embodied search 只有 **B** 仍处于 active provisional 状态；C 已降级，D 已经完成一次正式 Topic 生命周期并归档。
+截至 2026-08-24，**E 已经注册为 [Topic 24](../24_hierarchical_feedback_attribution/)**，是这一轮 embodied search 第一个通过“先证明 instrument、后注册”流程的候选。B 仍处于 active provisional 状态；C 已降级；D 完成一次正式 Topic 生命周期并归档。
 
 后续继续找题时，优先要求：
 
@@ -178,6 +195,8 @@ Fast-WAM、Faster-WAM、RIFT 已经覆盖 training-time world modeling、inferen
 one-clean-contrast
 +
 canonical behavior 确实依赖被干预的 causal object
++
+被切开的 seam 确实承载 feedback（seam liveness，不只是 replay fidelity）
 +
 正反结果都能直接解释
 ```

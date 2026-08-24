@@ -303,11 +303,14 @@ def run(args: argparse.Namespace) -> None:
             if key in done_keys:
                 print(f"[skip] {key}", flush=True)
                 continue
-            if condition != "fresh" and not tape_path.exists():
-                print(f"[wait] {key}: no tape at {tape_path}", flush=True)
+            if not tape_path.exists() and (condition != "fresh" or args.push_force > 0.0):
+                # Replay needs the commands; a perturbed `fresh` still needs the
+                # canonical rollout to place the push. Record the nominal pass first.
+                print(f"[wait] {key}: no canonical tape at {tape_path}", flush=True)
                 continue
 
-            tape = json.loads(tape_path.read_text()) if condition != "fresh" else None
+            # `fresh` consults the tape only for push timing, never for commands.
+            tape = json.loads(tape_path.read_text()) if tape_path.exists() else None
             t0 = _real_time.perf_counter()
 
             # Matched configs: identical scene draw for every condition.
@@ -358,7 +361,7 @@ def run(args: argparse.Namespace) -> None:
             # rollout: `push_lead_s` before the first robot/object contact. The
             # perturbed outcome is never consulted.
             push_lo = push_hi = None
-            if args.push_force > 0.0 and tape is not None:
+            if args.push_force > 0.0:
                 fc = tape.get("first_contact_step")
                 if fc is None:
                     raise RuntimeError(
@@ -449,7 +452,7 @@ def run(args: argparse.Namespace) -> None:
             terminal = state_digest(data)
             terminal_qpos = [float(v) for v in np.asarray(data.qpos, dtype=float)]
 
-            if condition == "fresh":
+            if condition == "fresh" and args.push_force == 0.0:
                 if len(vla_tape) != len(act_tape):
                     raise RuntimeError(
                         f"seam desync: {len(vla_tape)} vla rows vs {len(act_tape)} actuator rows"
@@ -477,7 +480,9 @@ def run(args: argparse.Namespace) -> None:
                 "direction": args.push_dir if args.push_force > 0.0 else "none",
                 "success": official_success,
                 "steps": frame_idx,
-                "tape_len": (len(tape["actuator"]) if tape else len(act_tape)),
+                "tape_len": (
+                    len(tape["actuator"]) if (tape and condition != "fresh") else len(act_tape)
+                ),
                 "tape_exhausted_early": exhausted,
                 "server_queries": server_queries,
                 "stabilize_steps": stabilize_steps,
