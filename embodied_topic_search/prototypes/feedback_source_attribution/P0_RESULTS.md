@@ -70,8 +70,15 @@ configs:
 | run | machine state | fresh | vla_replay | actuator_replay |
 | --- | --- | ---: | ---: | ---: |
 | [`clockcheck_real.jsonl`](records/clockcheck_real.jsonl) | loaded (a second rollout + two policy servers) | 0/3 | 0/3 | 0/3 |
-| [`clockcheck_real_idle.jsonl`](records/clockcheck_real_idle.jsonl) | idle | 1/3 | 1/3 | 1/3 |
-| `p0_closedoor.jsonl` (virtual) | idle | 10/10 | 10/10 | 10/10 |
+| [`clockcheck_real_idle.jsonl`](records/clockcheck_real_idle.jsonl) | lighter load | 1/3 | 1/3 | 1/3 |
+| `p0_closedoor.jsonl` (virtual) | any | 10/10 | 10/10 | 10/10 |
+
+The sharpest form of this is not the totals. Config `dr-level-0:0` — same seed,
+same scene draw, same checkpoint, same tape — **fails in the loaded run and
+succeeds in the lighter one**, in all three conditions alike. Under the virtual
+clock the same config reproduces bit-identically across runs. Failure is also not
+graceful degradation: the failing rollouts run to the 450-step limit with the door
+never moving.
 
 Two things follow, and they should not be conflated.
 
@@ -80,7 +87,7 @@ Two things follow, and they should not be conflated.
    idle run — including on the configs where all three fail. The tapes are
    faithful either way.
 2. **Task competence under the real clock is contaminated by machine load.** The
-   same released stack that Topic 23 measured at 30/30 drops to 1/3 idle and 0/3
+   same released stack that Topic 23 measured at 30/30 drops to 1/3 under light load and 0/3
    under contention. That is a property of a wall-clock-coupled controller running
    in non-real-time simulation, not of the policy. The virtual clock removes the
    dependence and is at least as competent (10/10).
@@ -103,7 +110,25 @@ pass this gate with the same 10/10. In that world the later
 So a passing P0 licenses the claim *the tapes are lossless*, and nothing about
 whether the lower seam can carry state feedback at all. That second claim needs
 its own instrument check before the scientific G0 is frozen; see
-[`P0B_SEAM_LIVENESS.md`](P0B_SEAM_LIVENESS.md).
+[`P0B_RESULTS.md`](P0B_RESULTS.md), which has since been run and **passed**.
+
+## Naming, fixed now rather than after seeing results
+
+`actuator_replay` is still a closed loop below the seam it cuts: joint servo/PD
+feedback, actuator dynamics, passive mechanical stabilization and task tolerance
+all survive it. The three levels are therefore named
+
+```text
+fresh - vla_replay              VLA-level online feedback contribution
+vla_replay - actuator_replay    WBC / reference-generation feedback contribution
+actuator_replay residual        servo + actuator dynamics + mechanics + task tolerance
+```
+
+"low-level controller contribution" is not used for the middle quantity, because
+it would claim the whole stack below the VLA when only one layer of it was cut.
+P0b narrows that middle term further still: below the VLA seam the arms and hands
+are open-loop interpolation, so it can only ever carry locomotion/balance state
+feedback.
 
 ## Incidental finding: `fresh` is not reproducible run-to-run
 
