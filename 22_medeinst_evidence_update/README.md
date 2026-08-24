@@ -1,27 +1,27 @@
 # 22 — Does the Model Encode New Evidence but Fail to Update Its Diagnosis?
 
-**Status: `ARCHIVED / MEASUREMENT_RUNTIME_FAILURE / NO_SCIENTIFIC_VERDICT`**
+**Status: `ACTIVE / G0a PASSED / G0b-v3 MEASUREMENT REPAIR READY`**
 
 ## Natural question
 
-A classic explanation of the Einstellung effect is that an established solution becomes a mental set: decisive new evidence appears, but the reasoner remains trapped by the old interpretation.
+A classic explanation of the **Einstellung effect** is that an established solution becomes a mental set: decisive new evidence appears, but the reasoner remains trapped by the old interpretation.
 
-For an LLM, a wrong counterfactual diagnosis leaves two different possibilities:
+For an LLM, an exact counterfactual Bias Trap leaves two different possibilities:
 
 > **Was the decisive new evidence never encoded, or was it encoded but unable to update the old diagnosis?**
 
-The scientific question remains legitimate. Topic 22 is archived because the frozen local measurement route did not produce a sufficiently valid behavioral object on which that mechanism distinction could be tested.
+This remains the scientific question. No mechanism claim has been established yet.
 
-## Seed
+## Seed and experimental object
 
-ACL 2026 long paper: **MedEinst: Benchmarking the Einstellung Effect in Medical LLMs through Counterfactual Differential Diagnosis**.
+Seed: ACL 2026 long paper **MedEinst: Benchmarking the Einstellung Effect in Medical LLMs through Counterfactual Differential Diagnosis**.
 
-- Official repository: `zhui711/MedEinst`
-- Dataset: `zhui711/MedEinst`
-- Seed-supported model: `Qwen/Qwen3-14B`
-- Released test set: 5,383 counterfactual pairs
+- ACL: https://aclanthology.org/2026.acl-long.1847/
+- official repository: https://github.com/zhui711/MedEinst
+- dataset: https://huggingface.co/datasets/zhui711/MedEinst
+- seed-supported model: `Qwen/Qwen3-14B`
 
-Exact Bias Trap event:
+The released test set contains 5,383 counterfactual pairs spanning a closed diagnosis vocabulary of 49 pathologies. The exact Bias Trap event is:
 
 ```text
 model(control) = control ground truth
@@ -31,9 +31,16 @@ AND
 trap ground truth != control ground truth
 ```
 
-## G0a — pair structure passed
+The paper reports for Qwen3-14B:
 
-The full released test set supplied a clean structural object:
+```text
+Baseline Accuracy = 44.12%
+Bias Trap Rate    = 54.19%
+```
+
+## G0a — pair structure: PASSED
+
+The full released test set passed the frozen alignment audit:
 
 ```text
 valid pairs                  5383
@@ -46,86 +53,186 @@ p90 changed-token frac       0.2516
 
 Verdict: `PAIR_STRUCTURE_OK`.
 
-This established useful paired support, but did not yet establish a reliable model-level Bias Trap measurement.
+This establishes a clean paired object for later analysis. It does not by itself prove that every changed span is the medically decisive variable.
 
-## First G0b — invalid measurement
+## G0b v1 — invalid measurement
 
-The first Qwen3-14B CoT run produced an `81.25%` invalid-output rate. The implementation used greedy thinking, a 1,024-token reasoning budget, and a mandatory custom `FINAL_DIAGNOSIS:` marker, so that run was correctly invalidated rather than interpreted scientifically.
+The first Qwen3-14B CoT run used an unsuitable measurement stack:
 
-One explicit measurement repair was then frozen before rerunning:
+- greedy decoding despite Qwen3 thinking-mode recommendations;
+- only 1,024 new tokens;
+- mandatory custom `FINAL_DIAGNOSIS:` parsing.
 
-```text
-thinking enabled
-sampling: temperature=0.6, top_p=0.95, top_k=20
-max_new_tokens=32768
-token-level </think> separation
-post-thinking answer only
-conservative canonical-label extraction
-same 256 pair IDs
-same model / seed / scientific thresholds
-```
+Invalid-output rate was 81.25%. That run is provenance only and carries no scientific verdict.
 
-## Repaired G0b — completed, still measurement-invalid
+## G0b v2 — substantive signal appears, but open-text canonicalization fails
 
-Commit recording the final run:
+The principled v2 repair froze the model, 256 pair IDs, seed, Bias Trap definition and all scientific thresholds while fixing the demonstrated Qwen3 inference issues:
 
 ```text
-2a6f9712bd5e799b237be455f79a5b24c648fc06
+temperature = 0.6
+top_p       = 0.95
+top_k       = 20
+max_new_tokens = 32768
+post-</think> final-answer scoring only
 ```
 
-Frozen repaired results:
+The rerun completed all 256 pairs. Every thinking trace closed and no branch hit the token ceiling.
 
-| Metric | Value | Gate |
-|---|---:|---|
-| control accuracy | `0.3555` (91/256) | pass (`>=0.35`) |
-| control-correct count | `91` | pass (`>=50`) |
-| Bias Trap count | `34` | pass (`>=20`) |
-| Bias Trap rate | `0.3736` | pass (`>=0.30`) |
-| Wilson lower bound | `0.2812` | pass (`>=0.20`) |
-| diagnosis transitions | `12` | pass (`>=8`) |
-| invalid-output rate | **`0.6250` (160/256)** | **fail (`<=0.10`)** |
+Substantive gates on the resolvable outputs all passed:
 
-All 256 control and trap thinking traces closed, and neither side hit `max_new_tokens`.
+| Metric | v2 | Frozen gate |
+|---|---:|---:|
+| control accuracy | 0.3555 (91/256) | >=0.35 |
+| control-correct count | 91 | >=50 |
+| exact Bias Trap count | 34 | >=20 |
+| Bias Trap Rate | 0.3736 | >=0.30 |
+| Wilson lower bound | 0.2812 | >=0.20 |
+| diagnosis transitions | 12 | >=8 |
 
-The remaining invalids were overwhelmingly `unresolved_final`:
+But pair-level invalid rate remained:
+
+```text
+160/256 = 62.5%    required <=10%
+```
+
+The dominant branch failure was `unresolved_final`:
 
 ```text
 control unresolved_final = 109
 trap unresolved_final    = 124
 ```
 
-Therefore the frozen verdict is:
+Crucially, this is not a thinking/runtime termination failure. The final-answer segments exist; the deterministic parser cannot map many open-vocabulary diagnosis phrases onto the benchmark's closed 49-label vocabulary.
+
+Therefore v2 is recorded as a **measurement failure, not a scientific negative**.
+
+Historical record: [`MEASUREMENT_FAILURE_V2.md`](./MEASUREMENT_FAILURE_V2.md).
+
+## Why a v3 repair is justified
+
+The v2 failure localized a new, narrower defect that was not visible before the rerun:
+
+> **free-form final diagnosis text -> closed benchmark label canonicalization**
+
+A third repair is allowed here because it is deliberately **scoring-only and outcome-blind**:
+
+- the 256 v2 CoT generations are frozen and must not be regenerated;
+- model, pair IDs, seed, decoding and all scientific thresholds are unchanged;
+- the fallback canonicalizer sees only the post-thinking final-answer text and the 49 closed labels;
+- it never sees the clinical narrative, ground truth, case type, pair identity as control/trap, or paired branch;
+- it may abstain rather than force a label;
+- two deterministic label orders are evaluated and a mapping is accepted only if both agree;
+- every canonical label must pass an exact self-mapping preflight under both orders before any benchmark output is rescored.
+
+This is categorically different from adding hand-written synonyms after inspecting which diagnoses would improve the result, or changing prompts/models/samples until the gate passes.
+
+Implementation: [`g0_recanonicalize_v3.py`](./g0_recanonicalize_v3.py).
+
+## Frozen G0b-v3 contract
+
+Input must be the original v2 record file:
 
 ```text
-MEASUREMENT_RUNTIME_FAILURE
+artifacts/g0_behavior_cot/records.jsonl
 ```
 
-No direct-mode G0c was run.
+`run_g0.sh` fails fast if this file is absent; it does **not** silently regenerate CoT.
 
-## Final interpretation
+V3 first runs a 49-label canonicalizer self-mapping preflight. Then it applies the semantic canonicalizer only to branches that:
 
-This is **not** a scientific negative for the MedEinst phenomenon and not evidence against encoding-vs-update failure.
+```text
+old deterministic parser -> unresolved
+AND thinking closed
+AND did not hit max tokens
+```
 
-The valid subset actually passed every substantive behavioral gate. The problem is that the selected CoT inference/scoring interface fails to yield a valid final diagnosis for 62.5% of the frozen pairs, so the exact event set is not trustworthy enough for downstream causal analysis.
+Already-resolved v2 predictions are preserved exactly.
 
-The repository stops here because the project has already used its one principled measurement repair. Continuing with a third parser/prompt/extraction redesign would turn candidate validation into measurement tuning.
+The original frozen CoT gates remain unchanged:
 
-A future revisit is allowed only if there is a genuinely different external measurement object—for example, an official released response format / evaluator or another seed-supported setup that removes the unresolved-final problem without tuning on these outcomes. It must not simply be another local parser repair.
+- control accuracy `>=0.35`;
+- control-correct count `>=50`;
+- Bias Trap count `>=20`;
+- Bias Trap Rate `>=0.30`;
+- 95% Wilson lower bound `>=0.20`;
+- at least 8 distinct diagnosis transitions;
+- invalid-output rate `<=0.10`.
 
-## Why direct mode was not used as a rescue
+### V3 decisions
 
-The frozen protocol required CoT G0b to pass before direct-mode G0c. Once repaired G0b returned `MEASUREMENT_RUNTIME_FAILURE`, running direct mode would change the prerequisite sequence after seeing the result.
+```text
+CANONICALIZER_PREFLIGHT_FAILURE
+    -> measurement object invalid; stop before rescoring
 
-Therefore direct mode remains unrun. It cannot be used post hoc to rescue Topic 22.
+MEASUREMENT_CANONICALIZATION_FAILURE
+    -> invalid rate remains >10%; stop measurement route, no scientific negative
 
-## Archive files
+SEED_PHENOMENON_NOT_REPRODUCED
+    -> measurement healthy but substantive frozen gates fail; real scientific stop
 
-- [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md) — final decision and transferable lessons.
-- [`G0_RESULTS.md`](./G0_RESULTS.md) — exact first and repaired G0b provenance.
-- [`VALIDATION_AUDIT.md`](./VALIDATION_AUDIT.md) — identification and measurement audit.
-- `artifacts/g0_behavior_cot/summary.json` — repaired frozen summary.
-- `g0_pair_locality.py`, `g0_bias_trap_screen.py`, `run_g0.sh` — frozen implementation retained for provenance.
+SEED_PHENOMENON_REPRODUCED
+    -> proceed to direct-mode G0c
+```
 
-## Reusable lesson
+## G0c — direct-answer mechanism eligibility
 
-> **A strong signal on the valid subset does not rescue a measurement with catastrophic invalid-output support. After one principled repair, persistent measurement invalidity is a reason to archive the route rather than keep tuning the interface until the desired phenomenon becomes measurable.**
+Only after G0b-v3 is measurement-healthy and reproduces the seed do we run direct mode on the **same exact 256 pairs, model and seed**.
+
+Reason: variable-length CoT is a poor substrate for simple token-local causal analysis. The downstream mechanism study needs the Bias Trap to remain dense in a fixed-position direct-answer regime.
+
+Direct raw generations are also passed through the same closed-label v3 canonicalizer before applying the pre-existing direct gates:
+
+- direct control accuracy `>=0.30`;
+- control-correct count `>=40`;
+- exact Bias Trap count `>=16`;
+- direct Bias Trap Rate `>=0.20`;
+- Wilson lower bound `>=0.10`;
+- at least 6 diagnosis transitions;
+- invalid-output rate `<=0.10`.
+
+If CoT reproduces but direct mode fails a healthy substantive gate, stop the simple fixed-position mechanism route. Do not replace it with open-ended CoT state fishing.
+
+## If all G0s pass
+
+Only then is the mechanism distinction eligible for study:
+
+1. align changed evidence spans within each control/trap pair;
+2. use correctly updated trap cases as positive controls for an evidence-sensitive internal transition;
+3. compare exact Bias Trap cases at a small predeclared site set;
+4. prefer same-pair / diagnosis-transition-matched causal intervention;
+5. require a manipulation check that distinguishes evidence representation from direct answer overwriting.
+
+A generic trap-vs-control probe is not enough.
+
+## Run
+
+```bash
+cd 22_medeinst_evidence_update
+MODEL=Qwen/Qwen3-14B \
+N_PAIRS=256 \
+SEED=20260823 \
+CUDA_VISIBLE_DEVICES=0,1,2,3 \
+bash run_g0.sh
+```
+
+If the v2 records are elsewhere:
+
+```bash
+V2_COT_RECORDS=/path/to/original/v2/records.jsonl bash run_g0.sh
+```
+
+## Files
+
+- `g0_pair_locality.py` — full pair-structure audit.
+- `g0_bias_trap_screen.py` — original CoT/direct generator and deterministic parser.
+- `g0_recanonicalize_v3.py` — frozen scoring-only closed-label repair.
+- `tests/test_g0_helpers.py`
+- `tests/test_g0_v3_canonicalizer.py`
+- `G0_RESULTS.md`
+- `VALIDATION_AUDIT.md`
+- `MEASUREMENT_FAILURE_V2.md`
+
+## Scientific invariant
+
+> **Same released patient pair, same model and frozen case set: control is correct, trap ground truth flips, and the model persists on the old diagnosis. Measurement repairs may make the benchmark label interface valid; they may not change the underlying CoT generations or use ground truth to decide how to score them. Only after this exact event is reproducible and dense do we ask what evidence the model encoded and why it failed to update.**
