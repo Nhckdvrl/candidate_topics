@@ -1,6 +1,6 @@
 # Topic 22 Validation Audit
 
-**Audit status: G0a passed; G0b-v2 localized a closed-label canonicalization failure; G0b-v3 scoring-only repair frozen and ready.**
+**Audit status: `ARCHIVED / G0b-v3 MEASUREMENT_CANONICALIZATION_FAILURE / NO_SCIENTIFIC_VERDICT`.**
 
 ## Claim hierarchy
 
@@ -11,7 +11,7 @@ Keep these levels separate.
 3. **Mechanism-tractable regime:** the same event remains dense with thinking disabled and fixed answer sites.
 4. **Mechanism:** decisive new evidence is encoded but fails to update the diagnostic state.
 
-G0 can establish only 1–3. It cannot establish 4.
+Topic 22 established only level 1 cleanly. Levels 2–4 were not licensed because the CoT measurement-support gate remained unhealthy.
 
 ## G0a — passed
 
@@ -26,30 +26,19 @@ Full test-set audit:
 
 Verdict: `PAIR_STRUCTURE_OK`.
 
-Pair locality is an intervention/alignment check; medical validity of the counterfactual flip comes from the benchmark construction, not edit distance.
+## G0b v1 — invalidated correctly
 
-## G0b v1 — correctly invalidated
-
-The first local Qwen3-14B CoT run had three demonstrated measurement defects:
+The first local Qwen3-14B CoT run had three demonstrated defects:
 
 1. greedy decoding in Qwen3 thinking mode;
 2. only 1,024 new tokens;
-3. a mandatory custom `FINAL_DIAGNOSIS:` marker.
+3. mandatory custom `FINAL_DIAGNOSIS:` parsing.
 
-Its 81.25% invalid rate could not be read scientifically.
+Its 81.25% invalid rate was not interpreted scientifically.
 
-## G0b v2 — what it established
+## G0b v2 — runtime healthy, label interface unhealthy
 
-V2 repaired those defects while preserving the scientific model/sample/gates:
-
-- Qwen3-recommended thinking sampling (`temperature=0.6`, `top_p=0.95`, `top_k=20`);
-- 32,768-token ceiling;
-- post-`</think>` final segment only;
-- conservative exact/sub-string canonical label extraction;
-- deterministic pair-level common random numbers;
-- same fixed 256 pairs and seed `20260823`.
-
-The rerun is diagnostically important:
+V2 preserved model/sample/seed/scientific gates while repairing the Qwen3 runtime stack.
 
 ```text
 control accuracy             0.3555  PASS
@@ -61,169 +50,143 @@ diagnosis transitions        12      PASS
 invalid rate                 0.6250  FAIL
 ```
 
-All 256 control and trap traces closed and no branch hit max tokens.
+All control/trap thinking traces closed and no branch hit the 32,768-token ceiling.
 
-The unresolved counts were:
+The dominant unresolved counts were:
 
 ```text
 control unresolved_final = 109
 trap unresolved_final    = 124
 ```
 
-Thus V2 does **not** support the claim that Qwen3 failed to finish reasoning. It localizes the measurement problem to the interface between free-form final diagnosis wording and the benchmark's finite pathology vocabulary.
+Therefore v2 localized the remaining measurement defect to free-form diagnosis -> closed-label canonicalization.
 
-## Why v3 is not ordinary post-hoc tuning
+## G0b v3 — bounded scoring-only repair
 
-A repair after viewing results is dangerous when it searches across models, prompts, aliases, thresholds or evaluation rules until the desired scientific effect appears.
+V3 was explicitly designed to avoid behavioral or outcome-driven tuning.
 
-V3 is permitted because its design satisfies a stricter criterion:
+It reused the exact v2 `records.jsonl`; no CoT was regenerated.
 
-> **It changes only the semantic canonicalization of already-frozen outputs and has no access to information that could tell it whether a mapping helps the scientific hypothesis.**
-
-Specifically:
-
-- no CoT regeneration;
-- no model/sample/seed/decoding change;
-- no scientific threshold change;
-- no diagnosis-specific hand-written synonym table;
-- no patient narrative in the mapper;
-- no ground truth in the mapper;
-- no control/trap identity in the mapper;
-- no paired branch in the mapper;
-- explicit abstention is allowed;
-- label-order invariance is required.
-
-This is a measurement-interface repair, not a search for a stronger effect.
-
-## V3 canonicalizer contract
-
-Implementation: `g0_recanonicalize_v3.py`.
-
-### Input boundary
-
-For each unresolved branch the mapper receives exactly:
+For each unresolved branch, the fallback canonicalizer saw only:
 
 ```text
 post-thinking final-answer text
 +
-49 closed benchmark labels
+closed benchmark labels
 ```
 
-It is explicitly told to map semantic equivalence rather than diagnose from a patient case.
+It did not receive:
 
-### Output boundary
+- patient narrative;
+- ground truth;
+- case type;
+- control/trap identity;
+- paired branch information.
 
-Output is a single numeric ID:
+Additional guards:
+
+- explicit abstention;
+- two fixed deterministic label orders;
+- accept only cross-order agreement;
+- self-mapping preflight before benchmark rescoring;
+- already-resolved v2 predictions preserved exactly.
+
+The cached test split contained 46 distinct canonical labels, and the 46/46 self-mapping preflight passed under both orders.
+
+## G0b v3 result
+
+V3 resolved 111 previously unresolved branch outputs.
 
 ```text
-0     = abstain / ambiguous / no equivalent
-1..49 = one closed label
+invalid rate: 0.6250 -> 0.3242
 ```
 
-Any extra prose or out-of-range output is unresolved.
-
-### Dual-order guard
-
-Two fixed deterministic label orders are used. A canonical label is accepted only if both orders return that same nonzero label.
-
-This guards against a single menu-order artifact without opening a label-order sweep.
-
-### Preflight
-
-Before touching benchmark outputs:
+Substantive metrics:
 
 ```text
-Final diagnosis: <canonical label>
+control accuracy             0.4258  PASS
+control-correct              109     PASS
+Bias Trap count              43      PASS
+Bias Trap Rate               0.3945  PASS
+Wilson lower bound           0.3078  PASS
+diagnosis transitions        14      PASS
 ```
 
-must map back to itself for every one of the 49 labels under both orders.
-
-A single preflight failure returns:
-
-`CANONICALIZER_PREFLIGHT_FAILURE`
-
-and blocks benchmark interpretation.
-
-### Fallback-only rule
-
-V3 does not rewrite any old resolved v2 prediction. It is called only when the old parser returned `None`, the thinking trace closed, and the branch did not hit the token ceiling.
-
-### Frozen source outputs
-
-The original v2 `records.jsonl` is mandatory. The v3 script records its SHA-256 digest. `run_g0.sh` refuses to silently regenerate CoT if the file is missing.
-
-This matters because regeneration under stochastic CoT after observing v2 would create a different behavioral sample.
-
-## Frozen G0b gates — unchanged
-
-- control accuracy `>=0.35`;
-- control-correct count `>=50`;
-- exact Bias Trap count `>=20`;
-- Bias Trap Rate among control-correct `>=0.30`;
-- Wilson lower bound `>=0.20`;
-- at least 8 diagnosis transitions;
-- pair invalid rate `<=0.10`.
-
-Decision logic:
+Support metric:
 
 ```text
-canonicalizer preflight fails
-    -> CANONICALIZER_PREFLIGHT_FAILURE
-
-invalid rate > 0.10
-    -> MEASUREMENT_CANONICALIZATION_FAILURE
-    -> no scientific verdict
-
-measurement healthy + substantive gate fails
-    -> SEED_PHENOMENON_NOT_REPRODUCED
-    -> real local scientific stop
-
-all gates pass
-    -> SEED_PHENOMENON_REPRODUCED
-    -> run direct G0c
+invalid-output rate          0.3242  FAIL  (required <=0.10)
 ```
 
-After a v3 measurement-support failure, no further local alias/prompt/mapper-model/order/threshold tuning is authorized on this same result.
+Remaining branch failures:
 
-## G0c — direct mode remains a separate prerequisite
+```text
+control unresolved_final = 64
+trap unresolved_final    = 58
+```
 
-Even a successful CoT reproduction is not enough for the planned simple causal mechanism study.
+Final verdict:
 
-Variable-length CoT trajectories are not the intended token-local mechanism substrate. Therefore the same exact 256 pair IDs must also produce a dense Bias Trap event under thinking-disabled direct answers.
+```text
+MEASUREMENT_CANONICALIZATION_FAILURE
+NO_SCIENTIFIC_VERDICT
+DIRECT_MODE_NOT_RUN
+```
 
-Only after G0b-v3 passes does `run_g0.sh` generate direct outputs. Those raw outputs use the same v3 canonicalization interface before the pre-existing direct gates are read.
+Result commit: `285ea8b7530ca24f14b721046efd584be8668499`.
 
-Direct gates remain:
+## Interpretation
 
-- control accuracy `>=0.30`;
-- control-correct count `>=40`;
-- exact Bias Trap count `>=16`;
-- Bias Trap Rate `>=0.20`;
-- Wilson lower bound `>=0.10`;
-- at least 6 diagnosis transitions;
-- invalid-output rate `<=0.10`.
+The correct interpretation is deliberately narrow:
 
-A healthy direct-mode substantive failure is terminal for the fixed-position mechanism route; do not silently migrate to open-ended CoT probing.
+> The released pair structure is clean, and the scorable subset shows a strong Bias Trap signal, but the frozen local measurement interface cannot score enough of the same 256 CoT outputs reliably enough to establish a population-level behavioral prerequisite.
 
-## What G1 would need to identify encoding vs updating
+Do **not** conclude:
 
-Only if G0a+b+c pass:
+- MedEinst failed to reproduce scientifically;
+- the Einstellung effect is absent;
+- encoding-vs-update is false.
 
-1. **Evidence-state manipulation check:** paired changed evidence must induce a measurable internal transition also present in correctly updated trap positive controls.
-2. **Causal downstream test:** intervention on that evidence-related state must move the diagnostic state/behavior away from the old control diagnosis without directly overwriting the answer representation.
+Do **not** promote the valid-subset signal to a mechanism object because support selection is too severe.
 
-A control-vs-trap linear probe is insufficient because it can decode lexical edits, diagnosis identity or formatting.
+## Why no v4 local repair
 
-Prefer same-pair or diagnosis-transition-matched causal intervention at a small predeclared site set. If the effect requires broad model/layer/token/coefficient search, stop.
+V3 was already the bounded repair specifically justified by the defect v2 localized.
 
-## Current verdict
+A further repair would introduce new researcher degrees of freedom after observing the same sample, including aliases, mapper model choice, prompt/menu design, semantic thresholds, or behavior regeneration.
+
+Accordingly:
+
+> **No further local parser/canonicalizer/prompt/model/order/threshold tuning is authorized on this result.**
+
+A future revisit requires a genuinely new external evaluation interface or artifact whose validity is established independently of these 256 outcomes.
+
+## G0c — not run
+
+Direct mode was preregistered as downstream of a healthy CoT prerequisite.
+
+Because v3 invalid rate remained above 10%, G0c was correctly not run as a rescue.
+
+## Mechanism analysis — not run
+
+No hidden-state probe, patching, steering, causal tracing, or encoding-vs-update conclusion is licensed.
+
+Had all G0s passed, G1 would have required both:
+
+1. a positive-control evidence-state manipulation check; and
+2. a causal downstream test separating evidence representation from diagnostic updating without directly overwriting the answer.
+
+That stage was never reached.
+
+## Final status
 
 ```text
 G0a: PASS
 G0b-v1: MEASUREMENT INVALID
-G0b-v2: MEASUREMENT INVALID, DEFECT LOCALIZED TO CLOSED-LABEL CANONICALIZATION
-G0b-v3: FROZEN / READY
+G0b-v2: MEASUREMENT INVALID; CANONICALIZATION DEFECT LOCALIZED
+G0b-v3: MEASUREMENT_CANONICALIZATION_FAILURE
 G0c: NOT RUN
 G1: NOT RUN
-NO SCIENTIFIC VERDICT YET
+NO SCIENTIFIC VERDICT
+TOPIC22 LOCAL MEASUREMENT ROUTE ARCHIVED
 ```
