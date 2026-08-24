@@ -73,6 +73,7 @@ A replay condition must consume the same number of tape rows at the same cadence
 - `p0_runner.py` — the executable P0: records both seams on a live rollout and
   replays each seam from the same config. Runs inside the SIMPLE venv.
 - `p0_analyze.py` — the frozen gate plus the structural checks that cannot be tuned.
+- `p0b_seam_liveness.py` — the command-level paired seam test that gates registration.
 - `tests/` — pure-logic tests for both the statistics and the gate.
 
 ## How the two seams are actually cut
@@ -128,6 +129,18 @@ PYTHONPATH=. pytest -q
 ```
 
 Current result: `13 passed`.
+
+## Status
+
+```text
+P0   replay fidelity     PASS   see P0_RESULTS.md
+P0b  WBC seam liveness   PASS   see P0B_RESULTS.md
+```
+
+P0b also fixed a limit on what the middle quantity can mean: below the VLA seam
+the arms and hands are open-loop interpolation, so `vla_replay - actuator_replay`
+can only ever carry locomotion/balance state feedback. See
+[`P0B_RESULTS.md`](P0B_RESULTS.md).
 
 ## Only after P0 passes
 

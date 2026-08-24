@@ -201,12 +201,8 @@ def run(args: argparse.Namespace) -> None:
     robot = task.robot
     agent = Psi0DecoupledWbcAgent(robot, args.host, args.port, sonic_config=sonic_config)
 
-    model = raw_env.unwrapped.mjModel
-    data = raw_env.unwrapped.mjData
-    body_joint_names = [
-        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, int(j))
-        for j in np.asarray(robot.body_joint_index)
-    ]
+    # `mjModel` / `mjData` only exist once the environment has been reset.
+    body_joint_names: list[str] = []
 
     tape_dir = Path(args.tape_dir)
     out_path = Path(args.out)
@@ -245,6 +241,12 @@ def run(args: argparse.Namespace) -> None:
         env_conf, _ = get_episode_lerobot(ds, eps_idx)
         observation, info = env.reset(options={"state_dict": env_conf})
         sonic_env = raw_env.unwrapped
+        model, data = sonic_env.mjModel, sonic_env.mjData
+        if not body_joint_names:
+            body_joint_names = [
+                mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, int(j))
+                for j in np.asarray(robot.body_joint_index)
+            ]
 
         clock.reset()
         agent.reset()
