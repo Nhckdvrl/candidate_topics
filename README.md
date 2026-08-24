@@ -39,6 +39,7 @@ A later search round must never resurrect a numbered topic whose local experimen
 10. A robust seed phenomenon does not imply our proposed explanation is correct.
 11. Positive-result excitement matters: the cleanest result should support a main-conference-sized story, not just a reasonable follow-up.
 12. Stop rather than model/prompt/layer/schedule-shop after a frozen negative.
+13. A measurement-invalid run is not a scientific negative, but repeated local repair is not free: after one principled repair, persistent catastrophic invalidity is reason to archive the route rather than tune the interface indefinitely.
 
 ---
 
@@ -47,8 +48,7 @@ A later search round must never resurrect a numbered topic whose local experimen
 | Priority | Topic | Status | Current gate |
 |---:|---|---|---|
 | 1 | [24 — Where Does Closed-Loop Robustness Live in Hierarchical Robot Foundation Policies?](./24_hierarchical_feedback_attribution/) | **ACTIVE / G0 NEXT** | Replay fidelity and WBC seam-liveness instrument gates passed; run the frozen physical-disturbance attribution G0. |
-| 2 | [22 — Does the Model Encode New Evidence but Fail to Update Its Diagnosis?](./22_medeinst_evidence_update/) | **REGISTERED / RERUN REQUIRED** | G0a pair structure passed. The first Qwen3-14B G0b was measurement-invalid (`81.25%` invalid outputs); run the frozen measurement-repair v2 before any scientific verdict. |
-| 3 | [16 — Does Citation Turn Hypotheses into Facts?](./16_citation_transmutation/) | **REGISTERED / G0 NOT RUN** | Identification is hardened; next step is the high-precision evidence-provenance G0. |
+| 2 | [16 — Does Citation Turn Hypotheses into Facts?](./16_citation_transmutation/) | **REGISTERED / G0 NOT RUN** | Identification is hardened; next step is the high-precision evidence-provenance G0. |
 
 There is **no Topic 25**.
 
@@ -59,6 +59,7 @@ There is **no Topic 25**.
 | Topic | Final decision | Why it stopped | Summary |
 |---|---|---|---|
 | [23 — Motor Equivalence Classes](./23_motor_equivalence_classes/) | **ARCHIVED / FROZEN PANEL PREREQUISITES FAIL** | No task in the frozen panel simultaneously supplied adequate competence and the required canonical arm program. | [Archive summary](./23_motor_equivalence_classes/ARCHIVE_SUMMARY.md) |
+| [22 — MedEinst Evidence Update](./22_medeinst_evidence_update/) | **ARCHIVED / MEASUREMENT_RUNTIME_FAILURE / NO SCIENTIFIC VERDICT** | G0a pair structure passed and the repaired valid subset passed every substantive Bias Trap gate, but `160/256 = 62.5%` remained unresolved at the final-answer measurement gate after one principled repair. Direct mode was not run. | [Archive summary](./22_medeinst_evidence_update/ARCHIVE_SUMMARY.md) |
 | [21 — SemTrace Semantic-State Failure](./21_semtrace_semantic_state_failure/) | **ARCHIVED / STOP_UPSTREAM_SEED_NOT_REPRODUCED** | The exact official Qwen2.5-Coder-7B prerequisite completed, but edge mean was `0.000625` vs required `>=0.30` and edge-to-middle drop was `0.000625` vs required `>=0.20`; custom mechanism G0 was not run. | [Archive summary](./21_semtrace_semantic_state_failure/ARCHIVE_SUMMARY.md) |
 | [20 — Representation or Access?](./20_numeracy_representation_access/) | **ARCHIVED / FROZEN CAUSAL ROUTES FAILED** | Robust behavior and decodability survived, but frozen causal rescue routes failed; remaining observation was too narrow for the intended paper. | [Archive summary](./20_numeracy_representation_access/ARCHIVE_SUMMARY.md) |
 | [19 — Task-Structured Feedback](./19_task_structured_feedback/) | **ARCHIVED / PRIMARY METRIC IDENTIFICATION FAILURE** | Joint-axis restoration did not identify task-space correction in a redundant controller. | [Archive summary](./19_task_structured_feedback/ARCHIVE_SUMMARY.md) |
@@ -102,5 +103,6 @@ Especially important recent examples:
 - **Topic 05:** a natural storage-vs-access question can still fail because the intervention does not identify uncued retention.
 - **Topic 13:** a robust motivating phenomenon does not make the proposed temporal-spacing explanation true.
 - **Topic 21:** official artifact availability does not mean the exact prerequisite phenomenon reproduces on the selected platform.
+- **Topic 22:** strong substantive gates on a valid subset do not rescue a measurement with catastrophic invalid support; after one principled repair, stop the route rather than tune the parser/interface indefinitely.
 - **Topic 20:** a decodable feature can be causally inert.
 - **Topic 23:** a statistically overwhelming effect can still be scientifically false when the treatment does not manipulate the claimed object.
