@@ -5,14 +5,14 @@
 > `ROUND_*.md` 是历史搜索记录；一旦和后来的本地实验冲突，必须以 numbered topic 的 `G0_RESULTS.md` / `ARCHIVE_SUMMARY.md` 为准。
 
 Last updated: 2026-08-24
-Source of current ranking: `ROUND_12_2026-08-24.md`
+Source of current ranking: `ROUND_13_2026-08-24.md`
 
 ---
 
 # 0. Hard rules after internal-history reconciliation
 
 1. **External overlap is normal.** 2026 年 AI/NLP 不追求“完全没人做过”。Collision audit 问的是：最接近工作都成立以后，是否仍剩下 ACL / EMNLP / NAACL 篇幅的独立主问题、主实验、主结论和后续机制/方法空间。
-2. **Internal failure is evidence, not literature overlap.** 已经在本仓库跑过并停止的 hypothesis / identification route，不能因为新一轮搜题忘记结果而重新升为 active。
+2. **Internal failure is evidence, not literature overlap.** 已经在本仓库跑过并停止的 hypothesis / identification / measurement route，不能因为新一轮搜题忘记结果而重新升为 active。
 3. Status precedence:
 
 ```text
@@ -28,6 +28,7 @@ ROUND search logs
 4. Before promoting any search candidate, audit `FAILURES_AND_LESSONS.md` and numbered-topic directories for internal collision.
 5. `REPRODUCTION_RECEIPT_POLICY.md` and `MOTHER_TOPIC_BRANCHING_POLICY.md` remain mandatory.
 6. Generic reasoning / CoT / test-time-compute mechanism remains advisor-low-priority.
+7. **Measurement repair has a budget.** One principled repair of a demonstrated defect can be legitimate. If the frozen route remains catastrophically invalid after that repair, archive the route rather than tune parser/prompt/extraction repeatedly.
 
 Detailed policy: `COLLISION_AND_INTERNAL_HISTORY_POLICY.md`.
 
@@ -119,22 +120,6 @@ Existing screen: `g0/chronoscope_drift_g0.py`.
 
 **Status:** `ACTIVE_B / EXECUTABLE / ADVISOR_FIT_BELOW_A`.
 
-## B3. MedEinst / Topic 22 — evidence update
-
-This is **not a fresh untested search candidate**. It already exists as numbered Topic 22.
-
-Repository truth:
-
-- G0a pair locality passed;
-- the first Qwen3-14B behavioral run was measurement-invalid because invalid outputs were 81.25%;
-- the negative label was withdrawn;
-- a frozen measurement repair v2 is documented;
-- a rerun is required before any scientific verdict.
-
-Therefore do not describe Topic 22 as simply `EXECUTABLE / advisor-fit review`, and do not call it failed either.
-
-**Status:** `NUMBERED_TOPIC_22 / RERUN_REQUIRED / NO_SCIENTIFIC_VERDICT_YET`.
-
 ---
 
 # C. DEEP AUDIT / RESOURCE — not active top pool
@@ -173,7 +158,31 @@ Interesting cognitive-memory inspiration, but construct validity of mapping prom
 
 # D. INTERNAL TERMINAL OBJECTS — do not accidentally resurrect
 
-## D1. SemTrace / Topic 21
+## D1. MedEinst / Topic 22
+
+**Terminal local route result:** `MEASUREMENT_RUNTIME_FAILURE / NO_SCIENTIFIC_VERDICT`.
+
+Repository truth:
+
+- G0a pair structure passed on all 5,383 released pairs;
+- the first Qwen3-14B CoT run was measurement-invalid (`81.25%` invalid);
+- one principled measurement repair was frozen and rerun on the same 256 pairs/model/seed;
+- repaired substantive gates all passed on the resolvable subset;
+- invalid-output rate remained `160/256 = 62.5%` against the frozen `<=10%` gate;
+- all thinking traces closed and none hit the 32,768-token ceiling;
+- dominant failure was `unresolved_final`;
+- direct mode was not run because G0b was a frozen prerequisite.
+
+The scientific question `encoding failure vs update failure` is not falsified. The **local CoT measurement route is archived** because another parser/prompt/extraction repair after seeing this result would become measurement tuning.
+
+See:
+
+- `../22_medeinst_evidence_update/G0_RESULTS.md`
+- `../22_medeinst_evidence_update/ARCHIVE_SUMMARY.md`
+
+**Status:** `ARCHIVED / DO_NOT_REPAIR_AGAIN_LOCALLY`.
+
+## D2. SemTrace / Topic 21
 
 **Terminal local result:** `STOP_UPSTREAM_SEED_NOT_REPRODUCED`.
 
@@ -186,24 +195,17 @@ edge-to-middle drop = 0.000625  (required >= 0.20)
 
 The custom paired mechanism G0 was never run. This is a prerequisite/platform failure for our selected Topic 21 regime, not a general refutation of the paper.
 
-See:
-
-- `../21_semtrace_semantic_state_failure/G0_RESULTS.md`
-- `../21_semtrace_semantic_state_failure/ARCHIVE_SUMMARY.md`
-
 **Status:** `ARCHIVED / DO_NOT_RELIST_AS_EXECUTABLE`.
 
-## D2. Temporal Forgetting / Topic 05
+## D3. Temporal Forgetting / Topic 05
 
 The broad storage-vs-access question is scientifically legitimate, but our registered Topic 05 failed **conceptual identification**: prefix rescue changes the task and cannot distinguish retained uncued competence from task simplification, search-space reduction, or conditional continuation.
-
-Therefore `Temporal Forgetting — storage loss vs access loss` must not sit in WATCH as though untouched.
 
 A future revisit requires a genuinely new identification strategy, explicitly explaining why Topic 05's failure no longer applies.
 
 **Status:** `INTERNAL_COLLISION / TOPIC_05_ARCHIVED / NEW_IDENTIFICATION_REQUIRED`.
 
-## D3. Temporal Spacing / Topic 13
+## D4. Temporal Spacing / Topic 13
 
 The locked four-trial test reproduced repetition damage in 4/4 trials, but `clustered-even` changed sign:
 
@@ -217,11 +219,6 @@ The locked four-trial test reproduced repetition damage in 4/4 trials, but `clus
 Final verdict: `NO_EVIDENCE_SPACING_IN_LOCKED_TEST`.
 
 This is a substantive negative for the registered spacing explanation because the prerequisite repetition damage was present. Do not revive by searching schedules/models/repeated pools.
-
-See:
-
-- `../13_repetition_temporal_spacing/G0_RESULTS.md`
-- `../13_repetition_temporal_spacing/ARCHIVE_SUMMARY.md`
 
 **Status:** `ARCHIVED / DO_NOT_REOPEN_WITH_SCHEDULE_SEARCH`.
 
@@ -262,10 +259,7 @@ There is no Topic 25.
 4. ChronoScope
    -> secondary executable object, advisor fit below learning/memory acquisition topics
 
-5. Topic 22 MedEinst
-   -> obey its existing frozen rerun; do not re-brainstorm it as a new candidate
-
-6. continue broad search
+5. continue broad search
 ```
 
 The search target is **not zero collision**. It is:
