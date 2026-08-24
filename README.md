@@ -48,9 +48,8 @@ A later search round must never resurrect a topic that has a real scientific/ide
 | Priority | Topic | Status | Current gate |
 |---:|---|---|---|
 | 1 | [24 — Where Does Closed-Loop Robustness Live in Hierarchical Robot Foundation Policies?](./24_hierarchical_feedback_attribution/) | **ACTIVE / G0 NEXT** | Replay fidelity and WBC seam-liveness instrument gates passed; run the frozen physical-disturbance attribution G0. |
-| 2 | [16 — Does Citation Turn Hypotheses into Facts?](./16_citation_transmutation/) | **REGISTERED / G0 NOT RUN** | Identification is hardened; next step is the high-precision evidence-provenance G0. |
-
-There is **no Topic 25**.
+| 2 | [25 — When Does Test-Time Reasoning Help Context Use, and When Does It Hurt?](./25_reasoning_context_use_boundary/) | **REGISTERED / REPRODUCTION RECEIPT NEXT** | Reproduce the pinned Weakest-Link Qwen3-8B think/no-think seed relation; only then run the frozen matched atomic-vs-composed G0. |
+| 3 | [16 — Does Citation Turn Hypotheses into Facts?](./16_citation_transmutation/) | **REGISTERED / G0 NOT RUN** | Identification is hardened; next step is the high-precision evidence-provenance G0. |
 
 ---
 
