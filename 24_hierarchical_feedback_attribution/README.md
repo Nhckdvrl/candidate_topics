@@ -1,8 +1,11 @@
 # 24 — Where Does Closed-Loop Robustness Live in Hierarchical Robot Foundation Policies?
 
-> **REGISTERED 2026-08-24.** Both pre-registration instrument gates passed before
-> this folder existed. The physical-disturbance G0 is frozen below and has not yet
-> been run.
+> **G0 RUN, 2026-08-24/25. Verdict: `WBC_LEVEL_DOMINATES`.** Of the recovery
+> `fresh` shows over `actuator_replay`, the WBC/reference-generation seam
+> accounts for essentially all of it (`delta_low = 0.302`, 95% CI
+> `[0.246, 0.358]`); the VLA-level online contribution is not statistically
+> distinguishable from zero (`delta_high = 0.017`, 95% CI `[-0.051, 0.084]`).
+> See [`G0_RESULTS.md`](./G0_RESULTS.md).
 
 ## Natural question
 

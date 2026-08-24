@@ -1,0 +1,118 @@
+{
+  "verdict": "WBC_LEVEL_DOMINATES",
+  "structural_violations": [],
+  "fidelity_control": {
+    "present": true,
+    "n_configs": 30,
+    "fresh": 0.9333333333333333,
+    "vla_replay": 0.9333333333333333,
+    "actuator_replay": 0.9333333333333333,
+    "pass": true
+  },
+  "push_effective": {
+    "present": true,
+    "force_n": 150.0,
+    "median_displacement_m": 0.10157184813847872,
+    "pass": true
+  },
+  "per_cell": [
+    {
+      "force_n": 0.0,
+      "direction": "none",
+      "n_configs": 30,
+      "fresh": 0.9333333333333333,
+      "vla_replay": 0.9333333333333333,
+      "actuator_replay": 0.9333333333333333,
+      "delta_high": 0.0,
+      "delta_low": 0.0,
+      "residual": 0.9333333333333333
+    },
+    {
+      "force_n": 50.0,
+      "direction": "left",
+      "n_configs": 30,
+      "fresh": 0.8333333333333334,
+      "vla_replay": 0.5333333333333333,
+      "actuator_replay": 0.0,
+      "delta_high": 0.30000000000000004,
+      "delta_low": 0.5333333333333333,
+      "residual": 0.0
+    },
+    {
+      "force_n": 50.0,
+      "direction": "right",
+      "n_configs": 30,
+      "fresh": 0.7,
+      "vla_replay": 0.8,
+      "actuator_replay": 0.26666666666666666,
+      "delta_high": -0.10000000000000009,
+      "delta_low": 0.5333333333333334,
+      "residual": 0.26666666666666666
+    },
+    {
+      "force_n": 100.0,
+      "direction": "left",
+      "n_configs": 30,
+      "fresh": 0.26666666666666666,
+      "vla_replay": 0.03333333333333333,
+      "actuator_replay": 0.0,
+      "delta_high": 0.23333333333333334,
+      "delta_low": 0.03333333333333333,
+      "residual": 0.0
+    },
+    {
+      "force_n": 100.0,
+      "direction": "right",
+      "n_configs": 30,
+      "fresh": 0.4,
+      "vla_replay": 0.6,
+      "actuator_replay": 0.2,
+      "delta_high": -0.19999999999999996,
+      "delta_low": 0.39999999999999997,
+      "residual": 0.2
+    },
+    {
+      "force_n": 150.0,
+      "direction": "left",
+      "n_configs": 30,
+      "fresh": 0.06666666666666667,
+      "vla_replay": 0.0,
+      "actuator_replay": 0.0,
+      "delta_high": 0.06666666666666667,
+      "delta_low": 0.0,
+      "residual": 0.0
+    },
+    {
+      "force_n": 150.0,
+      "direction": "right",
+      "n_configs": 29,
+      "fresh": 0.10344827586206896,
+      "vla_replay": 0.3103448275862069,
+      "actuator_replay": 0.0,
+      "delta_high": -0.20689655172413796,
+      "delta_low": 0.3103448275862069,
+      "residual": 0.0
+    }
+  ],
+  "pooled_perturbed": {
+    "fresh": 0.39664804469273746,
+    "vla_replay": 0.37988826815642457,
+    "actuator_replay": 0.0782122905027933,
+    "delta_high": 0.016759776536312887,
+    "delta_low": 0.3016759776536313,
+    "residual": 0.0782122905027933,
+    "n_cells": 179
+  },
+  "bootstrap": {
+    "delta_high": [
+      0.016759776536312887,
+      -0.050561797752809,
+      0.08379888268156427
+    ],
+    "delta_low": [
+      0.3016759776536313,
+      0.2458100558659218,
+      0.35754189944134074
+    ]
+  }
+}
