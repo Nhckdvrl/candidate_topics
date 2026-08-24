@@ -1,8 +1,16 @@
 {
-  "mode": "cot",
+  "repair_version": "g0b_measurement_repair_v2",
   "model": "Qwen/Qwen3-14B",
+  "mode": "cot",
   "seed": 20260823,
-  "n": 256,
+  "sampled_pairs": 256,
+  "max_new_tokens": 32768,
+  "decoding": {
+    "do_sample": true,
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "top_k": 20
+  },
   "sample_case_ids": [
     "case_95908",
     "case_67915",
@@ -261,25 +269,47 @@
     "case_83765",
     "case_41244"
   ],
-  "control_accuracy": 0.20703125,
-  "trap_accuracy": 0.0703125,
-  "control_correct_count": 53,
-  "bias_trap_count": 18,
-  "bias_trap_rate": 0.33962264150943394,
-  "bias_trap_wilson": [
-    0.22686862857429074,
-    0.4740546388917903
+  "control_accuracy": 0.35546875,
+  "trap_accuracy": 0.1328125,
+  "control_correct_count": 91,
+  "bias_trap_count": 34,
+  "bias_trap_rate_among_control_correct": 0.37362637362637363,
+  "bias_trap_rate_wilson_95": [
+    0.28124813194188497,
+    0.4762422520246446
   ],
-  "transition_count": 6,
-  "invalid_rate": 0.8125,
+  "bias_trap_transition_count": 12,
+  "invalid_rate": 0.625,
+  "invalid_reason_counts": {
+    "control:unresolved_final": 109,
+    "trap:unresolved_final": 124
+  },
+  "extraction_method_counts": {
+    "control:explicit_marker": 147,
+    "control:unresolved_final": 109,
+    "trap:explicit_marker": 130,
+    "trap:last_canonical_mention": 1,
+    "trap:resolved_final_line": 1,
+    "trap:unresolved_final": 124
+  },
+  "thinking_diagnostics": {
+    "control_thinking_closed_count": 256,
+    "trap_thinking_closed_count": 256,
+    "control_hit_max_tokens_count": 0,
+    "trap_hit_max_tokens_count": 0
+  },
+  "paper_reference_for_qwen3_14b": {
+    "baseline_accuracy": 0.4412,
+    "bias_trap_rate": 0.5419
+  },
   "gate": {
-    "control_accuracy_ge_0.35": false,
+    "control_accuracy_ge_0.35": true,
     "control_correct_count_ge_50": true,
-    "bias_trap_count_ge_20": false,
+    "bias_trap_count_ge_20": true,
     "bias_trap_rate_ge_0.30": true,
     "bias_trap_wilson_lower_ge_0.20": true,
-    "bias_trap_transition_count_ge_8": false,
+    "bias_trap_transition_count_ge_8": true,
     "invalid_rate_le_0.10": false
   },
-  "verdict": "STOP_SEED_PHENOMENON_NOT_REPRODUCED"
-}\n
+  "verdict": "MEASUREMENT_RUNTIME_FAILURE"
+}

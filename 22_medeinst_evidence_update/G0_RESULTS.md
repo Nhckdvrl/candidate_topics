@@ -2,7 +2,7 @@
 
 ## Current verdict
 
-**RERUN REQUIRED — the first G0b run is measurement-invalid, not a scientific negative.**
+**MEASUREMENT_RUNTIME_FAILURE — repaired G0b completed, but the measurement is still invalid.**
 
 The pair-structure result from G0a remains valid. The first Qwen3-14B CoT behavioral screen must not be used to decide the topic because the inference/scoring stack violated Qwen3 thinking-mode best practices and produced an 81.25% invalid-output rate.
 
@@ -76,9 +76,28 @@ Only the broken measurement implementation is repaired:
 
 No threshold has been relaxed and no model/prompt/sample search is authorized.
 
-## Next action
+## Repaired G0b rerun — completed, measurement-invalid
 
-Rerun:
+The frozen repair v2 rerun completed all 256 pairs on `fvcrc15` using `Qwen/Qwen3-14B`, seed `20260823`, four A100 GPUs, sampling `temperature=0.6`, `top_p=0.95`, `top_k=20`, and `max_new_tokens=32768`.
+
+| Metric | Value | Gate |
+|---|---:|---|
+| control accuracy | 0.3555 (91/256) | pass (>=0.35) |
+| Bias Trap count | 34 | pass (>=20) |
+| Bias Trap rate among control-correct | 0.3736 | pass (>=0.30) |
+| 95% Wilson lower bound | 0.2812 | pass (>=0.20) |
+| diagnosis transitions | 12 | pass (>=8) |
+| invalid-output rate | **0.6250 (160/256)** | **fail (<=0.10)** |
+
+All 256 control and trap thinking traces closed; neither side hit the token limit. The invalid outputs were `unresolved_final` (control 109, trap 124). Because the invalid-rate gate failed, the verdict is `MEASUREMENT_RUNTIME_FAILURE`; no direct-mode G0c was run and no scientific hypothesis verdict is assigned.
+
+The repaired artifact is `artifacts/g0_behavior_cot/summary.json`. The result is not a scientific negative: the behavioral signal gates pass on the valid subset, but 62.5% invalid output makes the measurement unusable under the frozen protocol.
+
+## Follow-up
+
+Under the frozen protocol, direct mode must not run after this runtime failure. Any further attempt requires another explicitly reviewed measurement repair; the current result cannot be used as either reproduction or non-reproduction.
+
+The command used for the completed repair rerun was:
 
 ```bash
 cd 22_medeinst_evidence_update
@@ -89,8 +108,4 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 \
 bash run_g0.sh
 ```
 
-Interpret the repaired G0b exactly as frozen:
-
-- if G0b passes, continue automatically to direct-mode G0c;
-- if G0b fails with a healthy invalid rate (`<=0.10`), treat that as a real reproduction failure and stop;
-- if invalid remains high because thinking still fails to terminate within 32768 tokens, report `MEASUREMENT_RUNTIME_FAILURE` rather than claiming the MedEinst phenomenon is false.
+The frozen interpretation is: because invalid rate remained above 0.10, report `MEASUREMENT_RUNTIME_FAILURE` and do not claim the MedEinst phenomenon is false.
