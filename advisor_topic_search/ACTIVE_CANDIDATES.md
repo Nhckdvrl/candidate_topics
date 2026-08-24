@@ -2,271 +2,278 @@
 
 > 这是 `advisor_topic_search/` 的**唯一当前候选状态表**。
 >
-> `ROUND_*.md` 保存搜索历史与完整审计；本文件只回答：**现在到底哪些题还活着，下一步做什么？**
->
-> 已经 KILL 的题不能因为换模型、换数据、换 probe 偷偷复活；若复活必须写明新的 scientific reason。
+> `ROUND_*.md` 是历史搜索记录；一旦和后来的本地实验冲突，必须以 numbered topic 的 `G0_RESULTS.md` / `ARCHIVE_SUMMARY.md` 为准。
 
 Last updated: 2026-08-24
-Source of current ranking: `ROUND_11_2026-08-24.md`
+Source of current ranking: `ROUND_12_2026-08-24.md`
 
 ---
 
-# 0. Current advisor-fit override
+# 0. Hard rules after internal-history reconciliation
 
-Generic reasoning / CoT / test-time compute / reasoning RL / multi-hop reasoning mechanism remains **advisor-low-priority**, even if the paper-scale science is otherwise strong.
-
-Preferred advisor-facing objects are:
-
-- learning dynamics / developmental trajectories;
-- knowledge acquisition and retention;
-- memory / interference / storage-vs-access distinctions;
-- representation and internal organization after a behavioral object exists;
-- semantic organization / model development;
-- old learning- or memory-science questions made newly testable by checkpoints and causal intervention.
-
-Two hard policies remain active:
-
-1. `REPRODUCTION_RECEIPT_POLICY.md`: no numbered registration before exact local reproduction;
-2. `MOTHER_TOPIC_BRANCHING_POLICY.md`: after reproduction, require several independent scientific branches rather than one fragile causal arrow.
-
----
-
-# A. CURRENT TOP — artifact verified, receipt next
-
-## A1. Positional Imprinting of Parametric Knowledge
-
-**Seed:** NAACL 2025 Main Long Paper / Oral, *Where is the answer? An empirical study of positional bias for parametric knowledge extraction in language model*.
-
-**Seed phenomenon:** moving the same answer-bearing sentence to later positions in training documents strongly reduces later closed-book extraction under vanilla autoregressive training; official code/data-generation/training/evaluation artifact is public.
-
-**New research question:**
-
-> **If each fact is eventually exposed exactly the same number of times at early and late document positions, with the same total budget and an identical final training tail, can the position at which it was first/early encoded still leave a persistent effect on final extractability?**
-
-This is **not** `position matters` and not generic `training order matters`. The matched object is acquisition-context history after aggregate position exposure has been equalized.
-
-Canonical matched schedule shape:
+1. **External overlap is normal.** 2026 年 AI/NLP 不追求“完全没人做过”。Collision audit 问的是：最接近工作都成立以后，是否仍剩下 ACL / EMNLP / NAACL 篇幅的独立主问题、主实验、主结论和后续机制/方法空间。
+2. **Internal failure is evidence, not literature overlap.** 已经在本仓库跑过并停止的 hypothesis / identification route，不能因为新一轮搜题忘记结果而重新升为 active。
+3. Status precedence:
 
 ```text
-EARLY-FIRST: 1,1,5,5 + 1,5,1,5
-LATE-FIRST:  5,5,1,1 + 1,5,1,5
-INTERLEAVED: 1,5,1,5 + 1,5,1,5
+numbered-topic local result / ARCHIVE_SUMMARY
+>
+numbered-topic README
+>
+ACTIVE_CANDIDATES
+>
+ROUND search logs
 ```
 
-All conditions share the same P1/P5 multiset and the same recent `1,5,1,5` washout tail.
+4. Before promoting any search candidate, audit `FAILURES_AND_LESSONS.md` and numbered-topic directories for internal collision.
+5. `REPRODUCTION_RECEIPT_POLICY.md` and `MOTHER_TOPIC_BRANCHING_POLICY.md` remain mandatory.
+6. Generic reasoning / CoT / test-time-compute mechanism remains advisor-low-priority.
 
-**Why currently #1:**
-
-- eligible NAACL Main seed;
-- advisor-aligned learning / memory-development object, not reasoning;
-- surprising seed is already externally established;
-- complete official artifact verified at `omron-sinicx/WhereIsTheAnswer`;
-- upstream commit frozen: `910fcddec93f7400b58257d70abf1dab31f1e179`;
-- same facts / same position multiset / same tail makes the new scientific variable unusually clean;
-- exact-collision audit found neighbors on generic training order and training-order representation, but no matched endpoint test of **position-of-acquisition history**;
-- mother branches are genuinely independent: washout law, storage-vs-access, developmental window, representation, intervention, domain/model generalization.
-
-**Important collision boundary:**
-
-- seed already owns static positional bias and shuffle/D-AR mitigation;
-- ACL 2024 PIT already shows QA-vs-document training order affects knowledge acquisition;
-- *Fresh in Memory* already shows training-order recency is encoded in activations.
-
-Therefore novelty survives only as the strict matched positional-history endpoint question above. Do not sell `LLMs remember training order` as new.
-
-**Important engineering constraint:** official training inherits Hugging Face `Trainer`; JSONL order alone does not guarantee optimizer exposure order. Any history experiment must explicitly freeze the train sampler / phase schedule while preserving optimizer state.
-
-**Frozen receipt card:** `advisor_topic_search/g0/POSITIONAL_IMPRINTING_RECEIPT.md`.
-
-**Next step:** exact official seed reproduction only. No history code or mechanism work before receipt.
-
-**Status:** `#1 / ARTIFACT_VERIFIED / RECEIPT_PENDING / DO_NOT_REGISTER_YET`.
+Detailed policy: `COLLISION_AND_INTERNAL_HISTORY_POLICY.md`.
 
 ---
 
-# B. STRONG SCIENCE — blocked / hold
+# A. TOP SCIENCE / TOP EXECUTABLE SEARCH OBJECTS
 
-## B1. Does Knowledge Arbitration Have a Training History?
+## A1. Does Knowledge Arbitration Have a Training History?
 
 **Seed:** ACL 2026 Main, *How Training Data Shapes the Use of Parametric and In-Context Knowledge in Language Models*.
 
-**Research question:**
+**Question:**
 
-> **If two models consume exactly the same training examples and end with exactly the same empirical data distribution, can different histories of when reliable vs conflicting evidence appeared leave them with persistently different parametric-vs-context knowledge-use policies?**
+> If two models consume the exact same training multiset and end with the same empirical data distribution, can different temporal histories of reliable vs conflicting evidence leave them with persistently different parametric-vs-context knowledge-use policies?
 
-This remains a strong path-dependence / hysteresis question about learning.
+This is a learning-history / hysteresis question, not generic `training order matters`.
 
-**Round-11 correction:** a web trace pointed to an apparent repository named `Training-Dynmaics-of-PK-ICK`, but the exact GitHub object is currently inaccessible / 404 and cannot satisfy the receipt policy.
+A full main-conference narrative remains available despite neighboring training-order work:
 
-Generic `training order matters` is also less novel than first assessed because ACL 2024 PIT and newer early-exposure work already establish broad order/history effects. The candidate survives only as **fixed-multiset hysteresis of a learned knowledge-arbitration policy**.
+- fixed-multiset hysteresis phenomenon;
+- directionality / reversibility / washout;
+- developmental window;
+- replay/interleaving intervention;
+- representation only after behavior stands;
+- continual-pretraining / post-training generalization.
+
+**Blocker:** no trustworthy accessible official reproduction artifact has been verified. Do not reverse-engineer the seed until it reproduces by tuning.
 
 **Status:** `SCIENCE_TOP / HOLD_FOR_ACCESSIBLE_OFFICIAL_ARTIFACT`.
 
-## B2. Parametric Encoding Specificity Across Input Structures
+---
 
-**Seed:** ACL 2026 Findings, *SParK-Eval: Evaluating Structure-Aware Knowledge Acquisition in LLMs for Domain Adaptation to Industrial Records*.
+## A2. Positional Imprinting of Parametric Knowledge
 
-**Research question:**
+**Seed:** NAACL 2025 Main / Oral, *Where is the answer? An empirical study of positional bias for parametric knowledge extraction in language model*.
 
-> **When a fact trained from a table/list fails natural-language QA, was it truly not stored, or is access cue-dependent on the structure in which it was encoded?**
+**Question:**
 
-Alive because it instantiates a clean storage-vs-access / encoding-specificity distinction.
+> If facts ultimately receive identical early/late position exposure counts and the same later washout training, does the position in which a fact was initially acquired leave a persistent difference in final parametric accessibility?
 
-Risks remain:
+External work on positional bias and training-history persistence does **not** kill this topic by itself. The relevant test is whether the acquisition-context object can support a full story:
 
-- Findings rather than ACL Main;
-- no complete official reproduction package verified;
-- formatting-generalization work already narrows novelty.
+- persistent fact-level history effect;
+- washout law and asymmetry;
+- storage/accessibility diagnostics;
+- whether shuffle/D-AR erase history dependence rather than merely improve average accuracy;
+- internal trace / causal analysis;
+- cross-model/domain generalization.
 
-Novelty survives only as **cue-dependent recovery of already-trained structured facts**, not `format matters` or `format augmentation helps`.
+**Artifact:** complete official code/data path verified at `omron-sinicx/WhereIsTheAnswer`, frozen upstream commit `910fcddec93f7400b58257d70abf1dab31f1e179`.
 
-**Status:** `SCIENCE_HOLD / VENUE+ARTIFACT+COLLISION_GATE`.
+**Important G0 repair before implementation:** prefer within-model fact-level counterbalancing after receipt, so early-P1 and early-P5 fact groups share the same optimizer/LR trajectory. Do not interpret three independently trained trajectories as positional imprinting if generic SGD path dependence remains an alternative.
+
+Frozen prerequisite: `g0/POSITIONAL_IMPRINTING_RECEIPT.md`.
+
+**Status:** `TOP_EXECUTABLE / ARTIFACT_VERIFIED / RECEIPT_PENDING / DO_NOT_REGISTER_YET`.
 
 ---
 
-# C. PREVIOUS EXECUTABLE OBJECTS — retained, but require advisor-fit review
+# B. ACTIVE HOLD / SECONDARY SEARCH OBJECTS
 
-## C1. SemTrace
+## B1. Parametric Encoding Specificity Across Input Structures
 
-Seed: ACL 2026 Main, *Sense and Sensitivity: Examining the Influence of Semantic Recall on Long Context Code Understanding*.
+**Seed:** ACL 2026 Findings, SParK-Eval.
 
-Existing numbered object: Topic 21.
+**Question:**
 
-**Status:** `EXECUTABLE / ADVISOR-FIT_REVIEW_REQUIRED`.
+> When structured-data training looks like poor knowledge acquisition under ordinary QA, how much of the loss is true storage failure versus format-bound access?
 
-Reason: concrete artifact-complete phenomenon, but downstream framing can drift into generic reasoning/computation mechanism.
+The paper-sized object is not `try a table-like prompt`. It is whether parametric knowledge becomes format-invariant after acquisition, measured through a controlled encoding × retrieval-format matrix plus development/intervention/generalization.
 
-## C2. ChronoScope
+Neighboring format-diversity work consumes part of the intervention story but does not automatically remove the mother question.
 
-Seed: ACL 2026 Main, *Evaluating Temporal Consistency in Multi-Turn Language Models*.
+**Blockers:** Findings seed, artifact not yet complete/verified, construct must avoid prompt-engineering interpretation.
 
-Existing G0: `advisor_topic_search/g0/chronoscope_drift_g0.py`.
+**Status:** `ACTIVE_HOLD / ARTIFACT+CONSTRUCT_GATE`.
 
-**Status:** `EXECUTABLE / MEMORY-DISCOURSE OBJECT / ADVISOR-FIT_REVIEW`.
+## B2. ChronoScope — Temporal Scope Dynamics
 
-## C3. MedEinst
+**Seed:** ACL 2026 Main, *Evaluating Temporal Consistency in Multi-Turn Language Models*.
 
-Seed: ACL 2026 Main, *MedEinst: Benchmarking the Einstellung Effect in Medical LLMs through Counterfactual Differential Diagnosis*.
+Potential paper object:
 
-Existing G0: `advisor_topic_search/g0/medeinst_pair_structure.py`.
+> How does an established historical reference-time state decay, suffer interference, recover under reinstatement, and compete with the present-day default?
 
-**Status:** `EXECUTABLE / OLD-COGNITIVE-QUESTION / ADVISOR-FIT_REVIEW`.
+This is broader than one `represented vs used` probe and can support decay/interference/reinstatement/default-attractor experiments.
 
-Main unresolved gate: whether edits are local and critical cells dense enough without expert-control proliferation.
+Existing screen: `g0/chronoscope_drift_g0.py`.
 
----
+**Status:** `ACTIVE_B / EXECUTABLE / ADVISOR_FIT_BELOW_A`.
 
-# D. HOLD / WATCH / RESOURCE REFERENCES
+## B3. MedEinst / Topic 22 — evidence update
 
-## D1. Memory Dial
+This is **not a fresh untested search candidate**. It already exists as numbered Topic 22.
 
-ACL 2026 Findings with accessible official code. Useful as a controlled memorization-pressure resource.
+Repository truth:
 
-Potential `same immediate recall, different later stability` question is narrowed by recent early-exposure/retention work.
+- G0a pair locality passed;
+- the first Qwen3-14B behavioral run was measurement-invalid because invalid outputs were 81.25%;
+- the negative label was withdrawn;
+- a frozen measurement repair v2 is documented;
+- a rerun is required before any scientific verdict.
 
-**Status:** `WATCH AS RESOURCE / NOT TOP`.
+Therefore do not describe Topic 22 as simply `EXECUTABLE / advisor-fit review`, and do not call it failed either.
 
-## D2. Knowledge Entropy Decay
-
-ICLR 2025 Oral with strong OLMo-based artifact and excellent learning-dynamics alignment.
-
-Seed already links entropy decay to reduced acquisition/retention and includes a resuscitation intervention, consuming the obvious one-step follow-up space.
-
-**Status:** `STRONG DESIGN REFERENCE / DO NOT FORCE A GAP`.
-
-## D3. In-context representation deployment bottleneck
-
-Seed: ACL 2026 Main, *Language Models Struggle to Use Representations Learned In-Context*.
-
-**Status:** `HOLD_FOR_ARTIFACT / LOWER_AFTER_ADVISOR_RESET`.
-
-## D4. Table DRE
-
-Potentially exact and structured, but generic localization/binding literature is crowded.
-
-**Status:** `DEEP_AUDIT / ARTIFACT_AND_COLLISION_GATE`.
-
-## D5. Context-shaped truth geometry -> source choice
-
-Knowledge-conflict/truth-vector space is crowded; artifact not verified.
-
-**Status:** `DEEP_AUDIT / HOLD_FOR_ARTIFACT`.
-
-## D6. Temporal Forgetting — storage loss vs access loss
-
-Checkpoint-rich and scientifically attractive, but prior storage-vs-access mechanism design was assumption-heavy.
-
-**Status:** `WATCH / DO_NOT_RESCUE_WITH_NEW_PROBE`.
-
-## D7. ImplicitMemBench
-
-Classic memory framing is attractive, but benchmark does not yet provide one clean storage/access mother contradiction.
-
-**Status:** `WATCH / OLD-QUESTION_REFERENCE`.
+**Status:** `NUMBERED_TOPIC_22 / RERUN_REQUIRED / NO_SCIENTIFIC_VERDICT_YET`.
 
 ---
 
-# E. DOWNGRADED / KILLED — do not recycle
+# C. DEEP AUDIT / RESOURCE — not active top pool
 
-| Candidate | Verdict | Main reason |
-|---|---|---|
-| Round-09 thinking helps/hurts context use | `DOWNGRADE / DO_NOT_REGISTER` | advisor-low-priority reasoning object + RecaLLM/Lost-in-Thought near-exact collision |
-| source-level repetition -> generalized source trust | `KILL` | frozen G0: mean transfer `-1.319 pp`, CI crosses 0 |
-| SMI residual -> semantic/fan interference | `KILL AS NEW TOPIC` | CoNLL 2024 already studies LLM fan effect |
-| OAKS repeated revision -> proactive interference | `KILL AS NEW TOPIC` | direct 2026 proactive/retroactive-interference literature + less clean parametric fit |
-| spaced repetition for CPT | `KILL AS NEW TOPIC` | 2026 *When to Review* directly applies spaced repetition to continual pretraining |
-| testing effect / retrieval practice for CPT | `KILL AS NEW TOPIC` | 2026 TELLME directly applies quiz/test-enhanced learning to CPT |
-| annotation-entropy LoRA dynamics as main seed | `NOT ELIGIBLE TOP SEED` | ACL Student Research Workshop, outside current main-seed venue policy |
-| Incomplete Learning follow-up | `KILL AS FOLLOW-UP` | seed already decomposes major causes and interventions |
-| generic Agentic-RL feedback internalization | `KILL` | direct 2026 collisions + prior internal kill |
-| Mem2Act recall->action gap | `KILL` | seed-owned + internal structural collision |
-| BOULDER generic multi-turn degradation | `KILL` | crowded lost-in-conversation / intent-mismatch space |
-| code->CoT training-order advantage | `KILL` | too many coupled explanations |
-| AR-Bench generic information-gain mechanism | `KILL` | directly studied |
-| Reasoning Trap tool hallucination follow-up | `KILL` | seed already provides mechanism |
-| MathIF reasoning-loses-control | `KILL / WATCH ONLY` | crowded reasoning trajectory space |
-| instruction tuning -> misinformation | `KILL` | base->instruct changes too many factors |
-| RFC-Bench reference-free misinformation | `KILL` | conditions differ in available information |
-| fact mutability -> source routing | `KILL` | relation-family confound |
-| general parametric-vs-context reconciliation | `REFERENCE ONLY` | adjacent work already traces entity flow/intervention |
-| LAD / MP-STRUCT | `KILL` | vocabulary/entropy entanglement; control tree grows |
-| reversal-curse semantics follow-up | `KILL` | seed already owns core explanation |
-| personalization factuality mechanism | `KILL` | seed already has representational account + steering |
-| new-knowledge hallucination mechanism | `KILL` | seed already has mechanism + mitigation |
-| general RAG context interference | `KILL / CROWDED` | heavily occupied |
+## C1. Context-shaped truth geometry → source arbitration
+
+External neighbors do not kill it merely because truth-vector / knowledge-conflict work is crowded. Promotion requires a full independent story linking conflict behavior, geometry, causal source choice, and intervention—not another geometry plot.
+
+**Status:** `DEEP_AUDIT`.
+
+## C2. Table DRE
+
+Could still support a main-conference mechanism paper if a clean, dominant referencing/binding bottleneck and causal rescue are established. Current mother framing is not yet strong enough.
+
+**Status:** `DEEP_AUDIT`.
+
+## C3. Memory Dial
+
+Useful controlled memorization-pressure knob. No sufficiently large next scientific question identified yet.
+
+**Status:** `RESOURCE`.
+
+## C4. Knowledge Entropy Decay
+
+Excellent learning-dynamics design reference with strong artifact, but the seed already spans phenomenon → interpretation → intervention. Do not force a tiny adjacent gap.
+
+**Status:** `DESIGN_REFERENCE`.
+
+## C5. ImplicitMemBench
+
+Interesting cognitive-memory inspiration, but construct validity of mapping prompt-induced behavior to human-style implicit memory remains unresolved.
+
+**Status:** `WATCH / INSPIRATION_ONLY`.
 
 ---
 
-# F. Current queue discipline
+# D. INTERNAL TERMINAL OBJECTS — do not accidentally resurrect
 
-There is **still no Topic 25 registration**.
+## D1. SemTrace / Topic 21
 
-Current queue:
+**Terminal local result:** `STOP_UPSTREAM_SEED_NOT_REPRODUCED`.
+
+The exact official frozen run completed on `Qwen/Qwen2.5-Coder-7B-Instruct`, but semantic accuracy was essentially zero at all positions:
 
 ```text
-1. A1 Positional Imprinting
-   -> exact official reproduction receipt
-   -> if REPRODUCED, freeze sampler/history G0
-   -> only if mother G0 survives, register
-
-2. B1 PK/ICK arbitration history
-   -> wait for / locate trustworthy accessible official artifact
-
-3. B2 encoding specificity
-   -> only reopen if venue/artifact/collision gates improve
-
-4. continue broad search for an advisor-fit object that beats A1 on science without losing artifact quality
+edge mean = 0.000625  (required >= 0.30)
+edge-to-middle drop = 0.000625  (required >= 0.20)
 ```
 
-The target shape remains:
+The custom paired mechanism G0 was never run. This is a prerequisite/platform failure for our selected Topic 21 regime, not a general refutation of the paper.
+
+See:
+
+- `../21_semtrace_semantic_state_failure/G0_RESULTS.md`
+- `../21_semtrace_semantic_state_failure/ARCHIVE_SUMMARY.md`
+
+**Status:** `ARCHIVED / DO_NOT_RELIST_AS_EXECUTABLE`.
+
+## D2. Temporal Forgetting / Topic 05
+
+The broad storage-vs-access question is scientifically legitimate, but our registered Topic 05 failed **conceptual identification**: prefix rescue changes the task and cannot distinguish retained uncued competence from task simplification, search-space reduction, or conditional continuation.
+
+Therefore `Temporal Forgetting — storage loss vs access loss` must not sit in WATCH as though untouched.
+
+A future revisit requires a genuinely new identification strategy, explicitly explaining why Topic 05's failure no longer applies.
+
+**Status:** `INTERNAL_COLLISION / TOPIC_05_ARCHIVED / NEW_IDENTIFICATION_REQUIRED`.
+
+## D3. Temporal Spacing / Topic 13
+
+The locked four-trial test reproduced repetition damage in 4/4 trials, but `clustered-even` changed sign:
 
 ```text
-classic learning / memory question
-+ externally anchored LLM phenomenon
-+ exact public training/checkpoint object
-+ clean falsifiable first experiment
--> reproduced mother phenomenon
--> independent behavior / development / mechanism / intervention branches
+-0.001534
++0.010758
++0.001005
+-0.009134
 ```
 
-Do not promote a topic merely because code is complete. Do not promote a fashionable reasoning object because the result looks impressive. Do not turn a failed mother G0 into model/layer/prompt shopping.
+Final verdict: `NO_EVIDENCE_SPACING_IN_LOCKED_TEST`.
+
+This is a substantive negative for the registered spacing explanation because the prerequisite repetition damage was present. Do not revive by searching schedules/models/repeated pools.
+
+See:
+
+- `../13_repetition_temporal_spacing/G0_RESULTS.md`
+- `../13_repetition_temporal_spacing/ARCHIVE_SUMMARY.md`
+
+**Status:** `ARCHIVED / DO_NOT_REOPEN_WITH_SCHEDULE_SEARCH`.
+
+---
+
+# E. Search-log kills / downgrades
+
+These remain historical search decisions, but remember the external-collision rule: a topic is killed by literature only when the closest work leaves insufficient independent paper narrative—not merely because neighbors exist.
+
+| Candidate | Current reason not to promote |
+|---|---|
+| Round-09 thinking helps/hurts context use | advisor-low-priority reasoning object + closest work compresses the title-level story |
+| source-level repetition → generalized source trust | frozen local G0 failed (`-1.319 pp`, CI crosses 0) |
+| SMI residual → semantic/fan interference | closest literature already occupies the main scientific question rather than merely sharing the domain |
+| spaced repetition for CPT | direct method/story overlap plus internal Topic 13 negative on our spacing explanation |
+| testing effect / retrieval practice for CPT | direct quiz/test-enhanced CPT work occupies the main method story |
+| Incomplete Learning follow-up | seed itself consumes the major causal decomposition and interventions |
+| generic Agentic-RL feedback internalization | advisor fit low + direct recent scientific overlap |
+
+---
+
+# F. Current queue
+
+There is no Topic 25.
+
+```text
+1. Positional Imprinting
+   -> exact official receipt
+   -> if reproduced, redesign mother G0 with within-model fact-level counterbalancing
+   -> only register after mother phenomenon survives
+
+2. PK/ICK arbitration history
+   -> remain science-top hold until trustworthy official artifact is accessible
+
+3. Encoding Specificity
+   -> artifact + construct audit
+
+4. ChronoScope
+   -> secondary executable object, advisor fit below learning/memory acquisition topics
+
+5. Topic 22 MedEinst
+   -> obey its existing frozen rerun; do not re-brainstorm it as a new candidate
+
+6. continue broad search
+```
+
+The search target is **not zero collision**. It is:
+
+```text
+mature literature
++ a distinct scientific object
++ enough remaining ACL/EMNLP/NAACL narrative
++ exact reproducible experimental handle
++ no contradiction with our own archived results
+```
