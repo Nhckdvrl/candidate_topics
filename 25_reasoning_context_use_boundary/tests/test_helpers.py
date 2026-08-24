@@ -28,6 +28,21 @@ class Topic25HelperTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             g0._render_atomic_question(decomp, 0)
 
+    def test_shared_query_interface_keeps_composed_dependency(self):
+        decomp = [
+            {"question": "ExampleCo >> founder", "answer": "Ada"},
+            {"question": "#1 >> birthplace", "answer": "London"},
+        ]
+        atomic = g0._format_atomic_query(g0._render_atomic_question(decomp, 1))
+        composed = g0._format_composed_query(decomp)
+        self.assertTrue(atomic.startswith(g0._QUERY_PREFIX))
+        self.assertTrue(composed.startswith(g0._QUERY_PREFIX))
+        self.assertIn("Step 1: Ada >> birthplace", atomic)
+        self.assertNotIn("#1", atomic)
+        self.assertIn("Step 1: ExampleCo >> founder", composed)
+        self.assertIn("Step 2: #1 >> birthplace", composed)
+        self.assertIn("#1 denotes the answer to Step 1", composed)
+
     def test_stable_rank_is_deterministic_and_identity_sensitive(self):
         self.assertEqual(g0._stable_rank("x"), g0._stable_rank("x"))
         self.assertNotEqual(g0._stable_rank("x"), g0._stable_rank("y"))
@@ -38,7 +53,7 @@ class Topic25HelperTests(unittest.TestCase):
         self.assertEqual(g0._percentile(vals, 1.0), 3.0)
         self.assertAlmostEqual(g0._percentile(vals, 0.5), 1.5)
 
-    def test_eligible_case_requires_exact_support_to_both_bank_golds(self):
+    def _clean_bank_and_source(self):
         bank = {
             "question_id": "2hop__1_2",
             "question": "Where was the founder born?",
@@ -57,42 +72,46 @@ class Topic25HelperTests(unittest.TestCase):
             ],
             "question_decomposition": [
                 {
-                    "question": "Who founded ExampleCo?",
+                    "question": "ExampleCo >> founder",
                     "answer": "Ada",
                     "paragraph_support_idx": 0,
                 },
                 {
-                    "question": "Where was #1 born?",
+                    "question": "#1 >> birthplace",
                     "answer": "London",
                     "paragraph_support_idx": 1,
                 },
             ],
         }
+        return bank, source
+
+    def test_eligible_case_requires_exact_support_to_both_bank_golds(self):
+        bank, source = self._clean_bank_and_source()
         case, reason = g0._build_eligible_case(bank, source, "id")
         self.assertEqual(reason, "ok")
         self.assertIsNotNone(case)
         self.assertEqual(case["support_gold_indices"], [0, 1])
-        self.assertEqual(case["atomic_questions"][1], "Where was Ada born?")
+        self.assertIn("Step 1: Ada >> birthplace", case["atomic_queries"][1])
+        self.assertIn("Step 2: #1 >> birthplace", case["composed_query"])
+        self.assertEqual(case["composed_answer"], "London")
+
+    def test_eligible_case_rejects_missing_step_dependency(self):
+        bank, source = self._clean_bank_and_source()
+        source["question_decomposition"][1]["question"] = "Ada >> birthplace"
+        case, reason = g0._build_eligible_case(bank, source, "id")
+        self.assertIsNone(case)
+        self.assertEqual(reason, "step1_has_no_dependency")
+
+    def test_eligible_case_rejects_final_answer_mismatch(self):
+        bank, source = self._clean_bank_and_source()
+        source["question_decomposition"][1]["answer"] = "Paris"
+        case, reason = g0._build_eligible_case(bank, source, "id")
+        self.assertIsNone(case)
+        self.assertEqual(reason, "final_answer_mismatch")
 
     def test_eligible_case_rejects_support_not_in_bank_gold(self):
-        bank = {
-            "question_id": "2hop__1_2",
-            "question": "Q",
-            "answers": ["A"],
-            "gold_docs": [{"text": "gold one"}, {"text": "gold two"}],
-        }
-        source = {
-            "id": "2hop__1_2",
-            "question": "Q",
-            "paragraphs": [
-                {"paragraph_text": "not a bank gold"},
-                {"paragraph_text": "gold two"},
-            ],
-            "question_decomposition": [
-                {"question": "q1", "answer": "a1", "paragraph_support_idx": 0},
-                {"question": "q2", "answer": "a2", "paragraph_support_idx": 1},
-            ],
-        }
+        bank, source = self._clean_bank_and_source()
+        source["paragraphs"][0]["paragraph_text"] = "not a bank gold"
         case, reason = g0._build_eligible_case(bank, source, "id")
         self.assertIsNone(case)
         self.assertEqual(reason, "support_not_unique_bank_gold")
