@@ -5,6 +5,11 @@ The script deliberately imports prompt construction, Qwen3 think/no-think API
 calls, answer extraction, document placement, and Exact Match from the pinned
 Weakest-Link repository. Our code owns only the new matched query manipulation,
 case eligibility, preregistered statistics, and gates.
+
+Important identification rule: atomic and composed conditions use the same
+canonical step-list query interface. We do not compare MuSiQue's relation-style
+decomposition strings directly against the natural-language final question,
+because that would confound computation depth with query format.
 """
 from __future__ import annotations
 
@@ -33,14 +38,24 @@ PROMPT_ID = 22
 BOOTSTRAP_SAMPLES = 5000
 BOOTSTRAP_CI = 0.90
 _PLACEHOLDER = re.compile(r"#(\d+)")
+_QUERY_PREFIX = "Resolve the following evidence chain using the documents."
 
 
 def _normalize_ws(text: Any) -> str:
     return " ".join(str(text or "").split())
 
 
+def _normalize_identity_answer(text: Any) -> str:
+    """High-precision source/bank identity check; not the model-answer scorer."""
+    return _normalize_ws(text).casefold()
+
+
 def _stable_rank(item_id: str, seed: int = SELECTION_SEED) -> str:
     return hashlib.sha256(f"{seed}:{item_id}".encode("utf-8")).hexdigest()
+
+
+def _placeholder_refs(text: Any) -> List[int]:
+    return [int(m.group(1)) for m in _PLACEHOLDER.finditer(str(text or ""))]
 
 
 def _render_atomic_question(decomposition: Sequence[Dict[str, Any]], index: int) -> str:
@@ -66,6 +81,29 @@ def _render_atomic_question(decomposition: Sequence[Dict[str, Any]], index: int)
     if _PLACEHOLDER.search(rendered):
         raise ValueError(f"unresolved placeholder after rendering: {rendered}")
     return rendered
+
+
+def _format_atomic_query(rendered_step: str) -> str:
+    step = str(rendered_step).strip()
+    if not step:
+        raise ValueError("empty rendered atomic step")
+    return f"{_QUERY_PREFIX}\nStep 1: {step}\nReturn the answer to Step 1."
+
+
+def _format_composed_query(decomposition: Sequence[Dict[str, Any]]) -> str:
+    if len(decomposition) != 2:
+        raise ValueError("canonical composed query requires exactly two steps")
+    step0 = str(decomposition[0].get("question", "")).strip()
+    step1 = str(decomposition[1].get("question", "")).strip()
+    if not step0 or not step1:
+        raise ValueError("empty composed step")
+    return (
+        f"{_QUERY_PREFIX}\n"
+        f"Step 1: {step0}\n"
+        f"Step 2: {step1}\n"
+        "In Step 2, #1 denotes the answer to Step 1.\n"
+        "Return the answer to Step 2."
+    )
 
 
 def _percentile(sorted_values: Sequence[float], q: float) -> float:
@@ -152,6 +190,23 @@ def _build_eligible_case(
     if len(decomposition) != 2:
         return None, "not_exactly_2hop"
 
+    raw_step0 = str(decomposition[0].get("question", "")).strip()
+    raw_step1 = str(decomposition[1].get("question", "")).strip()
+    if not raw_step0 or not raw_step1:
+        return None, "empty_decomposition_step"
+
+    # Freeze a clean two-step dependency object. Step 0 must be self-contained;
+    # Step 1 must depend only on Step 0 via #1. Otherwise "atomic vs composed"
+    # is not the intended one-step-vs-two-step manipulation.
+    refs0 = _placeholder_refs(raw_step0)
+    refs1 = _placeholder_refs(raw_step1)
+    if refs0:
+        return None, "step0_has_placeholder"
+    if not refs1:
+        return None, "step1_has_no_dependency"
+    if set(refs1) != {1}:
+        return None, "step1_has_non_step1_dependency"
+
     paragraphs = source_row.get("paragraphs") or []
     gold_docs = bank_row.get("gold_docs") or []
     if len(gold_docs) != 2:
@@ -162,7 +217,7 @@ def _build_eligible_case(
         return None, "bad_bank_gold_texts"
 
     support_gold_indices: List[int] = []
-    atomic_questions: List[str] = []
+    atomic_queries: List[str] = []
     atomic_answers: List[str] = []
 
     for step_idx, step in enumerate(decomposition):
@@ -179,13 +234,14 @@ def _build_eligible_case(
         support_gold_indices.append(hits[0])
 
         try:
-            atomic_question = _render_atomic_question(decomposition, step_idx)
+            rendered_step = _render_atomic_question(decomposition, step_idx)
+            atomic_query = _format_atomic_query(rendered_step)
         except (ValueError, IndexError):
-            return None, "placeholder_resolution_failed"
+            return None, "atomic_query_render_failed"
         atomic_answer = str(step.get("answer", "")).strip()
         if not atomic_answer:
             return None, "missing_atomic_answer"
-        atomic_questions.append(atomic_question)
+        atomic_queries.append(atomic_query)
         atomic_answers.append(atomic_answer)
 
     if set(support_gold_indices) != {0, 1}:
@@ -195,23 +251,38 @@ def _build_eligible_case(
     if not item_id:
         return None, "missing_item_id"
 
-    source_id = str(source_row.get("id", ""))
-    composed_question = str(bank_row.get("question", "")).strip()
     answers = bank_row.get("answers") or []
-    if not composed_question or not answers or not str(answers[0]).strip():
-        return None, "missing_composed_fields"
+    if not answers or not str(answers[0]).strip():
+        return None, "missing_bank_answer"
+    bank_answer = str(answers[0]).strip()
+    final_step_answer = str(decomposition[1].get("answer", "")).strip()
+    if not final_step_answer:
+        return None, "missing_final_step_answer"
+    if _normalize_identity_answer(final_step_answer) != _normalize_identity_answer(bank_answer):
+        return None, "final_answer_mismatch"
+
+    try:
+        composed_query = _format_composed_query(decomposition)
+    except ValueError:
+        return None, "composed_query_render_failed"
+
+    natural_composed_question = str(bank_row.get("question", "")).strip()
+    if not natural_composed_question:
+        return None, "missing_natural_composed_question"
 
     return (
         {
             "item_id": item_id,
-            "source_id": source_id,
+            "source_id": str(source_row.get("id", "")),
             "match_mode": match_mode,
             "bank": bank_row,
-            "atomic_questions": atomic_questions,
+            "raw_decomposition_steps": [raw_step0, raw_step1],
+            "atomic_queries": atomic_queries,
             "atomic_answers": atomic_answers,
             "support_gold_indices": support_gold_indices,
-            "composed_question": composed_question,
-            "composed_answer": str(answers[0]).strip(),
+            "composed_query": composed_query,
+            "composed_answer": final_step_answer,
+            "natural_composed_question": natural_composed_question,
         },
         "ok",
     )
@@ -471,11 +542,13 @@ def main() -> None:
                 "item_id": case["item_id"],
                 "source_id": case["source_id"],
                 "match_mode": case["match_mode"],
-                "atomic_questions": case["atomic_questions"],
+                "raw_decomposition_steps": case["raw_decomposition_steps"],
+                "atomic_queries": case["atomic_queries"],
                 "atomic_answers": case["atomic_answers"],
                 "support_gold_indices": case["support_gold_indices"],
-                "composed_question": case["composed_question"],
+                "composed_query": case["composed_query"],
                 "composed_answer": case["composed_answer"],
+                "natural_composed_question_metadata": case["natural_composed_question"],
                 "selection_rank": _stable_rank(str(case["item_id"])),
             }
             f.write(json.dumps(compact, ensure_ascii=False) + "\n")
@@ -492,6 +565,7 @@ def main() -> None:
         "buckets": list(BUCKETS),
         "distance": DISTANCE,
         "prompt_id": PROMPT_ID,
+        "query_interface": "shared_canonical_step_list_v1",
         "temperature": 0.0,
         "top_p": 1.0,
         "max_tokens": {"no_think": 3000, "think": 10000},
@@ -519,19 +593,19 @@ def main() -> None:
             query_defs = [
                 (
                     "atomic_0",
-                    case["atomic_questions"][0],
+                    case["atomic_queries"][0],
                     case["atomic_answers"][0],
                     gold_positions[case["support_gold_indices"][0]],
                 ),
                 (
                     "atomic_1",
-                    case["atomic_questions"][1],
+                    case["atomic_queries"][1],
                     case["atomic_answers"][1],
                     gold_positions[case["support_gold_indices"][1]],
                 ),
                 (
                     "composed",
-                    case["composed_question"],
+                    case["composed_query"],
                     case["composed_answer"],
                     None,
                 ),
@@ -582,6 +656,7 @@ def main() -> None:
             "bucket": task["bucket"],
             "distance": DISTANCE,
             "query_type": task["query_type"],
+            "query_interface": "shared_canonical_step_list_v1",
             "enable_thinking": think,
             "question": task["question"],
             "gold_answer": task["gold_answer"],
