@@ -2,7 +2,7 @@
 
 ## Current status
 
-**G0a PASSED. G0b-v2 was measurement-invalid. G0b-v3 is frozen and ready. No scientific verdict yet.**
+**G0a PASSED. G0b-v3 completed but remains measurement-invalid. No scientific verdict is assigned.**
 
 Topic 22 has not reached direct-mode G0c or mechanism analysis.
 
@@ -188,6 +188,24 @@ Direct gates:
 
 Only `DIRECT_MODE_MECHANISM_OBJECT_READY` allows mechanism work.
 
+## G0b-v3 — completed, measurement-invalid
+
+The scorer-only rerun used the original v2 `records.jsonl` and did not regenerate any CoT. The cached test split contained **46** distinct canonical labels; the required 46/46 self-mapping preflight passed under both deterministic label orders.
+
+| Metric | Value | Frozen gate |
+|---|---:|---|
+| control accuracy | 0.4258 (109/256) | pass (>=0.35) |
+| control-correct count | 109 | pass (>=50) |
+| exact Bias Trap count | 43 | pass (>=20) |
+| Bias Trap Rate among control-correct | 0.3945 | pass (>=0.30) |
+| 95% Wilson lower bound | 0.3078 | pass (>=0.20) |
+| diagnosis transitions | 14 | pass (>=8) |
+| invalid-output rate | **0.3242 (122/256)** | **fail (<=0.10)** |
+
+V3 resolved 111 previously unresolved final answers through the semantic canonicalizer, reducing invalid rate from 0.6250 to 0.3242. The remaining failures were `control:unresolved_final=64` and `trap:unresolved_final=58`. All substantive gates passed, but the measurement-health gate did not; therefore the verdict is `MEASUREMENT_CANONICALIZATION_FAILURE`, direct-mode G0c was not run, and no scientific negative is claimed.
+
+Artifact: `artifacts/g0_behavior_cot_v3/summary.json`.
+
 ## Run
 
 The v3 repair requires the original v2 records and deliberately refuses to regenerate them implicitly:
@@ -217,7 +235,7 @@ V2_COT_RECORDS=/path/to/original/v2/records.jsonl bash run_g0.sh
 Current verdict:
 
 ```text
-G0B_V3_READY
-NO_SCIENTIFIC_VERDICT_YET
+MEASUREMENT_CANONICALIZATION_FAILURE
+NO_SCIENTIFIC_VERDICT
 DIRECT_MODE_NOT_RUN
 ```
