@@ -1,6 +1,12 @@
 # 26 — Temporal Scope Interference & Reinstatement
 
-**Status: REGISTERED / G0 IMPLEMENTED / EXACT-ELIGIBILITY PREFLIGHT NEXT**
+**Status: ARCHIVED AT PREFLIGHT / STOP_INSUFFICIENT_EXACT_SUPPORT**
+
+The frozen 2026-08-25 preflight found `0/512` exact eligible items in the
+official downloaded artifact. The released file has no turn-level
+`present_day_answer` on any turn, so the registered target and stable-donor
+objects cannot be constructed without changing the frozen metadata contract.
+No tokenizer measurement or model inference was run. See `G0_RESULTS.md`.
 
 ## Natural scientific question
 

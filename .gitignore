@@ -4,6 +4,7 @@
 **/artifacts/
 **/external/
 **/_smoke/
+26_temporal_scope_interference_reinstatement/data/
 *.pyc
 *.npz
 *.pt
