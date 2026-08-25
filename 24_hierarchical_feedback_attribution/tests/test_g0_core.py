@@ -73,6 +73,20 @@ def test_replay_touching_the_server_is_structural_failure():
     assert any("policy server" in v for v in structural_violations(rows))
 
 
+def test_control_column_none_vs_int_push_tick_is_not_a_violation():
+    # Real runner behaviour: on the force=0 control column, `fresh` has no push
+    # to derive a tick from and records push_tick=None, while the two replay
+    # conditions still carry the tape's recorded (unused) tick as an int. This
+    # mismatch is not a contract violation - it crashed g0_core.py in production
+    # (TypeError comparing int and NoneType inside sorted()) before this fix.
+    rows = []
+    for cfg in range(4):
+        rows.append(row(cfg, 0, "none", "fresh", True, push_tick=None))
+        rows.append(row(cfg, 0, "none", "vla_replay", True, push_tick=57))
+        rows.append(row(cfg, 0, "none", "actuator_replay", True, push_tick=57))
+    assert structural_violations(rows) == []
+
+
 def test_nonzero_force_without_an_applied_push_is_structural_failure():
     rows = panel(4)
     target = next(r for r in rows if r["force_n"] > 0)

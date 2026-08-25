@@ -1,8 +1,22 @@
 # 24 — Where Does Closed-Loop Robustness Live in Hierarchical Robot Foundation Policies?
 
-> **REGISTERED 2026-08-24.** Both pre-registration instrument gates passed before
-> this folder existed. The physical-disturbance G0 is frozen below and has not yet
-> been run.
+> **G0 + G1 RUN, 2026-08-24/25.**
+>
+> **G0 verdict: `WBC_LEVEL_DOMINATES`.** Of the recovery `fresh` shows over
+> `actuator_replay`, the WBC/reference-generation seam accounts for
+> essentially all of it (`delta_low = 0.300`, 95% CI `[0.244, 0.356]`); the
+> pooled VLA-level online contribution is not statistically distinguishable
+> from zero (`delta_high = 0.017`, 95% CI `[-0.050, 0.083]`). See
+> [`G0_RESULTS.md`](./G0_RESULTS.md).
+>
+> **G1 verdict: `NAVIGATION_CHANNEL_CAUSES_REVERSAL`.** G0's near-zero pooled
+> `delta_high` hid a left/right sign flip (all three `left` cells positive,
+> all three `right` cells negative). Factoring the VLA command into its two
+> channels shows that flip lives entirely in the navigation/base channel
+> (`+0.20`/`+0.23` CI-excludes-zero under `left`, `-0.20` under `right`); the
+> upper-body channel's effect is at or below the minimum worthy effect in all
+> four estimates, and on `right` two of them are exactly `0.0`. See
+> [`G1_RESULTS.md`](./G1_RESULTS.md).
 
 ## Natural question
 

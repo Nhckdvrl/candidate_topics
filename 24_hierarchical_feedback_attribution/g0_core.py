@@ -201,7 +201,13 @@ def structural_violations(rows: Iterable[dict]) -> list[str]:
             (str(r["config_id"]), float(r["force_n"]), str(r["direction"])), []
         ).append(r)
     # The same disturbance must be delivered identically in all three conditions.
+    # Only meaningful when a push actually exists: on the force=0 control column,
+    # `fresh` records push_tick=None (nothing to derive it from) while the two
+    # replay conditions still carry the tape's recorded tick even though no push
+    # is applied there, so the two are not comparable and not a contract at all.
     for (cfg, force, direction), group in by_key.items():
+        if force <= 0.0:
+            continue
         ticks = {r.get("push_tick") for r in group}
         if len(ticks) > 1:
             bad.append(f"{cfg}/f{force}{direction}: push tick differs across conditions {sorted(ticks)}")
