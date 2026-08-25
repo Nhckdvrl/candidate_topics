@@ -24,13 +24,29 @@ and opposite-signed. `reversal_established_at: [100.0]`.
 
 ## What the shape says, read without over-interpreting a single number
 
-**`left`'s effect shrinks monotonically to exactly zero as force increases:**
-`+0.300 → +0.200 → 0.000`. The `150N`/`left` point estimate is not merely
-non-significant — it is a literal `[0.000, 0.000]` bootstrap CI, meaning the
-per-config `LR - RR` difference is `0` on every single one of the 30 configs,
-the same signature G1 found for the upper-body channel on `left`/`100N`.
-Whatever benefit live navigation replanning provides after a `left` push, it
-is present at `50N`, weakens at `100N`, and is completely gone by `150N`.
+**`left`'s effect on binary task success shrinks monotonically to exactly zero
+as force increases:** `+0.300 → +0.200 → 0.000`. The `150N`/`left` point
+estimate is not merely non-significant — it is a literal `[0.000, 0.000]`
+bootstrap CI, meaning the per-config `LR - RR` difference is `0` on every
+single one of the 30 configs, the same signature G1 found for the upper-body
+channel on `left`/`100N`.
+
+What this establishes is narrower than it might sound: **live vs. replayed
+navigation has exactly zero causal effect on binary task success across
+these 30 configs at 150N/left.** It does not establish that the navigation
+channel "stops working" or is inert at this force — live navigation may still
+be issuing a different `navigate_cmd`, moving the base along a different
+trajectory, or changing contact timing; none of that was measured here, and
+none of it needs to be zero for the *outcome* effect to be zero. This
+distinction matters because this candidate exists partly to catch exactly the
+opposite mistake — treating unchanged behavior as proof a mechanism did
+nothing. That is why P0b was run as a separate gate before Topic 24 was even
+registered: P0's identical replay fidelity under no disturbance did not by
+itself establish the WBC seam was live, and had to be checked directly at the
+command level (see
+[`../embodied_topic_search/prototypes/feedback_source_attribution/P0B_RESULTS.md`](../embodied_topic_search/prototypes/feedback_source_attribution/P0B_RESULTS.md)).
+The same logic applies here: a zero *outcome* effect is not evidence of a zero
+*mechanism* effect unless the mechanism itself was checked.
 
 **`right`'s effect does not show the same monotone pattern.** Point estimates
 are `-0.067` at `50N`, `-0.200` at `100N`, `-0.067` at `150N` — `100N` is the
@@ -46,16 +62,25 @@ absence — the frozen minimum-worthy-effect rule correctly withholds calling it
 established, and that withholding is doing its job rather than hiding a real
 effect.
 
-## Why this is not "the reversal was a fluke at 100N"
+## Structured force dependence beyond the binary reversal verdict
 
-A fluke would predict noise: no consistent sign, no relationship to force
-magnitude. What was found instead is a `left`-side effect that decays
-smoothly and completely with force, and a `right`-side effect that peaks in
-the middle of the grid rather than appearing only once. Both are structured
-patterns, not the signature of a single lucky operating point. The correct
-reading is that `100N` is where the phenomenon is currently *measurable* at
-this sample size, not that it is the only force where the underlying
-mechanism operates.
+The full grid does not establish a force-general reversal. It reveals
+structured heterogeneity:
+
+```text
+left:  +0.300 → +0.200 → 0.000
+right: -0.067 → -0.200 → -0.067
+```
+
+The monotone `left`-side pattern is descriptive rather than a pre-registered
+trend claim — no trend test was frozen in advance, and three points is not
+enough to statistically rule out a fluke shape. Only `100N` independently
+establishes the bidirectional reversal; `50N` and `150N` are consistent with
+it (`left` still positive at `50N`; `right` still negative-signed at both) but
+neither clears the frozen bar on its own. The `right`-side pattern in
+particular is not monotone at all — `100N` is a local extreme within the
+three points measured, not an endpoint of a trend — so no directional
+claim about `right` beyond `100N` is being made here.
 
 ## What this constrains for the next step
 
