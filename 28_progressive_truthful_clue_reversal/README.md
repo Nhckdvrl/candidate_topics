@@ -1,6 +1,6 @@
 # 28 — Information Non-Monotonicity under Progressive Truthful Clues
 
-**Status: REGISTERED / ARTIFACT-ONLY G0 IMPLEMENTED NEXT / NO GPU REQUIRED FOR FIRST SHOT.**
+**Status: REGISTERED / FROZEN ARTIFACT-ONLY G0 IMPLEMENTED / LOGIC TESTS PASS / FULL DATA RUN NEXT.**
 
 ## Natural scientific question
 
@@ -103,13 +103,13 @@ R = N(correct -> wrong) / N(current state correct and next clue exists consecuti
 These are **paper-worthiness / critical-cell density** gates, not hypothesis p-value thresholds:
 
 ```text
-question-metadata join coverage              >= 0.98
+question-metadata join coverage               >= 0.98
 eligible consecutive transitions from correct >= 500
 official correct->wrong events                >= 100
 reversal rate R                               >= 0.02
 unique questions with a reversal              >= 50
-unique non-human configs with a reversal       >= 5
-strict alias-stable reversal events            >= 30
+unique non-human configs with a reversal      >= 5
+strict alias-stable reversal events           >= 30
 ```
 
 Verdict:
@@ -173,6 +173,22 @@ Stop or demote if:
 - a few corrupted questions/configs dominate the effect;
 - released AI rows themselves were generated/backfilled under a monotonicity assumption;
 - a direct recent paper already occupies adjacent truthful-clue `correct -> wrong` reversals.
+
+# Implementation
+
+Committed files:
+
+```text
+README.md
+g0_progressive_reversal.py
+run_g0.sh
+requirements.txt
+tests/test_g0_progressive_reversal.py
+```
+
+Local logic validation completed with Hugging Face network calls stubbed: **8/8 unit tests pass**. The tests cover ID parsing, normalization, exact added-clue extraction, human exclusion, conflicting duplicate removal, gap-transition exclusion, reversal detection, strict-alias support, and frozen verdict gates.
+
+The current execution environment could not install `datasets` because outbound package access was unavailable, so the full public-data run has **not** been claimed as completed.
 
 # Run
 
