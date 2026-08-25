@@ -1,0 +1,76 @@
+{
+  "structural_violations": [],
+  "directions": {
+    "left": {
+      "direction": "left",
+      "n_configs": 30,
+      "RR": 0.03333333333333333,
+      "LR": 0.23333333333333334,
+      "RL": 0.03333333333333333,
+      "LL": 0.26666666666666666,
+      "nav_effect_upper_replayed": 0.2,
+      "nav_effect_upper_live": 0.23333333333333334,
+      "upper_effect_nav_replayed": 0.0,
+      "upper_effect_nav_live": 0.033333333333333326
+    },
+    "right": {
+      "direction": "right",
+      "n_configs": 30,
+      "RR": 0.6,
+      "LR": 0.4,
+      "RL": 0.6,
+      "LL": 0.4,
+      "nav_effect_upper_replayed": -0.19999999999999996,
+      "nav_effect_upper_live": -0.19999999999999996,
+      "upper_effect_nav_replayed": 0.0,
+      "upper_effect_nav_live": 0.0
+    }
+  },
+  "bootstrap": {
+    "left": {
+      "nav_effect_upper_replayed": [
+        0.2,
+        0.06666666666666667,
+        0.36666666666666664
+      ],
+      "nav_effect_upper_live": [
+        0.23333333333333334,
+        0.09999999999999999,
+        0.4
+      ],
+      "upper_effect_nav_replayed": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "upper_effect_nav_live": [
+        0.033333333333333326,
+        0.0,
+        0.10000000000000003
+      ]
+    },
+    "right": {
+      "nav_effect_upper_replayed": [
+        -0.19999999999999996,
+        -0.3666666666666667,
+        -0.033333333333333326
+      ],
+      "nav_effect_upper_live": [
+        -0.19999999999999996,
+        -0.39999999999999997,
+        0.0
+      ],
+      "upper_effect_nav_replayed": [
+        0.0,
+        -0.09999999999999998,
+        0.09999999999999998
+      ],
+      "upper_effect_nav_live": [
+        0.0,
+        -0.09999999999999998,
+        0.09999999999999998
+      ]
+    }
+  },
+  "verdict": "NAVIGATION_CHANNEL_CAUSES_REVERSAL"
+}
