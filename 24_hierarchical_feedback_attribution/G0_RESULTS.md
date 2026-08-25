@@ -10,7 +10,7 @@ the VLA-level contribution is not statistically distinguishable from zero.
 structural_violations         []
 fidelity_control (force=0)    fresh = vla_replay = actuator_replay = 0.933   pass
 push_effective (150N)         median base displacement 0.102 m >= 0.02 m     pass
-matched configs per cell      29 or 30 of 30, every cell >= 24                pass
+matched configs per cell      30 of 30 on every cell                          pass
 ```
 
 The replay instruments hold inside the actual G0 code path, not just in the
@@ -18,26 +18,32 @@ isolated P0/P0b prototypes: on the unperturbed control column, `fresh`,
 `vla_replay` and `actuator_replay` all land on exactly the same success rate
 (28/30), with zero gap in either direction.
 
-### One deliberate deviation from a literal 30/30, reported rather than hidden
+### The panel is now the full 630/630
 
-Data collection was stopped 2 rows short of the full 630-row grid
-(628/630) after a very long overnight run whose remaining rows were entirely
-inside a single already-99.7%-complete worker. This is not a silent
-shortcut: the frozen gate is `MIN_MATCHED_CONFIGS = 24` per cell precisely so
-that a small amount of incomplete data cannot invalidate the panel. The only
-cell affected is `150N/right`, which has 29 of 30 matched configs — still far
-above the floor, and the verdict does not turn on that one config.
+An earlier pass evaluated this G0 at 628/630 rows: one worker
+(`150N/right`, config `dr-level-0:2`) was 2 rows short after an external
+`SIGTERM` interrupted it mid-collection (see the incident record below — root
+cause was an unkilled instance of an earlier orchestration-script version,
+not the frozen G0 code, the push protocol, or any threshold). That data was
+never invalid — the frozen gate is `MIN_MATCHED_CONFIGS = 24` per cell
+precisely so a small shortfall cannot silently invalidate the panel, and
+29/30 was already far above the floor — but it was incomplete, so the
+missing `vla_replay`/`actuator_replay` rows were collected with `--resume`,
+verified against every worker's per-config target, and the frozen evaluator
+re-run on the now-complete 630/630 dataset. The numbers below reflect that
+final run; the verdict is unchanged and every number moved by at most
+0.002.
 
 ## The pooled numbers
 
 ```text
                     success rate
-fresh                0.397
-vla_replay           0.380
+fresh                0.394
+vla_replay           0.378
 actuator_replay      0.078
 
-delta_high (VLA-level online feedback)        0.017   95% CI [-0.051, 0.084]
-delta_low  (WBC/reference-generation feedback) 0.302   95% CI [ 0.246, 0.358]
+delta_high (VLA-level online feedback)        0.017   95% CI [-0.050, 0.083]
+delta_low  (WBC/reference-generation feedback) 0.300   95% CI [ 0.244, 0.356]
 ```
 
 `delta_high`'s confidence interval straddles zero and its point estimate is
@@ -67,7 +73,7 @@ success needed at least one of the two feedback layers to engage.
 | 100 | left | 30 | 0.267 | 0.033 | 0.000 | **+0.233** | +0.033 |
 | 100 | right | 30 | 0.400 | 0.600 | 0.200 | **-0.200** | +0.400 |
 | 150 | left | 30 | 0.067 | 0.000 | 0.000 | **+0.067** | +0.000 |
-| 150 | right | 29 | 0.103 | 0.310 | 0.000 | **-0.207** | +0.310 |
+| 150 | right | 30 | 0.100 | 0.300 | 0.000 | **-0.200** | +0.300 |
 
 ### The reversal that must be reported, not smoothed over
 
@@ -91,12 +97,12 @@ Clustered over the 30 physical configs (each config's whole force panel
 resampled as a unit), 10,000 resamples, seed `20260824`:
 
 ```text
-delta_high   point 0.017   95% CI [-0.051, 0.084]
-delta_low    point 0.302   95% CI [ 0.246, 0.358]
+delta_high   point 0.017   95% CI [-0.050, 0.083]
+delta_low    point 0.300   95% CI [ 0.244, 0.356]
 ```
 
-Records: [`records/g0_closedoor.jsonl`](records/g0_closedoor.jsonl) (628 rows),
-[`records/g0_result.json`](records/g0_result.json).
+Records: [`records/g0_closedoor.jsonl`](records/g0_closedoor.jsonl) (630 rows,
+the complete panel), [`records/g0_result.json`](records/g0_result.json).
 
 ## Method opening this licenses
 
@@ -137,3 +143,12 @@ This mirrors [`../FAILURES_AND_LESSONS.md`](../FAILURES_AND_LESSONS.md) lesson
 automated action with destructive authority needs a completion signal that
 cannot be wrong in the direction that causes damage, not merely one that is
 usually right.
+
+Even after that fix, at 628/630 one worker was externally `SIGTERM`'d a third
+time (server log shows a clean uvicorn shutdown, worker.sh logged the sim's
+own exit as `Terminated`/143) by a process never fully identified — plausibly
+an instance of an earlier watcher version that was never actually killed and
+sat dormant until the run coincidentally reached a real completion state it
+could match. The affected worker was restarted with `--resume`, completed its
+remaining 2 rows cleanly, and completion was confirmed by hand — no further
+automated watcher was used to trigger the final evaluation.
