@@ -215,4 +215,3 @@ Per the frozen protocol, the next step is analysis design only: competitor
 introduction, clue specificity/ambiguity, fixed-multiset order permutation,
 recovery dynamics, and a matched local open-model reproduction. Do not jump to
 mechanism or hidden-state work from this G0 alone.
-

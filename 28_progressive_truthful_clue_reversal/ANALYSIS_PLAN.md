@@ -109,4 +109,3 @@ artifacts/analysis1/
 
 Generated artifacts remain uncommitted. The checked-in result document records
 support, exact revisions, fixed definitions, and limitations.
-
