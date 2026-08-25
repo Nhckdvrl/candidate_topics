@@ -20,9 +20,11 @@ Frozen upstream, same as G0:
     SIMPLE b49c1aea2dd57309bb533219d0d34d6020f3d943
     Psi0   9ad917526394c1cacc72dba08562629936505987
 
-Frozen operating point: force=100N, both directions, the same 30 matched
-configs as G0, using G0's own recorded push tick per config so the disturbance
-is identical to the one G0 already measured a sign flip under.
+Force is a CLI argument (`--force-n`), not a hardcoded constant: G1 ran this
+at 100N; G2 reuses this exact script unchanged to run 50N and 150N. Whichever
+force is passed, directions, configs and push tick are still taken from the
+matching G0 tape, so the disturbance is the identical event G0 measured under
+that force.
 """
 from __future__ import annotations
 
@@ -45,9 +47,6 @@ from topic24_runner import (  # noqa: E402
     TASKS, VirtualClock, extend, _make_sonic_config, Pusher, PUSH_HORIZON,
 )
 
-FORCE_N = 100.0
-
-
 def find_tape(tape_root: Path, dr_level: str, eps_idx: int) -> Path:
     for sub in sorted(tape_root.iterdir()):
         cand = sub / f"{dr_level}_cfg{eps_idx}.json"
@@ -57,6 +56,7 @@ def find_tape(tape_root: Path, dr_level: str, eps_idx: int) -> Path:
 
 
 def run(args: argparse.Namespace) -> None:
+    force_n = args.force_n
     import gymnasium as gym
     import torch
     from gymnasium.wrappers import TimeLimit
@@ -164,7 +164,7 @@ def run(args: argparse.Namespace) -> None:
                     stabilize_steps += 1
                 agent._wbc_policy.lower_body_policy.gait_indices = torch.zeros((1,), dtype=torch.float32)
 
-                pusher = Pusher(model, data, FORCE_N, direction, push_tick, control_dt)
+                pusher = Pusher(model, data, force_n, direction, push_tick, control_dt)
                 vla_tape = extend(tape["vla"], horizon)
                 _replay_state["replay_nav"] = replay_nav
                 _replay_state["replay_upper"] = replay_upper
@@ -204,7 +204,7 @@ def run(args: argparse.Namespace) -> None:
                 row = {
                     "task": spec["short_name"], "env_id": args.env_id,
                     "config_id": config_id, "dr_level": dr_level,
-                    "condition": condition, "force_n": FORCE_N, "direction": direction,
+                    "condition": condition, "force_n": force_n, "direction": direction,
                     "nav_replayed": replay_nav, "upper_replayed": replay_upper,
                     "success": official_success,
                     "steps": frame_idx, "horizon": horizon,
@@ -235,6 +235,7 @@ def run(args: argparse.Namespace) -> None:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--env-id", default="simple/G1WholebodyCloseDoorTeleop-v0")
+    p.add_argument("--force-n", type=float, default=100.0, choices=[50.0, 100.0, 150.0])
     p.add_argument("--data-dir", required=True)
     p.add_argument("--tape-root", required=True, help="root dir containing G0's per-worker tape subdirs")
     p.add_argument("--out", required=True)
