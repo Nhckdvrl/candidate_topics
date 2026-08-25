@@ -1,240 +1,208 @@
-# 导师向选题搜索
+# 导师向选题搜索：统一标准
 
-这个目录用于记录**面向导师真实审查偏好、以 CCF A/B AI / NLP 会议为主搜索池、ACL 第一优先的研究选题搜索**。
+这个目录只做一件事：
 
-这里不是“从最新论文里找一个 gap，然后想办法套一个 probe / SAE / activation patching”的目录，而是一套**候选题过滤系统**。目标不是积累最多的题，而是持续留下少数：
+> **寻找少数真正值得做、符合导师审查习惯、达到 ACL/EMNLP/NAACL 等顶会尺度、并且在我们的资源下有较高概率做出来的研究题目。**
 
-> **问题本身自然且值得问；研究对象已经真实存在；实验能直接区分少数几个有意义的解释；第一轮便宜、清楚、可杀；最好的结果足以形成 ACL/EMNLP/NAACL 尺度的 headline；在我们的资源下真的做得出来。**
+这里不是“从最新论文里找一个 gap，再套 probe / SAE / activation patching”的地方，也不是“先注册很多 candidate 再慢慢试”的地方。
 
-当前候选状态统一看：
+**README 是唯一总标准。** 如果某个 `ROUND_*.md`、旧 candidate、聊天记录与这里冲突，以本 README 为准。
+
+当前候选只看：
 
 ```text
 advisor_topic_search/ACTIVE_CANDIDATES.md
 ```
 
-`ROUND_*.md` 保存每轮搜索、collision audit、升降级和失败历史；`g0/` 只放真正决定候选生死的 prerequisite / first-shot experiments。
+搜索历史放在 `ROUND_*.md`；真正决定生死的 first-shot / prerequisite 实验放在 `g0/`。
 
 ---
 
-# 0. 最重要的原则
+# 1. 我们到底要什么题
 
-1. **先问“这是一个好科学问题吗”，再问“能不能做机制”。** mechanism 是一种可能的深化方式，不是选题起点，也不是默认贡献。
-2. **组内已经做成论文/成熟项目的题，是最高优先级的选题 calibration。** 它们不是领域边界，但比“网上看起来像 ACL 的题”更能说明导师认可什么问题尺度、实验形状和 novelty。
-3. **实际可行性优先于题目看起来漂亮。** 这里的可行性不仅是 GPU 能不能跑，还包括 time-to-scientific-question、prerequisite chain depth 和失败后的 information gain。
-4. **导师关心“证明出来以后是否值得高兴”。** 最好结果如果只是“嗯，合理”，降级；如果一个反直觉结果本身就足够改变理解，即使没有复杂机制，也可以是好题。
-5. **最好只赌一个真正的科学问题。** 不要同时赌 seed 能复现、open model 有现象、measurement 有效、critical cell 足够、mechanism 也成立。
-6. **controls 应该服务于 competing explanations，而不是维持一个摇摇欲坠的 claim。** gate 和 controls 越写越复杂，通常说明题本身越来越不自然。
-7. **题目/标题最好让人一眼看到研究对象和问题。** 不要把 method 名、benchmark 名或“mechanistic analysis”放在问题前面。
-8. **主 seed venue 有硬约束。** ACL 第一优先；NAACL / EMNLP 其次；NeurIPS / ICML / AAAI / IJCAI 中与 NLP/LLM 直接相关的工作可进入主池。低优先级 venue 只做背景、collision、方法参考。
-9. **我们的资源画像是：现金少、人工标注能力少、GPU 相对充足。** 少 API、少新标注；open-weight + controlled training / representation analysis / causal intervention 可以重 GPU。
-10. **“分析型论文”完全允许。** 如果问题自然、变量清楚、结果系统且有解释力，不要求强行升级成 hidden-state causal mechanism。
+一个好候选至少同时满足下面六件事。
+
+## 1.1 问题本身自然
+
+不用任何 mechanism / benchmark / method 名，也能用一句普通话说明：
+
+```text
+为什么会发生 X？
+LLM 是否真正拥有 Y？
+X 和 Y 到底如何交互？
+LLM 时代到来后，旧现象 Z 是否发生变化？
+一个真实系统为什么在条件 C 下稳定失败？
+```
+
+如果必须先解释三分钟技术背景，别人才能理解“为什么值得问”，优先级下降。
+
+## 1.2 最好结果值得高兴
+
+先假设最理想结果出来，再问：
+
+> **如果这是论文标题或摘要第一句，我会觉得“原来是这样”，还是“嗯，这不是废话吗”？**
+
+值得高兴的结果可以是：
+
+- 一个反直觉现象；
+- 一个清楚的因素分解；
+- 一个此前没被系统回答的 interaction / trade-off；
+- 一个旧科学问题在 LLM 时代得到新的答案；
+- 一个 representation–behavior dissociation；
+- 一个真实系统 failure 被定位到明确条件；
+- 一个可直接使用的 practical rule。
+
+**不要求每个题都做 mechanism。**
+
+## 1.3 题目宽度对齐 NLP / AI 顶会
+
+目标形状通常是：
+
+```text
+一个清楚问题
++ 一个自然 measurement / experimental handle
++ 2–4 条 headline findings
++ 少量关键 controls
++ analysis / mechanism / intervention / method 中至少一种自然深化
+```
+
+不要：
+
+```text
+整个 LLM reasoning 的统一理论
+某 prompt 换词掉 1.3 分
+再做一个 leaderboard benchmark
+已有 phenomenon 上第一次用 SAE
+换模型 / 换语言 / 换数据集作为主要 novelty
+```
+
+## 1.4 第一枪必须直接碰科学问题
+
+理想路径：
+
+```text
+released artifact
+→ one-model sanity check
+→ 我们自己的 G0
+```
+
+不理想：
+
+```text
+重建 upstream 环境
+→ 复现整篇 seed paper
+→ 满足 relation A
+→ 满足 panel B
+→ eligibility C
+→ 才能跑我们的 G0
+```
+
+**真正的 scientific question 离开工越远，题越差。**
+
+## 1.5 实际做得出来
+
+我们不是“总体资源少”，而是：
+
+```text
+现金少
+人工标注能力少
+GPU 相对充足
+```
+
+因此：
+
+- 不依赖大规模付费 closed-model API；
+- 不依赖大规模新人工标注；
+- 优先公开数据、gold labels、released predictions / traces / logits；
+- 优先 open-weight model、公开 checkpoint、程序化 / executable labels；
+- 现象站住以后，GPU-heavy 的 controlled training、checkpoint analysis、probing、patching、SAE、steering 都可以做。
+
+GPU 应该用来**深入一个已经存在的问题**，不是大 sweep 挖一个可能根本不存在的 phenomenon。
+
+## 1.6 负结果也有信息
+
+好的 G0 即使失败，也应该缩小解释空间。
+
+例如：
+
+```text
+A 不成立，但 B 成立
+→ failure 更像 encoding 而不是 readout
+```
+
+坏的失败是：
+
+```text
+seed relation 没复现
+→ stop
+→ 除了“没复现”什么都没学到
+```
 
 ---
 
-# 1. 组内研究正例：导师真正接受的题是怎么长出来的
+# 2. 组内正例：导师真正接受什么 research shape
 
-这一节来自实验室 Slack 中 `r_xiang / r_han / r_hamdi / r_kisako` 等研究频道，以及 `r_utami / r_sato / r_tsujimoto / r_yano` 等成熟项目。这里记录的不是成员履历，而是**选题生成规律**。
+这一节来自实验室 Slack 中 `r_han / r_hamdi / r_kisako / r_utami / r_sato / r_tsujimoto / r_yano / r_xiang` 等研究频道。
 
-> 重要：组内正例用于校准“问题长什么样”和“导师会追问什么”，不改变本目录的主 seed venue policy。某个组内项目即使发表于本目录不作为主 seed 的 venue，也仍然可以作为 research-shape 正例。
+这里的目的不是列成员履历，而是校准：
 
-## 1.1 `r_han` — 经典语义资源 × LLM 时代的新问题
+> **什么问题导师觉得自然，什么实验形状能一路长成论文，导师反复会追问什么。**
 
-代表性方向：**Definition Generation for Semantic Frames with In-Context Learning**，以及 FrameNet frame relation 的自动补全/估计。
+| 组内方向 | 研究形状 | 最重要的启发 |
+|---|---|---|
+| `r_han`：Frame semantics / FrameNet generation & relation completion | 经典 NLP 资源 × LLM 时代的新能力 | old NLP problem/resource 完全可以重新成为好题；关键是新问题，不是“换 LLM 再跑” |
+| `r_hamdi`：real vs fictional / internal status representation | 自然 construct → matched controls → representation → causal behavior | 如果做机制，先把 construct 隔离干净；probe 不是贡献终点 |
+| `r_kisako`：dimensionality reduction × quantization | 两个成熟因素 × 一个统一 storage-budget axis | interaction / trade-off analysis 本身可以是完整论文，不需要硬上机制 |
+| `r_utami`：LLM 时代 academic English 的 native-language signal | 自然社会/语言变化问题 × 可解释 proxy | 问题本身重要时，method 可以简单；重点是 proxy 和 alternative explanations |
+| `r_sato`：character-level information acquisition | 已知 phenomenon → competing factors → controlled experiments | 最值得模仿：先提出 2–4 个自然解释，再直接控制 data/tokenizer/distribution 去区分 |
+| `r_tsujimoto`：semantic frame induction / program verification | 旧概念体系 × 自动诱导；goal-first practical problem | old scientific construct 仍可作为 anchor；practical 题也要从目标而不是方法出发 |
+| `r_yano`：FrameBench / implicit frame-semantic understanding | 旧 task formulation → 更接近真正 scientific question 的 measurement | novelty 可以来自“重新定义我们真正应该测什么”，不是新模型 |
+| `r_xiang`：retrieval-agent safety（早期方向） | concrete system failure × controlled normal/adversarial contrast | 真实 failure 可以做，但“攻击后分数下降”不够，必须继续问什么时候、为什么、怎么修 |
 
-真正的问题不是“LLM 能不能做一个 FrameNet task”，而是：
+从这些正例里抽出来的共同规律：
 
-> 人工构建的、可解释的 frame-semantic knowledge，LLM 是否已经隐式掌握？如果要生成/补全这种知识，哪些信息与 demonstration 真正有用？
-
-研究形状：
-
-```text
-成熟旧资源 / 旧问题（FrameNet）
-→ LLM 时代出现新的生成与内化能力
-→ 自然的新问题
-→ random vs similar demonstrations / relation completion / hard negatives
-→ frame-level generalization 与 leakage control
-```
-
-**要学的东西**：
-
-- “old NLP problem/resource × LLM”本身可以是很强的题，不需要硬做机制；
-- 关键是说明为什么这个旧问题在 LLM 时代仍然重要，而不是“因为以前有人做 FrameNet”；
-- generalization unit 必须和 scientific claim 一致，例如按 frame 而不是按 example 随机切分；
-- reviewer/advisor 会追问：这和已有 frame identification / WSD / resource construction 到底有什么本质区别？
-
-## 1.2 `r_hamdi` — 一个简单自然 construct，先隔离，再做到 causal
-
-代表性方向之一：**real vs fictional / ontological status 的内部表示**。
-
-好题的核心不是“做一个 probe 看真实/虚构能不能分类”，而是：
-
-> 模型是否真的把“现实存在性”作为一个独立于 familiarity / entity knowledge 的属性表示？这个表示是否因果影响最终判断？模型与人的未知实体判断是否存在系统差异？
-
-研究形状：
-
-```text
-非常容易理解的自然问题
-→ familiarity-matched / domain-matched controls
-→ cross-domain generalization
-→ representation evidence
-→ causal intervention
-→ behavior–representation dissociation
-→ rare / unknown cases 作为更强的一步
-```
-
-另一个方向把“随机/任意选择”拆成可读出的 internal mode 与可写入的 control direction，再用 gated intervention 验证 specificity。
-
-**要学的东西**：
-
-- 如果做 mechanism，先把 construct 隔离干净；
-- probe 不是终点，causal intervention 应回答原问题，而不是为了“更机制”而加；
-- famous/easy cases 得到预期结果不够，导师会继续追问 rare / unseen / counterfactual cases；
-- “技术上更复杂/几何上更新”不等于 payoff 更高。一个 nonlinear geometry 结果如果只是“果然比 linear 更复杂”，不一定是好题。
-
-## 1.3 `r_kisako` — 两个成熟因素 × 一个自然统一轴，也可以成为完整论文
-
-当前方向：**text embedding 的 dimensionality reduction × quantization interaction**。
-
-核心不是发明新的 compression algorithm，而是把两个成熟压缩手段放到统一 storage budget 下：
-
-```text
-storage ≈ bits × dimensions
-```
-
-然后跨 classification / clustering / retrieval / STS 等任务系统回答：
-
-> 在固定存储预算下，应该把容量花在更多维度还是更多 bit？dimension reduction 与 quantization 是否存在 task-dependent interaction？
-
-过程中曾出现非常反直觉的低维低 bit 结果，导师的第一反应不是“赶紧写机制”，而是：**如果这个结果是真的，而且能解释，单这个现象都很有价值。** 随后优先排查 normalization / quantizer / PCA whitening 等 artifact。
-
-**要学的东西**：
-
-- mechanism 不是必需条件；**自然统一轴 + 系统 interaction + 反直觉 finding + 实用结论**本身可以够强；
-- 标题应直接让人看到研究对象，例如“次元削減と量子化の相互作用”，而不是方法名堆砌；
-- 一个怪结果首先要做 artifact audit，不能把 bug 当 phenomenon；
-- 好分析题应能回答用户/研究者真实会问的 trade-off，不只是画很多曲线。
-
-## 1.4 `r_utami` — 自然社会/语言问题 × 简单可解释 proxy
-
-EMNLP 2026 Main 方向：**The Impact of LLMs on Native Language Signals in English Academic Writing**。
-
-问题一句话就能理解：
-
-> 随着 LLM 广泛进入学术写作，作者母语留下的 English writing signal 是否正在减弱/同质化？
-
-做法并不依赖复杂机制，而是比较 pre-neural / pre-LLM / post-LLM 等时期，用 L1 detectability 作为 measurable proxy，并辅以 LLM rewriting experiment。
-
-**要学的东西**：
-
-- 一个非常自然、读者本来就关心的问题，可以比“最新模型内部某个 feature”更有论文价值；
-- method 可以简单，但 proxy 必须能对应原问题；
-- 需要主动控制 topic distribution、时代变化、数据来源等 alternative explanations；
-- 导师会反复要求把标题/开头写成“问题本身”，而不是“我们做了一个分类实验”；
-- story clarity 比“把所有做过的实验都塞进去”重要。
-
-## 1.5 `r_sato` — 已知现象 → competing factors → controlled experiment
-
-代表性方向：**How Do Language Models Acquire Character-Level Information?**
-
-起点是一个非常明确的现象：
-
-> subword-based LM 并没有显式 character-level input unit，却仍能保持 character-level information；这种信息到底从哪里来？
-
-研究没有先去找 hidden-state circuit，而是系统控制三类变量：
-
-```text
-pretraining data
-+ tokenizer
-+ classifier train/eval data
-```
-
-再把候选因素拆成 segmentation-induced 与 segmentation-independent 两类，分别考察 merge rules、orthographic/phonological regularity、character bigram、string length、syntactic information 等。
-
-**要学的东西**：
-
-- 这是最值得模仿的“分析型机制”形状：**自然 phenomenon → 2–4 个 candidate explanations → 每个 explanation 都有直接 controlled experiment**；
-- “机制”不等于 activation patching。控制数据生成过程、tokenizer、训练分布，本身就是 causal/diagnostic handle；
-- 导师会主动把“解明 mechanism”改成更克制的“分析”，如果证据不足以支持 100% mechanism claim；
-- 如果结果可能只对特定 corpus 成立，就把它写成 limitation，不要靠额外大 sweep 假装 universal；
-- 组内反馈里这个项目的**研究生长过程本身**被明确评价为很值得肯定：先观察差异，再不断提出并排除具体因素。
-
-## 1.6 `r_tsujimoto` — 旧概念体系 × 自动诱导；以及 goal-first 的实用问题
-
-成熟方向之一是 **semantic frame induction**：
-
-```text
-FrameNet / human semantic analysis
-→ LM representation / metric learning / clustering
-→ 自动诱导已有与潜在新 frame
-→ quantitative alignment + qualitative novel clusters
-```
-
-后续也在探索 program verification / automatic test-case generation 一类可程序验证的实用问题。
-
-**要学的东西**：
-
-- 旧的语义资源/认知概念可以作为 scientific anchor，而不是被“LLM 已经很强”自动淘汰；
-- practical topic 的标题也应以**目标/问题**为中心，例如“为了更高效地定位 bug，如何生成测试用例”，而不是“方法 A 与 B 比较”；
-- concrete examples 是研究讨论的一部分，不只是 presentation decoration。
-
-## 1.7 `r_yano` — 把“人隐式理解什么”变成比 label prediction 更本质的评价
-
-当前成熟方向：**FrameBench / frame-semantic language understanding**。
-
-核心问题不是让 LLM 预测一个预定义 frame label，而是：
-
-> 不告诉模型 FrameNet label/definition 时，LLM 能否像人一样，从上下文中隐式区分 frame-semantic distinctions？
-
-这一步把“resource label prediction”重新定义成更接近 human implicit semantics 的自然语言理解问题，并通过人工 sanity check、generator generalization、qualitative difficult/easy cases 等确保 benchmark 真正在测目标 construct。
-
-**要学的东西**：
-
-- 好 novelty 经常不是“新模型/新方法”，而是**把旧 task formulation 改成更接近真正 scientific question 的 measurement**；
-- benchmark paper 也可以很强，但必须让 task formulation 本身回答一个明确问题，而不是再做一个 leaderboard；
-- 与已有 WSD / frame identification 的区别必须从**研究目的**解释，而不是只说 output format 不同；
-- reviewer 要一个额外 generator/control 时，如果它直接验证 benchmark construct 的 robustness，就值得做；这和 Topic 25 那种昂贵 prerequisite tax 完全不同。
-
-## 1.8 `r_xiang` — concrete agent failure / safety setting
-
-当前方向之一是**对话型 retrieval agent 在 adversarial input 下的 safety evaluation**：normal vs adversarial tasks，观察 answer correctness、unsafe behavior / query、safe refusal preservation、retrieval steps 等。
-
-这是早期方向，不能像已发表项目一样当“成功模板”，但它说明另一种导师可接受形状：
-
-```text
-真实系统对象（retrieval agent）
-+ 明确 failure setting（adversarial input）
-+ 可解释行为指标
-+ controlled normal/adversarial contrast
-```
-
-如果后面能找到一个稳定且非平凡的 failure mechanism / mitigation，它可以成长；如果只是“攻击后分数下降”，则不够。
+1. **问题先于方法。**
+2. **研究对象往往本来就存在，不需要先造一个复杂 seed phenomenon。**
+3. **少数 competing explanations 比大量 settings 更重要。**
+4. **分析型论文完全成立，不强迫 mechanism。**
+5. **反直觉 finding 很值钱，但先排 artifact。**
+6. **标题/第一页应直接让人看到研究对象，而不是 method 名。**
+7. **claim 强度要和证据强度一致。** 证据只支持 analysis，就不要硬写 mechanism。
 
 ---
 
-# 2. 从组内正例抽出来的“导师可接受题型”
+# 3. 优先寻找的六类题
 
-以后找题不能只找 mechanism gap。至少优先考虑下面六类：
+以后找题优先落到下面六种 research shape 之一。找不到对应 shape，不代表一定不能做，但要额外谨慎。
 
-### Type A — 已知自然现象 → 因素分解
+## Type A — 已知自然现象 → 因素分解
 
 代表：`r_sato`。
 
 ```text
-模型有一个已知但解释不充分的能力/现象
-→ 提出少数几个可竞争解释
-→ 控制训练数据 / tokenizer / input / evaluation distribution
-→ 逐项验证哪些因素真的贡献
+模型已有一个稳定能力 / failure / anomaly
+→ 提出 2–4 个自然 competing explanations
+→ 控制 training data / tokenizer / input / distribution / interface
+→ 逐项判断哪些因素真的贡献
 ```
 
-### Type B — 经典 NLP / cognitive / resource 问题 × LLM 时代的新能力
+这是当前**最高优先级形状之一**。
+
+## Type B — 经典 NLP / cognitive / resource 问题 × LLM 时代的新 measurement / capability
 
 代表：`r_han / r_tsujimoto / r_yano`。
 
-不是“老任务用新模型再跑一遍”，而是：
+核心不是：
 
-> LLM 出现后，旧问题里以前无法直接问的部分是否现在可测？旧 task formulation 是否已经不再对应真正的 scientific question？
+> 老任务 + 新模型。
 
-### Type C — 两个成熟因素 × 一个自然 interaction / budget axis
+而是：
+
+> **LLM 出现后，以前无法直接问的问题是否现在可测？原来的 task formulation 是否已经不再对应真正想知道的 scientific question？**
+
+导师明确在意这类“老问题在 LLM 时代能否有更好的处理方式”。
+
+## Type C — 两个成熟因素 × 一个自然 interaction / budget axis
 
 代表：`r_kisako`。
 
@@ -242,174 +210,304 @@ FrameNet / human semantic analysis
 成熟因素 X
 ×
 成熟因素 Y
-→ 以前各自研究很多，但 interaction / trade-off 没被系统回答
-→ 用一个自然预算或约束统一比较
+→ 以前分别研究很多
+→ interaction / trade-off 没有被系统回答
+→ 用一个自然预算 / 约束统一比较
 ```
 
-这种题**不需要强行做机制**，但必须得到可解释、task-dependent、最好有反直觉的结构性 finding。
+要求：结果必须有结构，不是画二维表。
 
-### Type D — 一个自然社会/语言变化问题 × 可解释 measurable proxy
+## Type D — 自然社会 / 语言变化问题 × 可解释 proxy
 
 代表：`r_utami`。
 
-重点是问题本身重要、proxy 对应问题、alternative explanations 控得住，而不是模型技术多新。
+适合问题本身重要、可观测数据已存在、proxy 可解释、alternative explanations 能控制的题。
 
-### Type E — 自然 construct → representation → causal behavior
+## Type E — 自然 construct → representation → causal behavior
 
 代表：`r_hamdi`。
 
-只有 construct 已经通过 matched controls 被隔离，才进入 probe / steering / causal intervention。不能从“我想做 activation patching”倒推题目。
+只有满足下面顺序才做：
 
-### Type F — concrete system failure → controlled failure analysis / mitigation
+```text
+construct 自然
+→ matched controls 隔离 construct
+→ representation evidence
+→ causal intervention 回答原问题
+```
 
-代表：`r_xiang` 的 agent safety 方向。
+禁止：
 
-必须从真实系统 failure 出发；单纯 benchmark score drop 不够，最好能找到**什么时候失败、为什么失败、怎么有针对性修复**。
+```text
+我想做 SAE / probe / patching
+→ 再找一个题套上去
+```
+
+## Type F — concrete system failure → controlled diagnosis / mitigation
+
+代表：agent / retrieval / safety / tool-use 等真实系统问题。
+
+要求至少回答三件事中的两件：
+
+```text
+什么时候失败？
+为什么失败？
+怎样有针对性修复？
+```
+
+单纯 score drop 不够。
 
 ---
 
-# 3. 导师反馈中反复出现的写题/做题偏好
+# 4. Seed / venue policy
 
-## 3.1 Problem first，标题和第一页就要能想象研究对象
+## 4.1 主 seed 范围
+
+主搜索池原则上只使用 **CCF A/B 的 AI / NLP 会议**：
+
+```text
+ACL                 第一优先
+NAACL / EMNLP       第二优先
+NeurIPS / ICML
+AAAI / IJCAI        补充与 NLP / LLM 直接相关的工作
+```
+
+低优先级 venue（包括 EACL 等）可以用于：
+
+- 背景；
+- exact collision；
+- 方法参考；
+- old-question anchor；
+- 组内 research-shape calibration。
+
+但**不能仅凭一个漂亮 gap 作为主 seed 升进 ACTIVE**。
+
+## 4.2 优先挖哪里
+
+优先看：
+
+- main paper 的 anomaly；
+- error analysis；
+- appendix 中的 unexpected result；
+- model-size / training-stage / task-condition dissociation；
+- 作者已经公开但没有继续追的问题；
+- 经典 NLP / cognitive / information-science 问题；
+- 实际系统中稳定出现的 failure。
+
+**不要主要靠 Future Work 生造 gap。**
+
+---
+
+# 5. 候选晋级的 8 个硬 Gate
+
+原来的大量 gate 合并为下面八个。它们是正式 candidate 的核心审核标准。
+
+## G1 — Natural Question
+
+能否不用方法名，用一句普通话解释：
+
+> **我们到底想知道什么，为什么值得知道？**
+
+明显失败：不注册。
+
+## G2 — Scientific Anchor + Venue Scale
+
+必须至少有一个明确 anchor：
+
+```text
+已知 phenomenon / anomaly
+经典 scientific question
+成熟资源 / task 的新 measurement 问题
+真实 system failure
+```
+
+并且最好结果能自然长成 ACL/EMNLP/NAACL 等尺度的 2–4 条 headline findings。
+
+## G3 — Scientific Novelty
+
+novelty 必须是 scientific，而不是 configuration。
 
 优先：
 
+- 新的因素分解；
+- 新 interaction / trade-off；
+- old question 在 LLM 时代的新答案；
+- 更正确的 measurement / formulation；
+- 稳定 dissociation / reversal；
+- 明确 system bottleneck。
+
+降级：
+
+- 换模型；
+- 换语言；
+- 换 benchmark；
+- 已有现象上第一次用某个 interpretability method。
+
+## G4 — Competing Explanations / Interaction
+
+进入 ACTIVE 前至少满足一个：
+
 ```text
-X 为什么发生？
-X 与 Y 如何交互？
-LLM 是否真正拥有 Z？
-随着 LLM 时代到来，旧现象 Z 是否改变？
+有 2–4 个自然 competing explanations
+或
+有一个清楚、自然的 interaction / budget axis
 ```
 
-而不是：
+如果唯一计划是“看看 hidden state 有什么”，不进 ACTIVE。
+
+## G5 — Direct G0 + Low Prerequisite Tax
+
+第一枪必须尽量直接碰我们的科学问题。
+
+健康：
 
 ```text
-A Mechanistic Analysis of ...
-A Comprehensive Benchmark of ...
-Using Method X for Task Y
+released data/model
+→ quick sanity
+→ G0
 ```
 
-## 3.2 一个 paper 最好能浓缩成 2–4 条 headline findings
-
-常见健康形状：
+危险：
 
 ```text
-1. 先确认主现象
-2. 拆出最重要的因素 / dissociation
-3. 用一个关键 control 排除最自然 alternative explanation
-4. 再走一步得到 surprising implication / practical rule / causal intervention
+复杂 upstream reproduction
+→ 多个 eligibility gate
+→ 才到 G0
 ```
 
-不是实验越多越好。
+原则：
 
-## 3.3 “反直觉”很值钱，但先排 artifact
+- fragile prerequisite 尽量不超过一层；
+- receipt 成本应明显低于核心 G0；
+- prerequisite 失败时最好仍有科学信息。
 
-如果出现违反直觉的结果，优先级上升；但必须先查：
+**G5 明显失败：不注册。**
+
+## G6 — Artifact + Resource Fit
+
+TOP 候选尽量具备：
+
+```text
+released dataset
++ exact model/checkpoint
++ prompt / scoring recipe
++ reproduction code / released outputs
+```
+
+资源硬限制：
+
+- phenomenon-existence G0 不依赖大量 closed API；
+- 第一枪不依赖大规模新 annotation；
+- 核心指标最好自动 / 程序化可判；
+- 有 open-weight regime；
+- GPU-heavy 后续允许，但不能用 sweep 找 phenomenon。
+
+缺两项以上 artifact，且 G0 还不简单：降级。
+
+## G7 — Clean Identification + Killability
+
+实验必须能清楚回答：
+
+> **什么结果出现时，这个解释活；什么结果出现时，它死？**
+
+要求：
+
+- 优先 same-model / paired / matched contrast；
+- controls 主要用来区分 competing explanations；
+- 一般只接受 1–3 个关键 control；
+- 如果需要越来越多 control 才维持 claim，优先杀题；
+- layer / strength / threshold 等 search space 必须可冻结。
+
+## G8 — Payoff + Continuation
+
+最好结果必须有 headline；负结果最好有 information gain；正结果后还要至少有一个自然 opening：
+
+```text
+更深 analysis
+mechanism
+intervention
+method / mitigation
+practical rule
+```
+
+但 opening 不是 requirement stacking：**不能为了“以后还能做”给当前 G0 再加 prerequisite。**
+
+### 晋级规则
+
+以下四个 gate 任一明显失败，原则上**不注册正式 candidate**：
+
+```text
+G1 Natural Question
+G3 Scientific Novelty
+G5 Direct G0 / Low Prerequisite Tax
+G6 Artifact / Resource Fit
+```
+
+其他 gate 如果弱，只能进 `WATCH / HOLD`，不能直接进 `ACTIVE`。
+
+---
+
+# 6. 可行性：我们最需要防的不是 GPU 不够，而是“题太折腾”
+
+## 6.1 Time-to-scientific-question
+
+每个候选必须明确回答：
+
+> **从 clone repo 到第一次得到“属于我们自己的 scientific result”，要经过几步？**
+
+如果主要时间都花在：
+
+- 修 upstream environment；
+- 对齐特殊 hostname / service；
+- 重建复杂 pipeline；
+- 复现 seed 的整张表；
+- 满足脆弱 aggregate relation；
+
+那就是高风险题。
+
+## 6.2 Critical cell 必须真实存在
+
+机制题尤其要求：
+
+- exact failure 在我们准备使用的 open model 上已经报告，或能极便宜确认；
+- critical cell 数量不能极稀疏；
+- 不允许先扫很多 model × prompt 才找到一个能做的 regime。
+
+## 6.3 Artifact audit 先于 story
+
+遇到反直觉结果先查：
 
 - scoring bug；
 - normalization；
 - tokenizer；
 - data leakage；
-- sample-size / distribution；
-- generator / judge bias。
+- generator / judge bias；
+- sample-size；
+- distribution shift；
+- quantizer / preprocessing / decoding 设置。
 
-确认不是 artifact 后，再考虑把它升为 paper headline。
+确认不是 artifact 后再升为 headline。
 
-## 3.4 Competing explanations 比“多做几个 setting”重要
+## 6.4 Same-model / paired contrast 优先
 
-好的 control 能直接区分 A/B explanation；坏的 control 只是让 appendix 更长。
-
-如果一个 claim 需要不断追加“不是 A、不是 B、不是 C、不是 D”才能成立，通常说明题目本身不干净。
-
-## 3.5 Claim 要和证据强度一致
-
-可以写“analysis / factors / evidence”，不必为了显得高级就写“mechanism”。
-
-只有在 intervention 真能区分 causal explanation 时，才把标题和主张升级到 mechanism / causal role。
-
-## 3.6 先让读者知道“为什么这事重要”，再展示方法
-
-尤其是 old NLP resource / cognitive question：必须解释为什么在 LLM 时代仍值得问。不要默认“以前有人做，所以现在也值得做”。
-
----
-
-# 4. Venue policy
-
-主 seed 默认优先级：
+最理想：
 
 ```text
-ACL
->
-NAACL / EMNLP
->
-NeurIPS / ICML / AAAI / IJCAI 中与 NLP / LLM 直接相关的工作
+same model
+same item / same underlying object
+只改变一个科学变量
+→ behavior flip / representation difference
 ```
 
-原则上只从 **CCF A/B 的 AI / NLP 会议**晋级主 seed。
+比 cross-model、cross-checkpoint、cross-training-regime 的 attribution 干净得多。
 
-其他 venue 可以用于背景、exact collision、方法参考、old-question anchor、组内 research-shape calibration，但不能单凭一个漂亮 gap 进入 TOP_POOL。
-
-**ACL 是第一优先级。** 优先挖 main paper 的 anomaly、error analysis、appendix、unexpected finding，而不是从 Future Work 里生造题。
+跨 checkpoint / 跨模型可以做，但必须先问 representation basis、training confound、trajectory divergence 是否会让机制主张失去识别性。
 
 ---
 
-# 5. 资源画像：现金少、标注少、GPU 多
+# 7. Topic 25：永久反面教材
 
-## 5.1 现金成本
-
-phenomenon-existence G0 **不能依赖大规模付费 closed-model API**。
-
-优先级：
-
-1. released predictions / traces / logits；
-2. public benchmark + gold labels；
-3. local open-weight models；
-4. public checkpoints；
-5. programmatic / executable exact labels；
-6. closed API 只做少量 external check。
-
-## 5.2 人工标注
-
-第一枪不能要求先新标几千条数据。
-
-允许 phenomenon 成立后人工核验少量高价值 case；不允许把大规模新 annotation 当 prerequisite。
-
-## 5.3 GPU 是优势
-
-现象站住后欢迎使用：
-
-- controlled SFT / continued pretraining；
-- dense checkpoint trajectories；
-- hidden-state probing / decoding；
-- logit/tuned lens；
-- activation patching / causal tracing；
-- attention / MLP ablation；
-- steering / representation engineering；
-- SAE / crosscoder；
-- quantization / compression / training-stage analysis。
-
-但 GPU 用来**回答已经存在的问题**，不是大 sweep 把一个不存在的 phenomenon 挖出来。
-
-## 5.4 Artifact completeness
-
-TOP_POOL 尽量确认：
-
-```text
-data
-+ exact model/checkpoint
-+ prompt / scoring recipe
-+ reproduction code
-```
-
-如果缺了两项以上，除非 G0 本身极其简单，否则降级。
-
----
-
-# 6. 新增硬规则：Prerequisite Tax / Information Gain
-
-Topic 25 是必须长期保留的反面教材。
-
-Topic 25 最终不是工程半成品，而是**完整 receipt 后的科学 stop**：
+Topic 25 不是“工程没跑完”，而是完整 receipt 后的 scientific stop：
 
 ```text
 Qwen3-8B-Think gold-only = 0.45746
@@ -423,39 +521,11 @@ result: FALSE
 → G0 NOT RUN by protocol
 ```
 
-工程上的 model alias / hostname 问题最后都被排除，最终 receipt 完整。因此教训不是“服务器坑”，而是：
+最终工程问题已排除，所以真正教训是：
 
-> **真正的 scientific question 前面放了一个昂贵、脆弱、信息增益很低的 seed-reproduction gate。**
+> **科学问题前放了一个昂贵、脆弱、失败后信息增益很低的 seed-reproduction gate。**
 
-以后每个候选在注册前必须问：
-
-### 6.1 Time-to-scientific-question
-
-从 `git clone` 到**真正第一次检验我们自己的 scientific question**，中间要经过多少工作？
-
-如果要先：
-
-```text
-重建 upstream environment
-→ 复现复杂 baseline
-→ 复现多个 cell
-→ 满足一个 seed relation
-→ 才能跑我们自己的 G0
-```
-
-这是高危题。
-
-### 6.2 Prerequisite chain depth
-
-理想：
-
-```text
-released artifact
-→ one-model sanity receipt
-→ our G0
-```
-
-危险：
+以后出现下面结构，直接重罚：
 
 ```text
 upstream reproduction A
@@ -465,144 +535,35 @@ upstream reproduction A
 → our G0 E
 ```
 
-每增加一个必须成立的前置关系，survival probability 都会乘法下降。
-
-### 6.3 Failure information gain
-
-最重要的问题：
-
-> **如果 prerequisite 失败，我们学到了什么？**
-
-如果答案只是：
-
-> “seed relation 在这个环境/模型没复现，所以停止。”
-
-而且为此已经花了很多 GPU / 工程时间，这种题要在 search 阶段重罚。
-
-更好的 G0 即使为负，也应该能区分科学解释，例如：
+尤其如果失败后的唯一结论是：
 
 ```text
-A 不成立，但 B 成立
-→ 已经说明 failure 属于 encoding 而不是 readout
+NOT_REPRODUCED
 ```
 
-### 6.4 Prerequisite cost 应显著小于核心实验成本
+而此前已经花了大量 GPU / 工程时间，这种题应该在 search audit 阶段就死。
 
-不要求所有 receipt 都免费，但**不能让“证明有资格做 G0”本身成为项目里最贵的实验之一**。
+### Topic 25 型 kill rule
 
-一个健康候选最好能在单模型、单数据集、固定 prompt/scoring 下快速确认 prerequisite；如果 receipt 本身接近一篇 reproduction project，直接降级。
+出现任一项，默认不进 ACTIVE：
 
-### 6.5 新 kill rule
-
-出现以下任一项，默认不进 ACTIVE：
-
-- 真正 scientific question 前有两层以上脆弱 prerequisite；
-- seed 的关键 relation 没在我们将使用的 exact open model 上报告；
-- receipt 比我们的 G0 更贵/更复杂；
-- prerequisite 失败时只能得到 `NOT_REPRODUCED`，没有新的科学区分；
-- upstream engineering / environment reconstruction 占了主要工作量；
-- 必须满足一个 aggregate relation 才允许进入 instance-level question；
-- 需要“先复现论文整张表”才能开始自己的研究。
+- scientific question 前有两层以上脆弱 prerequisite；
+- receipt 本身接近一个 reproduction project；
+- receipt 比 G0 更贵；
+- seed 关键 relation 没在 exact open model 上报告；
+- prerequisite 失败没有新的科学区分；
+- 必须先复现 seed paper 大部分结果才有资格开始自己的研究；
+- aggregate relation 必须先满足，才能进入真正想研究的 instance-level question。
 
 ---
 
-# 7. 理想题目长什么样
+# 8. 机制题的额外规则
 
-更接近组内正例的健康流程：
+机制题不是默认更高级，只在科学问题需要时做。
 
-```text
-自然 phenomenon / old scientific question / real system problem
-        ↓
-一句话说明为什么值得问
-        ↓
-列出 2–4 个最自然 competing explanations / interacting factors
-        ↓
-确认数据、模型、标签、关键对象基本可得
-        ↓
-设计一个直接区分解释的 cheap G0
-        ↓
-得到清楚 finding
-        ↓
-必要时再做 mechanism / intervention / method
-        ↓
-形成 2–4 条 headline findings
-```
+## 8.1 什么时候值得进入 mechanism
 
-而不是：
-
-```text
-最新 paper 有一个 gap
-→ 先复现 paper
-→ 找 latent object
-→ 扫 layer
-→ patch
-→ 再想 headline
-```
-
-每个候选首先回答四句话：
-
-> **1. 普通 NLP/ML 研究者为什么会自然问这个问题？**
->
-> **2. 组内哪个成功/成熟项目的 research shape 最接近它？**
->
-> **3. 最自然的两个 competing explanations / interacting factors 是什么？**
->
-> **4. 最便宜的实验能不能直接让其中一个解释失去可信度？**
-
-四个答不出来，不注册。
-
----
-
-# 8. Venue-scale、novelty 与 interestingness
-
-## 8.1 合适宽度
-
-典型 ACL/EMNLP/NAACL 尺度：
-
-```text
-一个自然问题
-+ 一个明确 experimental handle / measurement
-+ 2–4 条主 finding
-+ 少量关键 controls
-+ analysis / mechanism / intervention 中至少一个自然深化
-```
-
-不要：
-
-```text
-整个 LLM reasoning 的统一理论
-某 prompt 换词掉 1.3 分
-新 benchmark 排一遍模型
-已有 phenomenon 上第一次用 SAE
-```
-
-## 8.2 Scientific novelty，不是 configuration novelty
-
-更好的 novelty 包括：
-
-- 旧 task formulation 在 LLM 时代不再测真正想问的东西；
-- 已知 phenomenon 的几个 plausible causes 第一次被直接 disentangle；
-- 两个成熟因素存在此前未系统研究的 interaction；
-- 一个本应稳定的能力在自然条件下出现反直觉 reversal；
-- internal representation 与 behavior 稳定 dissociate，并且 causal test 能区分解释；
-- 社会/语言现象在 LLM 时代发生可测的结构性变化；
-- practical system failure 被定位到明确条件/瓶颈，而不是只报告性能下降。
-
-## 8.3 Positive-result excitement test
-
-先假设最理想结果出来，再问：
-
-> **如果这是论文标题/摘要第一句，我会觉得“原来是这样”，还是“这不是废话吗”？**
-
-“原来是这样”可以来自 causal mechanism，也可以来自一个强 interaction、一个反直觉系统规律、一个新 measurement 或一个 old-question 的清楚答案。
-
----
-
-# 9. 机制题额外规则：机制是深化，不是身份证
-
-## 9.1 Phenomenon before mechanism
-
-只有在下列之一已成立时才进入 mechanism：
+至少已经有一个：
 
 ```text
 稳定 behavioral anomaly
@@ -611,269 +572,363 @@ A 不成立，但 B 成立
 可程序化 intermediate state
 ```
 
-禁止：
+## 8.2 Representation ≠ causal use
+
+probe / decoder 只能说明 information available。
+
+如果 claim 是：
+
+> 模型“使用”了这个 representation。
+
+则应考虑 natural matched intervention、patching、ablation、targeted steering 等 causal evidence。
+
+## 8.3 Mechanism search space 必须有界
+
+不能：
 
 ```text
-先 SAE/probe
-→ 看见 feature
-→ 再编 scientific question
+32 layers × 20 strengths × 8 prompts
+→ test 上挑最好看的结果
 ```
 
-## 9.2 Representation ≠ causal use
+layer / token / strength / threshold 应在 validation / prior hypothesis 上冻结。
 
-linear probe 只能说明 information available。
+## 8.4 Null 必须可解释
 
-如果 claim 是“模型使用了它”，必须考虑 natural matched intervention、patching、ablation、targeted steering 等 causal evidence。
+如果 intervention 失败后只能说：
 
-## 9.3 Bounded search
+> 可能 layer 没找对。
 
-layer / token / strength / threshold 的选择要能在 validation 上冻结；test 不允许大 sweep 后挑最好看的 cell。
-
-## 9.4 Interpretable null
-
-如果 intervention 无效，只能说“可能没找到正确 layer”，说明设计不可证伪。
+说明设计不可证伪，需要降级。
 
 ---
 
-# 10. 什么样的题快速杀掉
+# 9. 快速 Kill Rules
 
-1. 从 method 出发而不是从问题出发；
-2. 只是“已有 phenomenon + 新 probe/SAE/patching”；
-3. 为 identification 必须造不自然 counterfactual；
-4. 最好结果只是“X 会影响 accuracy”；
-5. controls 越来越多才能维持 claim；
-6. 主要 novelty 是换模型 / 语言 / benchmark；
-7. 最强结果完全符合直觉且没有新的结构性解释；
-8. phenomenon existence 依赖大量 paid API；
-9. 第一批 useful data 需要大规模新人工标注；
-10. 核心指标依赖昂贵 LLM judge 且无 automatic proxy；
-11. 必须从头训练大 foundation model；
-12. public artifact 只覆盖 toy regime，meaningful regime 靠 fishing；
-13. 只有 aggregate gap，没有可解释的 instance-level object；
-14. seed anomaly 只在 inaccessible closed model 出现；
-15. exact question 已 crowded，只剩“再做一次 mechanism”；
-16. planned causal contrast 一次改变很多因素；
-17. bug/artifact 没排干净就开始写 story；
-18. 题目只能写成方法名，无法用普通语言说明研究对象；
-19. **prerequisite tax 高，真正 scientific question 离开工太远；**
-20. **prerequisite 失败时 information gain 很低；**
-21. **需要复现整篇 seed paper 才有资格跑自己的第一枪。**
+以下题型默认高危：
 
-特别记住：
+## 9.1 科学问题弱
 
-> **Topic 25 式失败要提前发生在 search audit，而不是发生在几天工程之后。**
+- 从 method 出发，而不是问题出发；
+- 最好结果只是“X 影响 accuracy”；
+- 题目只能写成方法名；
+- configuration novelty；
+- exact question 已 crowded，只剩“再做一次 mechanism”。
+
+## 9.2 Identification 脏
+
+- planned contrast 一次改变很多因素；
+- dataset/task identity 与目标 construct 混淆；
+- 为 identification 必须造很不自然的 counterfactual；
+- controls 越加越多才能保住 claim。
+
+## 9.3 Resource / artifact 差
+
+- 现象只在 inaccessible closed model 上；
+- G0 依赖大量 paid API；
+- 第一批 useful data 需要大规模新人工标注；
+- 核心指标完全依赖昂贵 LLM judge；
+- public artifact 只覆盖 toy regime；
+- meaningful regime 必须靠 fishing。
+
+## 9.4 Prerequisite tax 高
+
+- 需要复杂 upstream reproduction；
+- receipt 比 G0 贵；
+- seed relation 脆弱；
+- prerequisite 失败 information gain 低；
+- 需要复现整篇 seed paper 才能开始自己的问题。
+
+## 9.5 Researcher degrees of freedom 太大
+
+- 需要 model × prompt × layer × threshold 大 sweep；
+- 只有 aggregate gap，没有清楚 instance-level object；
+- null 永远可以解释成“没找到正确 setting”。
 
 ---
 
-# 11. Candidate card
+# 10. 标准搜索与审核流程
 
-进入 ACTIVE/HOLD 前至少写清楚：
+每一轮都按同一个流程，不允许跳着来。
+
+## Stage 0 — 先看组内 research shape 和 ACTIVE
+
+先问：
+
+```text
+现在缺哪类题？
+A phenomenon → factor decomposition
+B old question → new LLM measurement
+C interaction / budget analysis
+D social / language change
+E construct → representation → causal behavior
+F real system failure
+```
+
+不要一上来就搜“最新 mechanistic interpretability paper”。
+
+## Stage 1 — 广泛找 anchor
+
+来源：
+
+- ACL 优先；
+- NAACL / EMNLP；
+- NeurIPS / ICML / AAAI / IJCAI 中相关工作；
+- 经典 NLP / cognitive / information-science 文献；
+- benchmark error analysis；
+- 真实系统 failure。
+
+## Stage 2 — 只写“前人真正证明了什么”
+
+每篇 seed 先只记录：
+
+```text
+他们真正证明了什么？
+在哪个模型 / 数据 / setting 上成立？
+关键 effect size / critical cell 是什么？
+哪些解释已经被他们做掉？
+```
+
+**先不设计 SAE / probe / patch。**
+
+## Stage 3 — 生成自然问题
+
+写一句 natural research question，并标记属于哪类组内 research shape。
+
+如果写不出来，不注册。
+
+## Stage 4 — 写 competing explanations / interaction axis
+
+至少写：
+
+```text
+Explanation A
+Explanation B
+```
+
+或一个明确 X × Y interaction / budget axis。
+
+如果写不出来，而计划只是“看看内部发生了什么”，降级。
+
+## Stage 5 — Exact collision audit
+
+必须查：
+
+- seed 作者后续；
+- exact question wording；
+- 2025–2026 相邻工作；
+- 本仓库 archived failures；
+- 组内相近项目；
+- 已有 mechanism follow-up。
+
+发现核心 question 已做完：直接 kill，不靠缩窄到一个小 setting 续命。
+
+## Stage 6 — Prerequisite / artifact / resource audit
+
+明确写：
+
+```text
+到第一条 scientific result 有几步？
+最可能失败的是哪一步？
+失败后得到什么信息？
+数据/模型/labels/code 是否齐？
+需要多少 API / annotation / GPU？
+critical cell 是否在 exact open model 上存在？
+```
+
+## Stage 7 — 才允许写 Candidate Card
+
+通过 Gate 后才进 `ACTIVE_CANDIDATES.md`。
+
+不要因为已经花时间读了很多 paper，就降低晋级门槛。
+
+## Stage 8 — 才设计 G0
+
+G0 的目标只有一个：
+
+> **用最短路径，让我们对某个 scientific explanation / interaction 是否成立发生明显更新。**
+
+不是“证明我们有资格继续做下一层实验”。
+
+## Stage 9 — 根据结果决定 paper shape
+
+结果强以后再决定：
+
+```text
+analysis
+mechanism
+intervention
+method / mitigation
+practical rule
+```
+
+不强迫所有题最后都变成 mechanism paper。
+
+---
+
+# 11. Candidate Card：统一模板
+
+进入 `ACTIVE / HOLD` 前至少填写：
 
 ```text
 题目：
 一句话 natural research question：
-最接近的组内 research shape：
-Venue-scale headline：
-Seed paper / old scientific question / real system problem：
-Seed venue（CCF A/B?）：
+组内 research shape（A–F）：
+为什么普通 NLP/ML 研究者会关心：
+
+Scientific anchor：
+Seed paper / old question / system failure：
+Seed venue：
 前人已经证明什么：
-哪一个结果自然逼出下一问：
-为什么这个问题在 LLM 时代更值得/更可测：
+我们真正的新问题：
 
 Competing explanation A：
 Competing explanation B：
 （必要时 C）：
-最便宜能区分 A/B 的实验：
+或 interaction / budget axis：
 
-最好正结果为什么令人兴奋：
-最好负结果能学到什么：
-2–4 条可能 headline findings：
-最近 exact collision：
+最便宜的 G0：
+G0 正结果意味着什么：
+G0 负结果意味着什么：
+Kill line：
+
+最好结果的 headline：
+可能的 2–4 条 findings：
+正结果后的自然 opening：
+
+Exact collision：
 同门 / archived collision：
 
-Artifact completeness：
-- released dataset：
+Artifact：
+- dataset：
 - exact model/checkpoint：
-- prompt/scoring recipe：
-- reproduction code：
+- labels/scoring：
+- code / released outputs：
 
 Time-to-scientific-question：
-Prerequisite chain depth：
-Prerequisite failure information gain：
+Prerequisite chain：
 Receipt cost vs G0 cost：
-Same-model prerequisite：
-Critical-cell definition（若需要）：
-Critical-cell reported density：
+Prerequisite failure information gain：
+Critical-cell definition / density：
 
-Paid API requirement：
-New annotation requirement：
+Paid API：
+New annotation：
 Open-weight availability：
-Estimated GPU-hours：
-Storage / multi-node requirement：
+GPU / storage requirement：
 Researcher degrees of freedom：
 
-Mechanism really necessary?：
-如果需要 mechanism，哪一个 causal distinction：
-Mechanism search space 如何冻结：
-如果为正，下一步 intervention / method：
-Kill line：
-状态：
+Mechanism 是否真的必要：
+若需要，哪一个 causal distinction：
+状态：ACTIVE / HOLD / WATCH / KILL
 ```
 
-如果“最接近的组内 research shape”只能回答“没有，但 ACL 有一篇差不多”，要额外谨慎。
-
-如果 competing explanations 写不出来，而唯一计划是“看看 hidden state”，不进 ACTIVE。
-
 ---
 
-# 12. Promotion Gates
+# 12. 候选排序：先过 Gate，再比较谁更值得做
 
-只有同时大体通过才值得认真写代码：
-
-- **G1 Naturalness**：不用术语也能解释为什么值得问；
-- **G2 Lab-shape calibration**：能说明它接近组内哪种成功研究形状，而不是只像网上某篇 paper；
-- **G3 External anchor**：seed / anomaly / old problem / real system failure 明确；
-- **G4 Venue-scale**：能自然长成 2–4 条 ACL/EMNLP/NAACL 级 finding；
-- **G5 Scientific novelty**：不是 configuration/method novelty；
-- **G6 Positive-result excitement**：最强结果真的值得高兴；
-- **G7 Competing explanations**：至少有两个可区分的自然解释/因素；
-- **G8 Direct G0**：第一枪直接碰 scientific question，而不是先做长 reproduction；
-- **G9 Low prerequisite tax**：receipt 简单、短、失败也有信息；
-- **G10 Killability**：核心结构不存在就停；
-- **G11 Low control complexity**：最好 1–3 个关键 control；
-- **G12 Existing object**：数据/对象基本已存在；
-- **G13 Resource fit**：少 API、少标注，GPU 能发挥；
-- **G14 Artifact completeness**：data + model + prompt/scoring + code 尽量齐；
-- **G15 Same-model phenomenon**：需要机制时，exact failure 在目标 open model 上真实存在；
-- **G16 Collision auditability**：exact / near-exact 可检索；
-- **G17 Analysis/mechanism/method opening**：正结果后有自然下一步，但不强迫 mechanism；
-- **G18 Bounded degrees of freedom**：不能靠 model×prompt×layer sweep fishing；
-- **G19 Interpretable null**：null 也能缩小解释空间；
-- **G20 Venue eligibility**：主 seed 符合当前 CCF A/B AI/NLP policy。
-
-其中 **G1 / G7 / G8 / G9** 任何一个明显失败，原则上不注册正式 candidate。
-
----
-
-# 13. 标准搜索流程
-
-## Stage 0：先看组内正例，不要先搜 arXiv
-
-新一轮搜索前先重新问：
+通过硬 Gate 后，再用下面六项排序，每项 0–2 分：
 
 ```text
-我们缺的是哪一种 research shape？
-- phenomenon→factor decomposition？
-- old question→new LLM measurement？
-- interaction/budget analysis？
-- longitudinal/social change？
-- clean representation→causal behavior？
-- real system failure？
+Naturalness / importance
+Scientific novelty
+Positive-result excitement
+Feasibility / artifact completeness
+Identification cleanliness
+Time-to-scientific-question
 ```
 
-## Stage 1：广泛扫 seed / old question / real phenomenon
-
-ACL 优先，其次 NAACL/EMNLP；AI 顶会补充。还要查经典 NLP/cognitive/information-science literature、公开 benchmark error analysis、工程系统中稳定 failure。
-
-## Stage 2：每篇只写“真正证明了什么”
-
-先不设计 probe/patch。
-
-## Stage 3：提出 competing explanations / interaction
-
-如果没有两个自然解释，也没有一个自然 interaction axis，先不要写机制。
-
-## Stage 4：collision search
-
-查 seed 作者后续、exact wording、2025–2026 相邻工作、组内项目、本仓库 archived failures。
-
-## Stage 5：prerequisite-tax audit
-
-必须先写：
+解释：
 
 ```text
-到我们的第一条 scientific result 之前要做几步？
-哪一步最可能失败？
-失败后得到什么信息？
-receipt 要多久？
-是否比 G0 本身更贵？
+0 = 明显弱点
+1 = 可以接受
+2 = 明显优势
 ```
 
-## Stage 6：artifact + resource audit
+只有全部硬 Gate 基本通过后才打分。**总分不能救一个已经违反 hard gate 的题。**
 
-确认数据、labels、exact model、prompt/scoring、code、GPU/storage、API、annotation。
+排序时优先选择：
 
-## Stage 7：才设计 G0
-
-G0 的目标是：
-
-> **用最短路径改变我们对某个 scientific explanation / interaction 是否成立的信心。**
-
-不是“证明我们有资格继续做下一层实验”。
-
-## Stage 8：结果决定 paper shape
-
-- 如果 factor decomposition 已经形成强 finding：继续 analysis；
-- 如果存在 clean latent/behavior dissociation：再上 mechanism；
-- 如果出现 robust counterintuitive interaction：先解释与扩展；
-- 如果 practical rule 已很强：可以走 system/method；
-- 不为了显得高级强行机制化。
+> **更快碰到科学问题、关键对象已经存在、失败也有信息、最好结果更值得写进标题的题。**
 
 ---
 
-# 14. 文件组织
+# 13. 文件组织
 
 ```text
 README.md
-    唯一总筛选标准 + 组内 research priors
+    唯一总标准；不在 Round log 里再发明长期规则
 
 ACTIVE_CANDIDATES.md
     唯一当前候选状态表
 
 ROUND_*.md
-    每轮搜索与审核历史
+    每轮搜索、collision、升降级、kill 历史
 
 g0/
-    prerequisite / killable first-shot scripts
+    真正决定候选生死的 first-shot / prerequisite scripts
 ```
 
 每轮结束必须：
 
-1. 写 Round log；
+1. 写 `ROUND_*.md`；
 2. 同步 `ACTIVE_CANDIDATES.md`；
-3. 如果从新失败/组内反馈中学到新的长期规则，更新 README；
-4. 不允许一个候选只因为“我已经写了很多代码”而降低 kill threshold。
+3. 新的长期教训只有足够普适时才更新 README；
+4. 已经写了很多代码不能成为保留候选的理由。
 
 ---
 
-# 15. 当前总判断
+# 14. 注册 Candidate 前的最后检查
 
-以后选题的默认顺序应该是：
+在正式注册前，逐条回答：
 
 ```text
-先找自然问题
-→ 看组内成功项目里哪种 research shape 能承载它
-→ 找 old scientific anchor / ACL-level external seed
-→ 写 competing explanations / interaction axis
-→ 做 prerequisite-tax audit
-→ 用最短 G0 直接碰科学问题
-→ 结果足够强时再决定走 analysis、mechanism 还是 method
+[ ] 我能否一句话讲清问题，不提 method 名？
+[ ] 这个问题是否对应组内 A–F 中至少一种成熟 research shape？
+[ ] 最好结果是否真的值得高兴？
+[ ] novelty 是 scientific，而不是 configuration？
+[ ] 至少有两个自然解释，或一个明确 interaction axis？
+[ ] 第一枪是否直接碰我们的科学问题？
+[ ] receipt 是否简单、短、失败也有信息？
+[ ] 数据 / 模型 / labels / scoring / code 是否基本齐？
+[ ] 不需要大量 paid API 或新人工标注？
+[ ] critical phenomenon 是否在可访问 open model 上存在？
+[ ] 1–3 个关键 control 是否足以解释主要 confound？
+[ ] exact collision 是否认真查过？
+[ ] 如果 G0 为 null，我是否仍能学到东西？
+[ ] 如果 G0 为正，是否自然长成 2–4 条顶会尺度 finding？
 ```
 
-当前最应该避免的旧习惯：
+有明显的“否”，先不要注册。
+
+---
+
+# 15. 一句话总纲
+
+以后选题的默认顺序只有这一条：
 
 ```text
-ACL 有篇新 paper
-→ 找 limitation/gap
-→ 假设 open model 也有
+自然科学问题 / old question / real failure
+→ 组内 research shape 校准
+→ external anchor
+→ competing explanations / interaction
+→ collision audit
+→ prerequisite + artifact + resource audit
+→ 最短 G0 直接碰科学问题
+→ 结果决定走 analysis、mechanism 还是 method
+```
+
+最应该避免的是：
+
+```text
+最新 paper 有个 gap
 → 先复现复杂 seed
-→ 再找 hidden representation
+→ 假设 open model 也有
+→ 找 hidden representation
 → patch 一遍
 → 最后才问这件事到底值不值得知道
 ```
 
-最理想的项目不是“什么都新”，也不是“机制最复杂”。
+我们要的不是“最复杂的题”，也不是“最新的题”。
 
-最理想的是：
-
-> **一个任何 NLP/ML 研究者都能理解的自然问题；已有现象或旧科学问题把它钉住；实验直接区分少数几个解释；第一枪很快；结果无论正负都推进理解；如果需要，GPU 让我们比普通 behavioral analysis 再深一层。**
+> **我们要的是：问题天然成立、尺度够大、第一枪直接、可行性高、结果值得高兴、失败也有信息，并且能在现有资源下真正做成论文的题。**
