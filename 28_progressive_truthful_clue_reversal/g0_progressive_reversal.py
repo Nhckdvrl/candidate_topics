@@ -124,13 +124,13 @@ def extract_added_clue(full_question: object, clue_spans: object, clue_idx: int)
     """Return the newly added clue for 1-based clue_idx using official spans."""
     if not isinstance(full_question, str):
         return None
-    if not isinstance(clue_spans, (list, tuple)):
+    if not isinstance(clue_spans, (list, tuple, np.ndarray)):
         return None
     pos = clue_idx - 1
     if pos < 0 or pos >= len(clue_spans):
         return None
     span = clue_spans[pos]
-    if not isinstance(span, (list, tuple)) or len(span) != 2:
+    if not isinstance(span, (list, tuple, np.ndarray)) or len(span) != 2:
         return None
     try:
         start, end = int(span[0]), int(span[1])

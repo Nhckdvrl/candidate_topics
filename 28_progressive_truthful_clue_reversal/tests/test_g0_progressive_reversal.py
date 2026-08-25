@@ -3,6 +3,7 @@ import pathlib
 import sys
 import unittest
 
+import numpy as np
 import pandas as pd
 
 MODULE_PATH = pathlib.Path(__file__).resolve().parents[1] / "g0_progressive_reversal.py"
@@ -28,6 +29,11 @@ class TestHelpers(unittest.TestCase):
         spans = [[0, 3], [4, 7], [8, 11]]
         self.assertEqual(g0.extract_added_clue(q, spans, 2), "BBB")
         self.assertIsNone(g0.extract_added_clue(q, spans, 4))
+
+    def test_extract_added_clue_accepts_huggingface_pandas_arrays(self):
+        q = "AAA BBB CCC"
+        spans = np.asarray([[0, 3], [4, 7], [8, 11]], dtype=np.int32)
+        self.assertEqual(g0.extract_added_clue(q, spans, 2), "BBB")
 
 
 class TestCleaningAndTransitions(unittest.TestCase):
