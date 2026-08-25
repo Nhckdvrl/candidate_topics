@@ -1,6 +1,6 @@
 # 28 — Information Non-Monotonicity under Progressive Truthful Clues
 
-**Status: ARCHIVED / G0 PHENOMENON REAL / G1 `STOP_ORDER_DEPENDENCE` / G2a `STOP_DESTRUCTIVE_CONJUNCTION`.**
+**Status: ARCHIVED / G0 PHENOMENON REAL / G1 `STOP_ORDER_DEPENDENCE` / G2a `STOP_DESTRUCTIVE_CONJUNCTION` / FINAL SHARED-TRAP PREFLIGHT `STOP_SHARED_TRAP_ROUTE`.**
 
 ## Natural scientific question
 
@@ -223,6 +223,15 @@ Verdict: `STOP_DESTRUCTIVE_CONJUNCTION`. See
 This is a scientific stop for the explanatory/paper route. Do not proceed to
 natural clue substitution, aggregation-law fitting, mitigation, another model,
 or hidden states.
+
+One final, separately frozen artifact-only mother-route preflight tested
+whether natural clue boundaries produce shared exact wrong competitors across
+independent released system families. Cross-family reversal overlap was
+`1.765x` its agent-marginal-preserving null (`p=1/1001`), but only 17 boundaries
+across 17 questions met the complete shared-trap definition, below the frozen
+20/20 support gates. Verdict: `STOP_SHARED_TRAP_ROUTE`. No new candidate was
+registered and no modern-model confirmation is authorized. See
+[`SHARED_TRUTHFUL_CLUE_TRAPS_RESULTS.md`](../advisor_topic_search/g0/SHARED_TRUTHFUL_CLUE_TRAPS_RESULTS.md).
 
 # Run
 

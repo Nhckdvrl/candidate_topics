@@ -46,6 +46,15 @@ destructive conjunction = 1/229 = 0.44%
 The event also passed a conservative clear-wrong check, but all frozen density
 and support gates failed. Verdict: `STOP_DESTRUCTIVE_CONJUNCTION`.
 
+### Final artifact-only mother-route preflight — Shared clue traps
+
+Cross-family co-reversal overlap was `1.765x` the frozen
+agent-marginal-preserving null (`p=1/1001`). After correcting an artifact
+contract omission so the same exact wrong answer had to span at least two
+families, only 17 boundaries across 17 questions met the full shared-trap
+definition. The frozen population gates required 20/20. Verdict:
+`STOP_SHARED_TRAP_ROUTE`.
+
 ## Scientific conclusion
 
 The released-trajectory reversal object is real, but the observed specificity
@@ -57,6 +66,10 @@ regime.
 The project stops before natural clue substitution, aggregation-law fitting,
 mitigation, or hidden-state analysis. Running those after the failed G2a gate
 would be outcome-driven continuation.
+
+The final artifact-only shared-trap preflight also failed its frozen support
+gate. Topic 28 and this last separately posed mother route are permanently
+closed; do not run modern-model transfer confirmation.
 
 ## Failure type
 

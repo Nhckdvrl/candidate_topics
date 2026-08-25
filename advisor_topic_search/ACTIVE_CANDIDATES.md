@@ -20,7 +20,10 @@ Last updated: 2026-08-25
 released-trajectory object，但 controlled-order G1 返回
 `STOP_ORDER_DEPENDENCE`，随后 destructive-conjunction G2a 也只得到
 `1/229`（0.44%）critical events。该题已归档；不得继续 natural clue
-substitution、aggregation law、换模型或 mechanism。
+substitution、aggregation law、换模型或 mechanism。最后一次纯 artifact
+shared-clue-trap preflight 虽观察到 cross-family clustering，但完整定义只剩
+17 个 boundary / 17 个问题，未过冻结 20/20 gate，verdict 为
+`STOP_SHARED_TRAP_ROUTE`；不注册新 mother route，不做 modern-model transfer。
 
 ---
 
