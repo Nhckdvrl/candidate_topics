@@ -16,50 +16,17 @@ Last updated: 2026-08-25
 
 > 研究问题必须先有模型外部定义；换模型后问题仍然成立。模型差异应成为 boundary condition / explanatory factor，而不是让题目消失。
 
-因此 Round 08 的前三全部重新审级。Topic 28 随后的冻结全量 G0 已把
-progressive truthful-clue reversal 从廉价 screen 提升为有大样本支持的真实实验对象；
-但其 outcome-blind controlled-order G1 已返回 `STOP_ORDER_DEPENDENCE`，所以
-path-dependent belief-updating 的升级路线停止，不能进入 mechanism 或改配置救结果。
+因此 Round 08 的前三全部重新审级。Topic 28 的冻结全量 G0 虽然建立了真实
+released-trajectory object，但 controlled-order G1 返回
+`STOP_ORDER_DEPENDENCE`，随后 destructive-conjunction G2a 也只得到
+`1/229`（0.44%）critical events。该题已归档；不得继续 natural clue
+substitution、aggregation law、换模型或 mechanism。
 
 ---
 
-# A. ESTABLISHED OBJECT / EXPLANATION BRANCH STOPPED
+# A. CONDITIONAL SURVIVOR
 
-## A1. Information Non-Monotonicity under Progressive Truthful Clues
-
-**External construct:** accumulating truthful evidence 下的 information
-monotonicity / belief updating stability。
-
-**Observed object:** 冻结全量 G0 在 128 个 released response configs 上得到
-`8,102/120,353` 个相邻 `correct -> wrong` event（`6.7319%`），覆盖 760 个问题、
-93 个 AI configs；3,871 个 event 通过 strict-alias sanity。top config 只占
-3.84%，50/50 official added-clue audit 全通过。
-
-**Structure result:** corpus-IDF specificity quartile 的 reversal rate 从
-4.35% 单调升至 8.35%；7.73% event 的 wrong prediction 被新增 clue 直接、首次
-exact 引入；56.91% 后续恢复，43.09% 在 released trajectory 中未恢复。proper
-noun / number 的泛化 anchor-override 解释不受支持。
-
-**Frozen G1 result:** outcome-blind 498-boundary adjacent-swap panel 在
-Qwen2.5-7B-Instruct 上得到 original reversal `15/498`、swap reversal
-`15/498`，所以 `delta_order=0.0000`（95% clustered CI
-`[-0.02001,+0.02016]`）。相同 clue multiset 的 final-error difference 为
-`-0.01606`（`[-0.03726,+0.00581]`），方向也不支持 original-order harm。
-285 个两条路径第一状态都正确的 common-belief cases 中，original-only 与
-swap-only final harm 各 1 个。
-
-**Interpretation:** released-trajectory phenomenon 仍成立，但最有希望的
-path-dependent belief-updating 升级没有通过 controlled test。严格 alias scorer 对
-absolute event count 有 undercoverage，但 paired order result 完全对称，不能以此为由
-修 scorer 或换模型救结果。
-
-**Status:** `G0_OBJECT_ESTABLISHED / G1_STOP_ORDER_DEPENDENCE / DO_NOT_TUNE / PAPER_STORY_DEMOTED`.
-
----
-
-# B. CONDITIONAL SURVIVOR
-
-## B1. What Learning Signal Governs In-Context Association? Cue Competition / Kamin Blocking as a Diagnostic
+## A1. What Learning Signal Governs In-Context Association? Cue Competition / Kamin Blocking as a Diagnostic
 
 **External construct:** associative learning 中的 cue competition；经典问题是学习是否只由共现驱动，还是依赖 prediction error / informativeness。
 
@@ -88,9 +55,9 @@ but no established competing predictor A -> X
 
 ---
 
-# C. DEMOTED FOR REFRAMING
+# B. DEMOTED FOR REFRAMING
 
-## C1. Positional Imprinting of Parametric Knowledge
+## B1. Positional Imprinting of Parametric Knowledge
 
 旧问题：第一次学习一个事实时所处位置，是否在后续 exposure 完全 equalize 后仍留下 imprint？
 
@@ -108,9 +75,9 @@ but no established competing predictor A -> X
 
 ---
 
-# D. SCIENTIFIC HOLD
+# C. SCIENTIFIC HOLD
 
-## D1. Does Knowledge Arbitration Have a Training History?
+## C1. Does Knowledge Arbitration Have a Training History?
 
 **External construct:** evidence history / reliability history 对 source arbitration 的长期影响。
 
@@ -118,7 +85,7 @@ but no established competing predictor A -> X
 
 **Status:** `SCIENCE_HOLD / ARTIFACT+PREREQUISITE_GATE`.
 
-## D2. Parametric Encoding Specificity Across Input Structures
+## C2. Parametric Encoding Specificity Across Input Structures
 
 **External construct:** knowledge representation 的 format invariance / access specificity。
 
@@ -128,7 +95,7 @@ but no established competing predictor A -> X
 
 ---
 
-# E. SEARCH PRIORITY AFTER THE 2026-08-25 CORRECTION
+# D. SEARCH PRIORITY AFTER THE 2026-08-25 CORRECTION
 
 下一轮不再以 `surprising LLM failure` 为主要检索入口。优先从以下外部对象找问题：
 

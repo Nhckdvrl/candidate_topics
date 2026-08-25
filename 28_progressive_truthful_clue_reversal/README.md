@@ -1,6 +1,6 @@
 # 28 — Information Non-Monotonicity under Progressive Truthful Clues
 
-**Status: G0 PASSED / REVERSAL OBJECT ESTABLISHED / STRUCTURE ANALYZED / G1 `STOP_ORDER_DEPENDENCE` / DO NOT TUNE.**
+**Status: ARCHIVED / G0 PHENOMENON REAL / G1 `STOP_ORDER_DEPENDENCE` / G2a `STOP_DESTRUCTIVE_CONJUNCTION`.**
 
 ## Natural scientific question
 
@@ -186,8 +186,8 @@ requirements.txt
 tests/test_g0_progressive_reversal.py
 ```
 
-The final G0 and frozen descriptive-analysis implementations complete **15/15
-unit tests**. The full public-data G0 loaded all 128 response configs and
+The current complete G0-through-G2a implementation suite passes **23/23 unit
+tests**. The full public-data G0 loaded all 128 response configs and
 returned `GO_REVERSAL_OBJECT`: `8,102/120,353` adjacent correct-state
 transitions reversed (`6.7319%`), across 760 questions and 93 non-human configs.
 See [`G0_RESULTS.md`](./G0_RESULTS.md).
@@ -210,6 +210,20 @@ The same-multiset final-error contrast was `-0.01606`
 [`G1_RESULTS.md`](./G1_RESULTS.md). Do not search another model, prompt, panel,
 scorer, threshold, or permutation to rescue this branch.
 
+The final outcome-blind G2a tested the stronger destructive-conjunction cell
+`P correct AND C correct AND P+C wrong`. Among 229 boundaries where P and C
+were independently correct, only one became wrong when combined (`0.44%`, 95%
+clustered CI `[0.00%,1.36%]`). The same event passed the conservative
+clear-wrong audit, but every frozen scientific density/support gate failed.
+Verdict: `STOP_DESTRUCTIVE_CONJUNCTION`. See
+[`G2A_PREREGISTRATION.md`](./G2A_PREREGISTRATION.md),
+[`G2A_RESULTS.md`](./G2A_RESULTS.md), and
+[`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md).
+
+This is a scientific stop for the explanatory/paper route. Do not proceed to
+natural clue substitution, aggregation-law fitting, mitigation, another model,
+or hidden states.
+
 # Run
 
 ```bash
@@ -228,3 +242,6 @@ bash run_analysis1.sh
 
 The historical frozen G1 entrypoint is `run_g1.sh`; its completed terminal
 result must not be rerun with altered scientific settings.
+
+The historical frozen G2a entrypoint is `run_g2a.sh`; its completed terminal
+result must not be used to search alternate panels, scorers, or models.
