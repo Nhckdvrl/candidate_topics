@@ -1,5 +1,6 @@
 import importlib.util
 import pathlib
+import sys
 import unittest
 
 import pandas as pd
@@ -8,6 +9,7 @@ MODULE_PATH = pathlib.Path(__file__).resolve().parents[1] / "g0_progressive_reve
 SPEC = importlib.util.spec_from_file_location("g0_progressive_reversal", MODULE_PATH)
 g0 = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
+sys.modules[SPEC.name] = g0
 SPEC.loader.exec_module(g0)
 
 
