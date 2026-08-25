@@ -1,6 +1,6 @@
 # 28 — Information Non-Monotonicity under Progressive Truthful Clues
 
-**Status: REGISTERED / FROZEN ARTIFACT-ONLY G0 IMPLEMENTED / LOGIC TESTS PASS / FULL DATA RUN NEXT.**
+**Status: G0 PASSED / REVERSAL OBJECT ESTABLISHED / ANALYSIS NEXT.**
 
 ## Natural scientific question
 
