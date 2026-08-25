@@ -55,11 +55,9 @@ tape.
 rather than smoothed over. It is not a replay-fidelity issue: `fresh`,
 `vla_replay` and `actuator_replay` on this config produce byte-identical
 trajectories (`final_target_lift_m` and `steps` match exactly across all
-three), so the instrument reproduces this failure deterministically. Whatever
-causes the released checkpoint to fail this particular scene draw locally
-(likely stochastic-sampling or hardware-dependent variation from upstream's
-own evaluation run, not investigated further here — out of scope for an
-instrument check), all three conditions agree on it perfectly.
+three), so the instrument reproduces this failure deterministically. The
+source of the discrepancy from the published `10/10` is unresolved and out of
+scope here.
 
 ## Horizon and cadence, read from the running system rather than assumed
 
