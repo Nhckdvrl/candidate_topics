@@ -1,5 +1,24 @@
 # Topic 24 G3 pre-registration: does WBC-level recovery dominance replicate on XMoveBendPickTeleop?
 
+> **SUPERSEDED BEFORE ANY PUSH DATA.** No push-condition row was ever
+> collected under this design. The scientific question below re-asked G0's
+> WBC-vs-VLA question on a second task, but Topic 24's actual live thread is
+> the VLA-centric one G1/G2 opened (is online VLA feedback reliably
+> positive-value, not where does credit sit between two hierarchy layers).
+> Replaced by
+> [`G3_VLA_FEEDBACK_PREREGISTRATION.md`](G3_VLA_FEEDBACK_PREREGISTRATION.md),
+> written before this file's `actuator_replay` condition or any push data was
+> ever run. Left in place, not deleted, as the record of that correction.
+> Nothing below was invalidated by a result — this is a target correction,
+> not a stop.
+>
+> The panel infrastructure this file froze is NOT superseded and carries
+> forward unchanged: the eligible 28-config panel, the per-config contact
+> timing anchor, the 800-step horizon, and the {0,50,100,150}N x {left,right}
+> force grid, all in `CANONICAL_RECONNAISSANCE.md`.
+
+---
+
 > Written and committed **before any push-condition row exists**. The
 > instrument (`P0'`/`P0b'`), the eligible panel and the timing anchor
 > (`CANONICAL_RECONNAISSANCE.md`) are frozen first; this document freezes
