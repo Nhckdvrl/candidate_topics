@@ -1,6 +1,6 @@
 # 28 — Information Non-Monotonicity under Progressive Truthful Clues
 
-**Status: G0 PASSED / REVERSAL OBJECT ESTABLISHED / ANALYSIS NEXT.**
+**Status: G0 PASSED / REVERSAL OBJECT ESTABLISHED / STRUCTURE ANALYZED / CONTROLLED ORDER TEST NEXT.**
 
 ## Natural scientific question
 
@@ -186,9 +186,19 @@ requirements.txt
 tests/test_g0_progressive_reversal.py
 ```
 
-Local logic validation completed with Hugging Face network calls stubbed: **8/8 unit tests pass**. The tests cover ID parsing, normalization, exact added-clue extraction, human exclusion, conflicting duplicate removal, gap-transition exclusion, reversal detection, strict-alias support, and frozen verdict gates.
+The final G0 and frozen descriptive-analysis implementations complete **15/15
+unit tests**. The full public-data G0 loaded all 128 response configs and
+returned `GO_REVERSAL_OBJECT`: `8,102/120,353` adjacent correct-state
+transitions reversed (`6.7319%`), across 760 questions and 93 non-human configs.
+See [`G0_RESULTS.md`](./G0_RESULTS.md).
 
-The current execution environment could not install `datasets` because outbound package access was unavailable, so the full public-data run has **not** been claimed as completed.
+The first preregistered descriptive phase is also complete. Specificity rises
+monotonically with reversal density; direct lexical competitor introduction is
+visible in a high-precision minority; `56.91%` of events eventually recover,
+while `43.09%` never do in the released trajectory. See
+[`ANALYSIS_PLAN.md`](./ANALYSIS_PLAN.md) and
+[`ANALYSIS_RESULTS.md`](./ANALYSIS_RESULTS.md). These findings are descriptive,
+not mechanistic or causal.
 
 # Run
 
@@ -199,3 +209,9 @@ bash run_g0.sh
 ```
 
 The first shot downloads only public Hugging Face metadata/data and performs no model inference.
+
+Run the frozen structure analysis with:
+
+```bash
+bash run_analysis1.sh
+```
