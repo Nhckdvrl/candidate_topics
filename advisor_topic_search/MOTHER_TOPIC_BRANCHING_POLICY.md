@@ -45,6 +45,49 @@ A strong candidate should normally satisfy all of the following:
 6. At least one branch exposes a practical training / inference / system lever.
 7. Failure of one branch must not logically falsify the other branches.
 8. The whole object is broad enough for ACL / EMNLP / NAACL main-paper scale, while each experiment remains individually clean.
+9. The released artifact must expose the **instance-level fields required by the first frozen contrast**, not merely a benchmark-level or chain-level proxy.
+10. Before registration, a metadata-contract preflight must show that the exact critical cell is constructible from released artifacts without changing field semantics, matcher semantics, sample size, or dataset after seeing support.
+
+## Metadata-contract preflight
+
+`artifact public` is **not** equivalent to `experiment executable`.
+
+Before a mother topic is registered, audit the exact contract needed by the first branch:
+
+```text
+required unit of analysis:
+required instance-level fields:
+required labels / counterfactual values:
+required pairing keys:
+required model outputs, if any:
+exact eligible support before model inference:
+```
+
+The preflight must run **before tokenizer/model download whenever possible**.
+
+Hard warning signs:
+
+- the paper describes a field that is absent from the released artifact;
+- the needed value exists only at a coarser granularity than the frozen experiment;
+- a chain-level/document-level field would need to be reused as a turn-level/example-level label;
+- the official evaluator reconstructs a value from hidden or unreleased metadata;
+- eligibility depends on post-hoc matching, aliases, semantic mapping, or outcome-dependent filtering;
+- exact support cannot be counted before inference.
+
+If the frozen experiment requires substituting a coarser field, changing dataset, relaxing matcher semantics, lowering N, or reconstructing missing labels after registration, **stop the registered route**. A new route requires a separately justified measurement object.
+
+### Topic 26 lesson
+
+Topic 26 (`temporal_scope_interference_reinstatement`) passed the high-level artifact audit but failed the exact metadata contract:
+
+```text
+raw structural candidates = 324,637
+eligible exact-support     = 0
+```
+
+The pinned ChronoScope artifact had `present_day_answer` at chain level for many chains but on **zero of 3,335,698 turns**. The registered contrast required turn-level present-day truth. Reusing the chain-level field would have changed the measurement semantics, so the run correctly stopped before tokenization or model inference.
+
+This is an **artifact/measurement stop, not a scientific negative**. The lesson is that metadata semantics must be verified at the exact experimental unit before registration.
 
 ## Anti-abuse rule
 
@@ -74,7 +117,8 @@ Avoid:
 - `paper A shows X + paper B shows Y → maybe Z links them` without a shared experimental object;
 - one benchmark error category inflated into a mother topic;
 - generic `represented but not used` stories without a new direct behavioral dissociation;
-- a branch map whose only entries are probe / SAE / patching / steering.
+- a branch map whose only entries are probe / SAE / patching / steering;
+- a mother topic whose first scientific branch depends on unreleased or semantically ambiguous metadata.
 
 ## Required pre-registration card
 
@@ -82,6 +126,11 @@ Avoid:
 Mother phenomenon:
 Exact reproduction receipt:
 Why surprising / important:
+
+Artifact unit-of-analysis:
+Required instance-level metadata:
+Exact eligible support before inference:
+Metadata-contract verdict:
 
 Branch A — characterization / boundary:
 Branch B — mechanism:
@@ -94,4 +143,4 @@ What result would kill the mother topic itself?
 Exact 2025–2026 collision audit:
 ```
 
-Only after both the reproduction receipt and this branching audit pass may the project enter a numbered topic directory.
+Only after the reproduction receipt, metadata-contract preflight, and branching audit pass may the project enter a numbered topic directory.
