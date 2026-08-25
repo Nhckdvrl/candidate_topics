@@ -1,0 +1,75 @@
+{
+  "structural_violations": [],
+  "fidelity_control": {
+    "present": true,
+    "n_configs": 28,
+    "fresh": 0.8214285714285714,
+    "vla_replay": 0.8214285714285714,
+    "pass": false
+  },
+  "push_effective": {
+    "present": true,
+    "force_n": 150.0,
+    "median_displacement_m": 0.09103507283732927,
+    "pass": true
+  },
+  "per_cell": [
+    {
+      "force_n": 0.0,
+      "direction": "none",
+      "n_configs": 28,
+      "fresh": 0.8214285714285714,
+      "vla_replay": 0.8214285714285714,
+      "delta_VLA": 0.0
+    },
+    {
+      "force_n": 50.0,
+      "direction": "left",
+      "n_configs": 28,
+      "fresh": 0.35714285714285715,
+      "vla_replay": 0.32142857142857145,
+      "delta_VLA": 0.0357142857142857
+    },
+    {
+      "force_n": 50.0,
+      "direction": "right",
+      "n_configs": 28,
+      "fresh": 0.5357142857142857,
+      "vla_replay": 0.4642857142857143,
+      "delta_VLA": 0.0714285714285714
+    },
+    {
+      "force_n": 100.0,
+      "direction": "left",
+      "n_configs": 28,
+      "fresh": 0.03571428571428571,
+      "vla_replay": 0.03571428571428571,
+      "delta_VLA": 0.0
+    },
+    {
+      "force_n": 100.0,
+      "direction": "right",
+      "n_configs": 28,
+      "fresh": 0.0,
+      "vla_replay": 0.0,
+      "delta_VLA": 0.0
+    },
+    {
+      "force_n": 150.0,
+      "direction": "left",
+      "n_configs": 28,
+      "fresh": 0.03571428571428571,
+      "vla_replay": 0.03571428571428571,
+      "delta_VLA": 0.0
+    },
+    {
+      "force_n": 150.0,
+      "direction": "right",
+      "n_configs": 28,
+      "fresh": 0.0,
+      "vla_replay": 0.0,
+      "delta_VLA": 0.0
+    }
+  ],
+  "verdict": "PREREQUISITE_FAIL_REPLAY_FIDELITY"
+}
