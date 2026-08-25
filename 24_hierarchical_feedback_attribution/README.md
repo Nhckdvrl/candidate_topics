@@ -1,6 +1,6 @@
 # 24 — Where Does Closed-Loop Robustness Live in Hierarchical Robot Foundation Policies?
 
-> **G0 + G1 RUN, 2026-08-24/25.**
+> **G0 + G1 + G2 RUN, 2026-08-24/25.**
 >
 > **G0 verdict: `WBC_LEVEL_DOMINATES`.** Of the recovery `fresh` shows over
 > `actuator_replay`, the WBC/reference-generation seam accounts for
@@ -9,14 +9,22 @@
 > from zero (`delta_high = 0.017`, 95% CI `[-0.050, 0.083]`). See
 > [`G0_RESULTS.md`](./G0_RESULTS.md).
 >
-> **G1 verdict: `NAVIGATION_CHANNEL_CAUSES_REVERSAL`.** G0's near-zero pooled
-> `delta_high` hid a left/right sign flip (all three `left` cells positive,
-> all three `right` cells negative). Factoring the VLA command into its two
-> channels shows that flip lives entirely in the navigation/base channel
-> (`+0.20`/`+0.23` CI-excludes-zero under `left`, `-0.20` under `right`); the
-> upper-body channel's effect is at or below the minimum worthy effect in all
-> four estimates, and on `right` two of them are exactly `0.0`. See
-> [`G1_RESULTS.md`](./G1_RESULTS.md).
+> **G1 verdict: `NAVIGATION_CHANNEL_CAUSES_REVERSAL`** (100N). G0's near-zero
+> pooled `delta_high` hid a left/right sign flip. Factoring the VLA command
+> shows that flip lives in the navigation/base channel: `N_100,left = +0.200`
+> CI `[0.067,0.367]`, `N_100,right = -0.200` CI `[-0.367,-0.033]`, both
+> independently significant and opposite-signed. A post-result audit tightened
+> two overclaims about the upper-body channel and the evaluator's verdict
+> predicate — see [`G1_RESULTS.md`](./G1_RESULTS.md).
+>
+> **G2 verdict: `REVERSAL_CONFIRMED_AT_SOME_FORCES_ONLY`.** Completing the
+> force grid (50N/150N, 100N reused from G1) with the corrected predicate
+> finds the reversal strictly established only at `100N`. `50N` is
+> direction-consistent but short of significance; `150N`'s `left` effect is
+> exactly `0.000` (CI `[0,0]`, zero on all 30 configs) — the navigation
+> channel's `left`-push benefit decays monotonically to nothing as force
+> increases (`+0.30 → +0.20 → 0.00`), while its `right`-push cost peaks at
+> `100N` rather than trending. See [`G2_RESULTS.md`](./G2_RESULTS.md).
 
 ## Natural question
 
