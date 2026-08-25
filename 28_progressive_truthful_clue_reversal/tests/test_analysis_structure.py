@@ -71,7 +71,7 @@ class TestRecovery(unittest.TestCase):
                 "full_quiz_question": [full] * 3,
                 "clue_spans": [spans] * 3,
                 "alias_norms": [("gold",)] * 3,
-                "category": ["Test"] * 3,
+                "metadata": [{"category": "Test", "subcategory": "Unit"}] * 3,
             }
         )
         out = analysis.build_transition_table(clean, {"clue": 1.0, "beta": 2.0})
@@ -80,6 +80,7 @@ class TestRecovery(unittest.TestCase):
         self.assertTrue(bool(out.iloc[0]["immediate_recovery"]))
         self.assertTrue(bool(out.iloc[0]["eventual_recovery"]))
         self.assertEqual(out.iloc[0]["new_clue_text"], "Beta clue.")
+        self.assertEqual(out.iloc[0]["category"], "Test")
 
 
 class TestSummaries(unittest.TestCase):

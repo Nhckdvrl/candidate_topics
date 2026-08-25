@@ -185,6 +185,12 @@ def build_transition_table(clean: pd.DataFrame, idf: dict[str, float]) -> pd.Dat
         raise RuntimeError("Eligible transition has no extractable official new clue")
 
     eligible["total_clues"] = eligible["clue_spans"].map(len).astype(int)
+    eligible["category"] = eligible["metadata"].map(
+        lambda x: x.get("category") if isinstance(x, dict) else None
+    )
+    eligible["subcategory"] = eligible["metadata"].map(
+        lambda x: x.get("subcategory") if isinstance(x, dict) else None
+    )
     eligible["relative_arrival"] = eligible["clue_idx"] / eligible["total_clues"]
     eligible["relative_stage"] = pd.cut(
         eligible["relative_arrival"],
@@ -303,25 +309,27 @@ def cluster_bootstrap_binary_difference(
         .reset_index()
     )
     qids = np.asarray(sorted(work["qid"].unique()))
-    by_qid = {qid: g for qid, g in counts.groupby("qid", sort=False)}
+    qid_position = {qid: i for i, qid in enumerate(qids)}
+    sums = np.zeros((len(qids), 2), dtype=np.int64)
+    totals = np.zeros((len(qids), 2), dtype=np.int64)
+    for qid, raw_flag, n_reversals, n_total in counts.itertuples(
+        index=False, name=None
+    ):
+        pos = qid_position[qid]
+        flag = int(bool(raw_flag))
+        sums[pos, flag] = int(n_reversals)
+        totals[pos, flag] = int(n_total)
+
     rng = np.random.default_rng(seed)
-    vals = []
-    for _ in range(reps):
-        sampled = rng.choice(qids, size=len(qids), replace=True)
-        totals = {False: [0, 0], True: [0, 0]}
-        for qid in sampled:
-            for _, raw_flag, n_reversals, n_total in by_qid[qid].itertuples(
-                index=False, name=None
-            ):
-                flag = bool(raw_flag)
-                totals[flag][0] += int(n_reversals)
-                totals[flag][1] += int(n_total)
-        if totals[True][1] and totals[False][1]:
-            vals.append(
-                totals[True][0] / totals[True][1]
-                - totals[False][0] / totals[False][1]
-            )
-    lo, hi = np.quantile(np.asarray(vals, dtype=float), [0.025, 0.975])
+    sampled = rng.choice(len(qids), size=(reps, len(qids)), replace=True)
+    sampled_sums = sums[sampled].sum(axis=1)
+    sampled_totals = totals[sampled].sum(axis=1)
+    valid = (sampled_totals[:, 0] > 0) & (sampled_totals[:, 1] > 0)
+    vals = (
+        sampled_sums[valid, 1] / sampled_totals[valid, 1]
+        - sampled_sums[valid, 0] / sampled_totals[valid, 0]
+    )
+    lo, hi = np.quantile(vals, [0.025, 0.975])
     return observed, float(lo), float(hi)
 
 
