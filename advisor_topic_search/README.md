@@ -2,443 +2,294 @@
 
 这个目录只做一件事：
 
-> **寻找少数真正自然、可推广、符合研究室选题风格、题目宽窄与 novelty 对齐 ACL / EMNLP / NAACL Main，并且在我们的资源条件下高概率做出来的研究问题。**
+> **寻找少数真正自然、可推广、符合研究室选题风格、题目宽窄与 novelty 对齐 ACL / EMNLP / NAACL Main、在我们的资源下高概率做出来，并且最终天然留下方法口子的研究问题。**
 
 这里不是“从最新论文里找一个 gap，再套 probe / SAE / activation patching”的地方，也不是“看到某个模型在某个 benchmark 上有怪现象，就把怪现象本身当成研究问题”的地方。
 
-**README 是唯一总标准。**
+## 文件职责
 
-- `ROUND_*.md`：每一轮搜题的完整历史日志；
+- `README.md`：唯一总标准；
+- `ROUND_*.md`：每一轮完整搜题历史，包括留下和杀掉的方向；
 - `ACTIVE_CANDIDATES.md`：唯一当前候选状态表；
 - `g0/`：first-shot / prerequisite / frozen G0；
-- 三者与 README 冲突时，以 README 为准。
+- numbered topic：用户明确选中以后才注册的正式题。
 
-从现在开始，以下三条是**并列的一等原则**，缺一不可：
-
-1. **Construct-first：问题必须先于具体模型存在。**
-2. **ACL-scale：题目宽窄、novelty 和 contribution package 必须达到 ACL / EMNLP / NAACL Main 的尺度。**
-3. **Executable-first：第一科学检验必须直接、便宜、可证伪，不能先支付高额 prerequisite tax。**
+任何 Round / ACTIVE / G0 与 README 冲突时，以 README 为准。
 
 ---
 
-# 0. Construct-first：研究对象必须先于模型存在
+# 1. 四条并列的一等原则
 
-以后所有候选首先问：
+以后一个题只有同时满足下面四条，才值得进入 ACTIVE。
 
-> **如果把具体模型名、benchmark 名，甚至把 “LLM” 三个字暂时删掉，这个研究对象 / 科学问题还存在吗？**
+## P1 — Construct-first：问题必须先于具体模型存在
 
-如果答案是否定的，默认不进 ACTIVE。
+先问：
 
-我们优先研究的是：
+> **如果把模型名、benchmark 名，甚至把 “LLM” 三个字删掉，这个研究对象 / 科学问题还存在吗？**
 
-- 一个语言学 / 语义学 / NLP 资源问题；
-- 一个认知、学习、记忆、信息处理中的经典 construct；
-- 一个语言变化 / 社会语言现象；
-- 一个信息压缩、表示、检索、预算或系统设计问题；
-- 一个真实任务中长期存在、可定义的 failure；
-- 一个成熟因素之间尚未系统回答的 interaction / trade-off。
+我们优先研究：
 
-**模型应当是研究对象、测量工具或实验载体，而不是题目存在的唯一原因。**
+- 语言学 / 语义学 / NLP 资源中的真实问题；
+- 认知、学习、记忆、信息处理中的经典 construct；
+- 语言变化 / 社会语言现象；
+- 表示、压缩、检索、预算中的成熟工程问题；
+- 真实系统中长期存在、可定义的 failure；
+- 两个成熟因素之间尚未系统回答的 interaction / trade-off。
 
-理想情况是：换成另一个模型，问题仍然成立；模型之间是否表现不同，本身成为关于该 construct 的 boundary condition，而不是让整个题目失效。
+**模型是研究对象、实验载体或测量工具，不应是题目存在的唯一原因。**
 
-## 0.1 强制研究链条：顺序不能倒
+换模型以后，即使效应强弱变化，问题本身仍应有意义；cross-model variation 应成为 boundary condition，而不是让整个题目消失。
 
-所有候选优先按下面这条链条组织：
+## P2 — ACL-scale：宽窄和 novelty 必须对齐 ACL / EMNLP / NAACL Main
 
-```text
-外部存在的概念 / 规律 / 约束
-→ 严格 operationalize
-→ 测 LLM 是否正确处理它（behavior / structural test）
-→ 再问内部表示 / mechanism
-→ 最后才谈 intervention / mitigation
-```
+天然问题只是必要条件，不是充分条件。
 
-### Step A — External object first
-
-先写清楚一个**不依赖具体模型仍然存在**的科学对象。例如 real / fictional、knowledge / existence、source dependence、storage budget、language change。
-
-禁止从“某层有一个方向”“某 benchmark 出现 reversal”“某个 token 很敏感”开始倒推研究问题。
-
-### Step B — Operationalization before model analysis
-
-必须先把外部 construct 变成可控制、可测量的变量：
-
-- 哪个因素被 manipulate？
-- 哪些因素必须 matched / held constant？
-- 如果模型正确处理该 construct，行为上应出现什么关系？
-- competing explanations 分别预测什么？
-
-**如果 construct 无法在 hidden state 之外被定义和检验，它大概率还不是一个成熟研究问题。**
-
-### Step C — Behavior is the first scientific test
-
-第一阶段先回答：
-
-> 模型是否以符合该外部规律 / construct 的方式处理信息？边界在哪里？
-
-Behavioral null 不能靠 probe / SAE / layer sweep 救回来。若行为对象根本不稳定，优先杀题或改问题，而不是继续找内部信号。
-
-### Step D — Mechanism is optional and subordinate
-
-只有 behavior / structural result 已经站住，而且内部证据能区分重要 competing explanations 时，才投入 probing / patching / SAE / steering。
-
-机制的任务是**解释外部问题**，不是把“能 decode 某个信号”本身升级成贡献。
-
-### Step E — Intervention must close the scientific loop
-
-Intervention 最好用于回答：
-
-- 这个表示是否具有 causal role？
-- 修正该机制是否改善对原 construct 的处理？
-- 能否构造 principled mitigation / system design？
-
-单纯证明“这个 direction 可以 steer”不够。
-
-## 0.2 好问题与坏问题
-
-更像研究室同门：
-
-```text
-哪些因素让 subword LM 获得 character-level information？
-FrameNet 中哪些语义关系存在系统性缺口，现代 LM 能否帮助补全？
-在固定 storage budget 下，降维和量化如何交互？
-LLM 普及后，academic English 中的 L1 signal 是否减弱？
-模型是否区分 real / fictional status，而不是仅依赖 familiarity？
-多个表面一致的报告在 source dependence 不同时，是否应具有相同证据强度？
-```
-
-不够自然：
-
-```text
-为什么 Qwen 在第 4 个 clue 后把正确答案改错？
-为什么某模型在某 benchmark 的 middle position 掉 20 分？
-为什么某层 probe 能读到一个信号但最终 token 没输出？
-```
-
-后者只有在能被提升为一个**独立、跨模型仍有意义的科学问题**后才考虑。
-
----
-
-# 1. 研究室同门给出的真实选题先验
-
-这一节来自实验室 Slack 中 `r_han / r_hamdi / r_kisako / r_utami / r_sato / r_tsujimoto / r_yano / r_xiang` 等频道。目的不是列履历，而是回答：
-
-> **导师实际认可的题，研究对象长什么样？**
-
-| 组内方向 | 真正研究的对象 | 对我们最重要的启发 |
-|---|---|---|
-| `r_han`：Frame semantics / FrameNet relation & induction | 显式语义资源、frame relation、coverage | 经典 NLP 资源问题在 LLM 时代仍然成立；LLM 是新工具，不是问题本身 |
-| `r_hamdi`：real vs fictional | 现实/虚构这一独立 ontology construct | 做机制也要 construct-first；familiarity、genre、knowledge 等是 competing explanations |
-| `r_kisako`：dimensionality reduction × quantization | 表示压缩与 storage budget | 两个成熟因素的 interaction / trade-off 就可以是完整论文，不需要 mechanism |
-| `r_utami`：native-language signal in academic English | 语言变化与 L1 trace | 一个现实世界自然问题 + 可解释 measurement 可以直接成为 EMNLP 尺度研究 |
-| `r_sato`：character-level information acquisition | tokenization、orthography、semantic / syntactic factors | 最值得模仿：已知现象 → 2–4 个自然解释 → 受控实验逐个拆解 |
-| `r_tsujimoto`：semantic resources / induction | 经典概念体系与资源构建 | old NLP construct 可以用现代 LM 重新测量、诱导或补全 |
-| `r_yano`：FrameBench / frame-semantic understanding | “我们真正想测什么”这一 measurement 问题 | novelty 可以来自更正确的问题 formulation，而不是新模型 |
-| `r_xiang`：retrieval-agent safety（早期） | 真实系统失败 | 系统题也应从稳定 failure 出发，回答什么时候、为什么、怎么修 |
-
-从组内项目抽出的共同规律：
-
-1. **问题先于模型，模型先于方法。**
-2. **研究对象最好有模型外部定义。**
-3. **先 operationalize，再测 behavior，最后才允许 mechanism / intervention。**
-4. **换模型后问题仍然有意义。**
-5. **2–4 个自然 competing explanations 比大量 settings 更重要。**
-6. **分析型论文完全成立，不强迫 mechanism。**
-7. **标题和第一页应该先让人看到问题，不是 method。**
-8. **claim 强度必须和证据强度匹配。**
-9. **最好的结果往往是一条清楚的规律、因素分解、interaction 或 boundary condition。**
-
----
-
-# 2. 我们优先寻找的六类 research shape
-
-## Type A — 自然现象 → 因素分解
-
-代表：`r_sato`。
-
-```text
-一个跨模型 / 跨数据仍有意义的 phenomenon
-→ 2–4 个自然解释 A/B/C
-→ 每个解释有直接 controlled manipulation
-→ 得到因素贡献和边界条件
-```
-
-## Type B — 经典 NLP / cognitive / resource 问题 × LLM 时代的新 handle
-
-代表：`r_han / r_tsujimoto / r_yano`。
-
-不是：
-
-```text
-老 benchmark + 新模型
-```
-
-而是：
-
-```text
-旧问题本来难以观察 / 自动处理
-→ LLM 的能力、表示、生成或规模让新的 measurement / intervention 成为可能
-→ 重新回答旧科学问题
-```
-
-## Type C — 两个成熟因素 × 一个自然 interaction / budget
-
-代表：`r_kisako`。
-
-```text
-因素 X 已经成熟
-因素 Y 已经成熟
-X × Y 的 interaction / trade-off 还没有被系统回答
-→ 用一个自然约束 / budget / task family 统一比较
-```
-
-结果必须有结构，不能只是二维表。
-
-## Type D — 自然社会 / 语言变化问题 × 可解释 proxy
-
-代表：`r_utami`。
-
-问题本身来自现实世界，不来自模型 failure。重点审 proxy、时间/群体对照和 alternative explanations。
-
-## Type E — 自然 construct → operationalization → behavior → representation → causal role
-
-代表：`r_hamdi`。
-
-只有下面顺序才允许做机制：
-
-```text
-construct 有独立定义
-→ 用 matched controls / manipulable variables operationalize
-→ behavior / structural relation 先站住
-→ representation evidence
-→ causal intervention 回答原 construct 问题
-```
-
-禁止：
-
-```text
-想做 probe / SAE / patching
-→ 找一个模型怪现象
-→ 再给内部信号起一个科学名字
-```
-
-## Type F — 真实系统目标 / failure → controlled diagnosis
-
-系统题必须围绕一个真实目标，而不是 benchmark 分数。至少回答以下两项：什么时候失败、为什么失败、如何针对性缓解。
-
----
-
-# 3. ACL / EMNLP / NAACL Main：题目宽窄与 novelty 标准
-
-**目标 venue 的校准中心就是 ACL / EMNLP / NAACL Main。**
-
-NeurIPS / ICML / AAAI / IJCAI 可以作为科学背景、方法、collision 和 adjacent literature，但**题目尺度与 narrative 首先按 ACL-family NLP main conference 来校准**。
-
-天然问题只是必要条件，不是充分条件。一个问题即使很自然，如果过宽、过窄、novelty 不够、只能得到一张 benchmark 表，也不能进入 ACTIVE。
-
-## 3.1 正确的题目尺度：一个 mother question，不是一粒灰，也不是整个宇宙
-
-理想 ACL / EMNLP / NAACL 尺度通常是：
+一个 Main-scale 题通常应能收成：
 
 ```text
 1 个清楚的 mother question
-+ 2–4 个自然 competing explanations / factors / subquestions
++ 2–4 个自然 factors / competing explanations / subquestions
 + 一套统一 operationalization
-+ 2–4 条能够写进 abstract 的 headline findings
-+ 至少一个有意义的 generalization / boundary-condition 轴
++ 2–4 条能写进 abstract 的 headline findings
++ 至少 1 个有意义的 generalization / boundary-condition 轴
 ```
 
 ### 太宽
-
-例如：
 
 ```text
 LLM 是否会推理？
 LLM 如何使用证据？
 LLM 的记忆机制是什么？
-LLM 是否理解语言？
 ```
-
-这类题没有一个 paper 可以自然封口，往往只能变成 benchmark 大拼盘。
 
 ### 太窄
 
-例如：
-
 ```text
-某一个 Qwen checkpoint 在某一个 benchmark 上为什么多掉 7 分？
-某一个 prompt wording 是否改变某一个 bias？
-某一层某个 probe 的 AUROC 为什么更高？
-把已有 phenomenon 换成另一个模型 / 数据集 / 语言再做一次。
+某个 Qwen checkpoint 为什么在某 benchmark 多掉 7 分？
+某个 prompt wording 是否改变某个 bias？
+某层某个 probe 为什么 AUROC 更高？
+把已有现象换模型 / 换语言再做一次。
 ```
-
-这类题即使结果真实，也通常不足以形成 ACL Main 级别的 mother question。
 
 ### 合适
 
-例如：
-
 ```text
 在固定 storage budget 下，降维与量化如何交互？
-哪些因素导致 subword LM 获得 character-level information？
-模型是否区分 knowledge 与 existence，而非仅仅 familiarity？
+哪些因素使 subword LM 获得 character-level information？
+模型是否区分 knowledge 与 existence，而不是仅依赖 familiarity？
 来源数量相同但独立性不同，证据整合应如何变化？
 ```
 
-共同点是：**一个外部问题 + 少数可解释因素 + 一套统一实验逻辑。**
+## P3 — Executable-first：第一科学检验必须直接、便宜、可杀
 
-## 3.2 Novelty 必须是“科学 novelty”，不是实验 novelty
-
-优先认可的 novelty：
-
-1. **New scientific question / reframing**：旧 benchmark 没有真正测到想问的 construct，重新 formulation 后得到不同结论。
-2. **New factor decomposition**：已有现象存在，但关键 competing explanations 尚未被干净拆开。
-3. **New interaction / trade-off**：两个成熟因素各自已有研究，但它们的交互在一个自然约束下尚未系统回答。
-4. **New empirical regularity**：跨模型 / 数据 /语言出现一条稳定、可解释的新规律，而不是单点 anomaly。
-5. **Old question, new answer**：LLM 时代提供新的 handle，使经典 NLP / cognitive 问题第一次能被规模化、自动化或因果检验。
-6. **New measurement / resource formulation**：不是单纯多一个 benchmark，而是改变“我们到底在测什么”。
-7. **System diagnosis + principled mitigation**：真实 failure 被分解出稳定原因，并导出针对性方法。
-
-默认不算核心 novelty：
+健康路径：
 
 ```text
-第一次在模型 X 上做
-第一次在语言 Y 上做
-第一次把 probe / SAE / activation patching 用在现象 Z
-多跑几个 benchmark
-换一个更大的模型
-把已有结论复制到一个相邻 domain
+外部 construct
+→ programmatic / public data operationalization
+→ 很轻的 sanity
+→ 直接 behavioral / structural G0
+→ 成立后再做深化
 ```
 
-## 3.3 “近撞但没完全撞”不是自动 novelty
-
-如果最近工作已经完成 mother question，不能靠以下方式续命：
+危险路径：
 
 ```text
-改一种 token
-改一个 layer
-改一种模型 family
-改成一个更窄数据子集
-增加一个 probe
-把 behavior 改成 representation
+复杂复现
+→ receipt A
+→ seed relation B
+→ eligibility C
+→ layer / probe sweep
+→ 才知道自己的 scientific question 能不能开始
 ```
 
-只有当新题仍然能用**独立科学问题**来表述，才算 survived collision。
+Topic 25 是永久反例：昂贵 receipt 完整完成，但冻结 seed relation 失败，真正 G0 根本无法进入；失败本身又没有足够 scientific information gain。
 
-## 3.4 ACL-paper test：注册前先假装写 Abstract
+以后必须问：
 
-候选进入 ACTIVE 前，必须能粗写出以下 contribution package：
+> **从 clone repo 到第一次检验“我们的科学问题”，到底隔了几步？**
+
+## P4 — Method-runway：分析结果必须天然留下方法口子
+
+这条是硬要求，不是 optional bonus。
+
+我们不要求题目从第一天就写出新方法，但必须能够在分析阶段回答：
+
+> **如果我们发现了规律 / failure / mechanism，接下来到底可以改什么？为什么这个方法是由科学发现自然导出的？**
+
+健康结构：
 
 ```text
-Problem: 一个普通 NLP 研究者能立即理解的问题。
-Gap: 现有工作具体缺哪一个 scientific distinction，而不是“还没用我们的方法”。
-Method/Design: 一套统一 experimental framework，而不是零散 settings。
-Finding 1: 主现象 / 主规律。
-Finding 2: competing explanation / factor decomposition。
-Finding 3: boundary condition / generalization / interaction。
-Finding 4 (optional): mechanism / mitigation / resource implication。
+external construct / real problem
+→ factor decomposition / diagnosis
+→ 找到稳定 failure condition 或 causal factor
+→ principled method / objective / data strategy / architecture / inference policy
+→ method specifically targets the discovered factor
 ```
 
-如果预想 abstract 最后只能写：
+例如：
 
-> “我们在三个模型上发现 X 有时发生。”
+- source dependence 导致 false corroboration → dependency-aware evidence aggregation；
+- detectability 决定 negative evidence 的意义 → search-coverage-aware stopping / belief update；
+- 压缩预算下某种交互最优 → budget-aware compression allocation；
+- 某类 evidence / representation 被错误忽略 → targeted training objective / routing / retrieval policy。
 
-默认太窄。
-
-如果需要十几个完全不同的 benchmark 才能显得有内容，通常说明 mother question 太散。
-
-## 3.5 Breadth 必须来自科学覆盖，不来自 sweep 数量
-
-ACL-scale 的“宽”不是：
+不健康：
 
 ```text
-20 个模型 × 15 个 benchmark × 8 个 prompt
+我们发现模型有性质 X。
+然后呢？
 ```
 
-而是：
+或者：
 
 ```text
-核心 construct 被多个互补 manipulation 支持
-+ competing explanations 被逐个排除
-+ 至少一个跨模型 / 跨任务 / 跨语言 / 跨 domain 的 boundary test
+为了“有方法”，最后随便加一个 prompt / steering vector。
 ```
 
-模型数量是证据，不是 contribution 本身。
-
-## 3.6 当前晋级尺度
-
-候选至少应满足以下之一，才有 ACL / EMNLP / NAACL Main 潜力：
-
-- **Type A**：一个自然现象 + 2–4 个因素的系统分解；
-- **Type B**：一个经典问题在 LLM 时代得到实质性新答案；
-- **Type C**：一个自然 interaction / trade-off，能导出稳定规律；
-- **Type D**：一个重要现实语言现象 + 强 measurement / temporal/group controls；
-- **Type E**：外部 construct + behavioral dissociation + representation / causal explanation；
-- **Type F**：一个真实系统 failure + controlled diagnosis + principled mitigation。
-
-如果只够 workshop / short diagnostic 的体量，明确标 `TOO_NARROW_FOR_MAIN`，不要靠后续堆实验强行放大。
+**方法口子必须由前面的科学结果推出，而不是论文最后硬塞。**
 
 ---
 
-# 4. External-Construct / Model-Invariance Gate
+# 2. 强制研究链条：顺序不能倒
 
-这个 Gate **优先于 artifact 和 mechanism，但与 ACL-scale/novelty Gate 并列为必须通过的科学门槛。**
+所有候选默认按下面顺序：
 
-### EC1. Construct independent of model
+```text
+外部存在的概念 / 规律 / 约束
+→ 严格 operationalize
+→ behavioral / structural test
+→ 因素分解 / competing explanations
+→ 必要时看 representation / mechanism
+→ 导出 principled intervention / method
+```
 
-研究对象能否独立于某个模型的偶发现象被定义？
+## Step A — External object first
 
-如果只能写：
+先写清楚一个不依赖具体模型仍然存在的对象，例如 real / fictional、knowledge / existence、source dependence、storage budget、language change。
 
-> “模型 X 在任务 Y 上出现 Z。”
+禁止从“某层有一个方向”“某 benchmark 出现 reversal”“某 token 很敏感”倒推研究问题。
 
-而不能写出更一般的问题，默认降级。
+## Step B — Operationalization before model analysis
 
-### EC2. Operationalization independent of hidden-state evidence
-
-在看 probe / SAE / activation 之前，能否明确：
+必须先明确：
 
 - independent variable；
 - dependent behavioral / structural measure；
 - matched controls；
-- competing predictions。
+- 2–4 个 competing explanations 的不同预测。
 
-如果不能，说明我们可能仍是在从内部现象倒推 construct。
+如果 construct 只能靠 hidden-state evidence 来定义，它大概率还不是成熟问题。
 
-### EC3. Model swap test
+## Step C — Behavior first
 
-至少设想 2–3 个不同 family 的模型。
+第一阶段先回答：
 
-如果换模型后 phenomenon 消失：这个结果能否成为有意义的 boundary condition？如果整个题目直接没有了，不进 ACTIVE。
+> 模型是否以符合该 construct / law 的方式处理信息？边界在哪里？
 
-### EC4. Benchmark is instrument, not object
+Behavioral null 不能靠 probe / SAE / layer sweep 救回来。
 
-benchmark 应当只是测量 scientific construct 的工具。如果研究问题等价于“解释这个 benchmark 的奇怪分数”，优先级低。
+## Step D — Mechanism only when needed
 
-### EC5. Generality must be in the claim
+只有 behavior 已经站住，而且内部证据能区分重要 competing explanations 时，才投入 probing / patching / SAE / steering。
 
-最终 claim 应该尽量是：
+机制是解释外部问题，不是贡献本身。
 
-```text
-某种语言 / 学习 / 信息 / 认知因素如何影响模型
-```
+## Step E — Method closes the loop
 
-而不是：
+最后的方法最好回答：
 
-```text
-某个 checkpoint / 某个模型有某个性质
-```
+- 哪个 failure condition 可以被消除？
+- 哪个 causal factor 可以被控制？
+- 哪个 system component 应该被重新设计？
+- 新 objective / data construction / routing / aggregation 为什么针对前面的发现？
 
-**EC1 或 EC2 明显失败：不注册。EC3 明显失败：至少降为 WATCH。**
+单纯“这个 direction 能 steer”不算完整 method runway。
 
 ---
 
-# 5. Venue / literature policy
+# 3. 研究室同门给出的真实选题先验
 
-## 5.1 目标 venue
+这一节来自实验室 Slack 中 `r_han / r_hamdi / r_kisako / r_utami / r_sato / r_tsujimoto / r_yano / r_xiang` 等频道。
 
-题目尺度、novelty、叙事与最终投稿目标优先对齐：
+| 组内方向 | 真正研究的对象 | 选题启发 |
+|---|---|---|
+| `r_han`：Frame semantics / FrameNet | frame relation、coverage、语义资源 | 经典 NLP 资源问题在 LLM 时代仍成立，LLM 是新工具 |
+| `r_hamdi`：real vs fictional | real/fictional、knowledge/existence | construct 先存在，再做 behavior → representation → causal role |
+| `r_kisako`：dimensionality reduction × quantization | storage budget / compression | 两个成熟因素的 interaction 就能成为完整论文，同时天然能导出 compression 方法 |
+| `r_utami`：native-language signal | 现实语言变化、L1 trace | 现实问题 + 强 measurement 可以是 Main-scale 论文 |
+| `r_sato`：character-level information | tokenization / orthography / semantic / syntactic factors | 最值得模仿：现象 → 2–4 个解释 → 受控实验拆因素 |
+| `r_tsujimoto`：semantic resources / induction | 经典概念体系与资源构建 | old NLP construct 可以用现代 LM 重新测量、诱导、补全 |
+| `r_yano`：FrameBench | 我们到底在测什么 | novelty 可以来自更正确的 formulation / measurement |
+| `r_xiang`：retrieval-agent safety（早期） | 真实系统 failure | 系统题应回答什么时候失败、为什么、怎么修 |
+
+共同规律：
+
+1. 问题先于模型，模型先于方法；
+2. construct 最好有模型外部定义；
+3. 2–4 个自然 competing explanations 比大量 settings 更重要；
+4. 分析型论文完全成立，但最好能自然导向方法；
+5. 标题首先体现问题，而不是 method；
+6. claim 强度必须和证据强度匹配；
+7. 最好的结果是一条清楚规律、因素分解、interaction、boundary condition，并能告诉我们“该怎么改”。
+
+---
+
+# 4. 六类优先 research shape
+
+## Type A — 自然现象 → 因素分解 → targeted method
+
+代表：`r_sato`。
+
+```text
+稳定 phenomenon
+→ 2–4 个解释 A/B/C
+→ controlled manipulation
+→ 找到关键因素
+→ 针对该因素设计方法 / data strategy / objective
+```
+
+## Type B — 经典 NLP / cognitive / resource 问题 × LLM 时代新 handle
+
+代表：`r_han / r_tsujimoto / r_yano`。
+
+不是“老 benchmark + 新模型”，而是旧问题因为 LLM 时代出现新的 measurement / automation / intervention handle，从而获得实质性新答案。
+
+## Type C — 两个成熟因素 × interaction / budget → policy / allocation method
+
+代表：`r_kisako`。
+
+```text
+因素 X 已成熟
+因素 Y 已成熟
+X × Y interaction 尚未系统回答
+→ 统一 budget / constraint
+→ 找规律
+→ 导出最优 allocation / compression / selection strategy
+```
+
+## Type D — 自然社会 / 语言变化问题 × 可解释 proxy
+
+代表：`r_utami`。
+
+需要强 temporal/group controls。方法口子可以是 measurement framework、detection、adaptation、data curation，而不一定是新 neural module。
+
+## Type E — 自然 construct → behavior → representation → causal role → intervention
+
+代表：`r_hamdi`。
+
+适合我们 GPU 丰富的优势，但 mechanism 必须服务于外部 construct。
+
+## Type F — 真实系统目标 / failure → controlled diagnosis → principled mitigation
+
+至少回答：什么时候失败、为什么失败、怎么修，其中最好三者形成一条完整因果链。
+
+---
+
+# 5. ACL / EMNLP / NAACL Main：宽窄与 novelty
+
+目标 venue 的校准中心：
 
 ```text
 ACL Main
@@ -446,64 +297,11 @@ EMNLP Main
 NAACL Main
 ```
 
-## 5.2 搜索文献范围
+NeurIPS / ICML / AAAI / IJCAI 用作背景、方法、collision、adjacent literature，但题目尺度首先按 ACL-family Main 校准。
 
-主 seed 优先 ACL / EMNLP / NAACL；NeurIPS / ICML / AAAI / IJCAI 可作为补充科学来源、方法来源和 collision source。
+## 5.1 Scope verdict
 
-低优先级 venue 可以用于 old-question anchor、背景与反例，但不能仅凭漂亮 gap 把新题升进 ACTIVE。
-
-更重要的是：**以后不再主要搜索 “surprising LLM failure”。** 搜索顺序改成：
-
-```text
-外部科学 construct / old NLP problem
-→ 经典文献中的 competing explanations
-→ 找到可直接 operationalize 的变量与 manipulation
-→ 查 ACL/EMNLP/NAACL 近年如何处理这个问题
-→ 再补 AI 顶会相邻工作
-→ exact collision
-→ ACL-scale / novelty audit
-```
-
----
-
-# 6. 资源画像
-
-我们的约束不是“算力少”，而是：
-
-```text
-现金少
-人工标注资源少
-GPU 相对充足
-```
-
-因此优先：
-
-- public dataset / structured resource；
-- gold labels；
-- released predictions / traces / checkpoints；
-- open-weight models；
-- synthetic / executable / programmatic labels；
-- 现成语料或元数据能直接完成 first shot。
-
-避免：
-
-- 大量付费闭源 API；
-- 几千条新人工 annotation；
-- 必须先复现一个昂贵 upstream pipeline 才碰得到自己的问题。
-
-GPU 用于 controlled training、cross-model confirmation、checkpoint analysis、probing / patching / SAE / steering 等**第二阶段深化**，而不是 sweep 出一个偶然现象。
-
----
-
-# 7. 正式候选的 8 个硬 Gate
-
-## G1 — External Construct + Natural Question
-
-必须通过 External-Construct gate，并能用一句普通话解释“研究的是什么”。
-
-## G2 — ACL / EMNLP / NAACL Scale
-
-必须明确判断：
+每个候选必须明确写：
 
 ```text
 TOO_BROAD
@@ -513,202 +311,245 @@ TOO_NARROW_FOR_MAIN
 
 进入 ACTIVE 原则上必须是 `MAIN_SCALE`。
 
-预期 full paper 至少要能形成一个 mother question、2–4 个 coherent subquestions / factors、2–4 个 headline findings，而不是一个孤立 effect。
+## 5.2 Scientific novelty 类型
+
+认可：
+
+1. new scientific question / reframing；
+2. new factor decomposition；
+3. new interaction / trade-off；
+4. new empirical regularity；
+5. old question, new answer；
+6. new measurement / resource formulation；
+7. system diagnosis + principled mitigation；
+8. analysis that reveals a factor and enables a new method family。
+
+默认不算核心 novelty：
+
+```text
+第一次在模型 X 做
+第一次在语言 Y 做
+第一次用 probe / SAE / activation patching 做现象 Z
+多跑几个 benchmark
+换更大的模型
+把已有结论搬到相邻 domain
+```
+
+## 5.3 Near collision 不能靠压窄续命
+
+如果 mother question 已被做完，不能靠 token / layer / model family / 子数据集 / probe / representation 续命。
+
+只有仍能用独立科学问题描述，才算 survived collision。
+
+## 5.4 ACL-paper test
+
+注册前必须能粗写：
+
+```text
+Problem: 一个普通 NLP 研究者立即理解的问题。
+Gap: 缺一个 scientific distinction，而不是“还没用我们的方法”。
+Design: 一套统一 experimental framework。
+Finding 1: 主规律。
+Finding 2: factor decomposition / competing explanation。
+Finding 3: generalization / boundary / interaction。
+Method implication: 前面结果具体告诉我们该改什么。
+Method: 一个由发现自然推出的 principled intervention。
+```
+
+如果最后只能写“我们在三个模型上发现 X 有时发生”，太窄。
+
+如果方法和前面 finding 没有逻辑连接，也不算完整 contribution package。
+
+---
+
+# 6. 资源画像
+
+我们的真实约束：
+
+```text
+现金少
+人工标注少
+GPU 相对充足
+```
+
+优先：public dataset、gold labels、released predictions / traces / checkpoints、open-weight models、synthetic / executable labels、现成语料和 metadata。
+
+避免：大量 closed API、大规模人工 annotation、昂贵 upstream reproduction tax。
+
+GPU 优先用于第二阶段：controlled training、cross-model confirmation、checkpoint analysis、probing / patching / SAE / steering、method training。
+
+---
+
+# 7. 正式候选的 9 个硬 Gate
+
+## G1 — External Construct + Natural Question
+
+问题先于具体模型存在，并能用一句普通话解释。
+
+## G2 — ACL / EMNLP / NAACL Scale
+
+必须是 `MAIN_SCALE`，而不是靠堆 settings 放大。
 
 ## G3 — Scientific Novelty
 
-必须明确写出 novelty 属于哪一种：reframing、factor decomposition、interaction、new regularity、old-question/new-answer、measurement、system diagnosis。
-
-如果 novelty 只能写“first to apply method X / model Y”，不进 ACTIVE。
+必须明确 novelty 类型和 one-liner；不能只是 first-to-apply。
 
 ## G4 — Competing Explanations / Interaction
 
-进入 ACTIVE 前至少有 2–4 个自然 competing explanations，或者一个清楚的 interaction / budget axis。
+至少 2–4 个自然解释，或者一个清楚 interaction / budget axis。
 
-如果唯一计划是“看看 hidden state 有什么”，不进 ACTIVE。
+## G5 — Direct G0 + Low Prerequisite Tax
 
-## G5 — Direct Behavioral / Structural G0 + Low Prerequisite Tax
-
-健康路径：
-
-```text
-公开资源 / programmatic construction
-→ 一个很轻的 sanity
-→ 直接 behavioral / structural test 检验我们的科学问题
-→ 成立后再考虑 mechanism
-```
-
-危险路径：
-
-```text
-复杂复现
-→ receipt A
-→ relation B
-→ eligibility C
-→ probe / layer sweep
-→ 才知道 scientific object 是否存在
-```
-
-Topic 25 是永久反面教材：昂贵 prerequisite 完整跑完，冻结 seed relation 失败，G0 根本不能开始；失败本身又没有足够科学信息增益。以后这种题搜索阶段就重罚。
+第一科学检验必须尽快碰到 mother question。
 
 ## G6 — Artifact / Resource Executability
 
-“论文说代码公开”不等于可执行。注册前要核对：数据字段、instance-level metadata、模型权重、scorer、eligible support、环境要求。
+数据、字段、scorer、模型、环境都要实际可执行。
 
 ## G7 — Interpretable Null
 
-G0 如果不支持假说，必须仍能回答一个 meaningful question 或排除一个 explanation。若失败只能得到“这个模型没出现”，这是坏题信号。
+G0 null 仍能排除解释、回答科学问题或界定边界，不能只剩“这个模型没出现”。
 
-## G8 — Runway
+## G8 — Method Runway
 
-最好结果出来后还要有自然下一步：因素边界、跨语言/跨模型 generality、机制、方法、资源改进或系统 mitigation。不能是“证明了，然后呢？”
-
----
-
-# 8. Model-generality policy
-
-所有模型行为类候选默认遵守：
-
-- 发现阶段可以先用一个便宜 open model；
-- 晋级阶段至少设计 2–3 个不同 family 的 confirmation；
-- 如果主效应只在一个 family 上存在，除非这种 family difference 本身对应明确科学解释，否则降级；
-- 不要求每个模型 effect size 相同，但要求研究问题跨模型仍然成立；
-- model size / post-training / architecture 更适合作为 explanatory factor，而不是题目本身。
-
-> **Cross-model variation 应该帮助解释问题，而不是决定问题是否存在。**
-
----
-
-# 9. Mechanism 的位置
-
-机制不是默认贡献，也不是“显得高级”的装饰。
-
-只有下面情况才值得投入 GPU：
+进入 ACTIVE 前必须写出至少一个**由预期 scientific finding 自然推出的方法方向**，并回答：
 
 ```text
-external construct 已独立定义
-+ operationalization 清楚
-+ behavioral / structural object 已经稳定
-+ competing explanations 需要内部证据才能区分
+Failure / factor 是什么？
+我们能控制哪个变量？
+方法改哪一层：data / objective / representation / retrieval / aggregation / routing / inference / system policy？
+为什么这个方法针对前面的原因，而不是 generic trick？
+什么实验能证明 method 真的修正了原问题？
 ```
 
-优先 causal intervention；probe / CKA / t-SNE 只能作为证据链的一部分。
+如果只能写“以后可以设计一个更好的方法”，不通过 G8。
 
-如果 behavior 本身不稳定，禁止用更多层、更大 coefficient sweep、更多 probe 去把故事救回来。
+## G9 — Full-paper Runway
 
-**representation 不存在并不自动 kill 一个好问题**：不同模型对同一外部 construct 表现不同，可以是有意义的 model-family boundary condition。真正危险的是 construct 本身只能靠 representation 来定义。
+最好结果后还应有自然扩展：因素边界、跨模型/语言/domain generality、mechanism、method、资源或系统应用。
+
+不能“证明了，然后呢？”
+
+---
+
+# 8. Mechanism 与 Method 的位置
+
+机制不是默认贡献，也不是显得高级的装饰。
+
+只有：
+
+```text
+external construct 已定义
++ behavior 已站住
++ competing explanations 需要内部证据
+```
+
+才值得做机制。
+
+优先 causal intervention；probe / CKA / t-SNE 只能做证据链一部分。
+
+方法也不能反过来定义问题。最健康的是：
+
+```text
+问题 → 规律 / failure → 原因 → 方法
+```
+
+而不是：
+
+```text
+先想一个方法 → 找 benchmark 证明它有效 → 再包装科学问题
+```
+
+---
+
+# 9. Model-generality policy
+
+- 发现阶段可先用一个便宜 open model；
+- 晋级至少设计 2–3 个不同 family confirmation；
+- 如果效应只在一个 family 上存在，除非 family difference 有科学解释，否则降级；
+- model size / post-training / architecture 更适合作为 explanatory factor；
+- Cross-model variation 应帮助解释问题，而不是决定问题是否存在。
 
 ---
 
 # 10. Kill rules
 
-以下任一明显成立，原则上直接 KILL / DOWNGRADE：
+以下任一明显成立，原则上 KILL / DOWNGRADE：
 
-- 研究问题只能依赖某个模型/benchmark 的怪癖来定义；
-- construct 在看 hidden state / probe 之前无法 operationalize；
-- 题目明显 `TOO_NARROW_FOR_MAIN`，只能靠堆 settings 放大；
-- 题目 `TOO_BROAD`，无法用一个 full paper 自然封口；
-- 主 novelty 是换模型、换语言、换数据集或换 interpretability method；
-- exact collision 已经把 mother question 做完，只能继续压窄；
-- 要靠大量 closed API 或大规模新人工标注；
-- first scientific test 前有多层昂贵 prerequisite；
-- behavior 不成立后试图靠 layer/probe/SAE sweep 救故事；
-- 需要越来越多 control 才能解释 claim；
+- 题目只能由某模型 / benchmark 怪癖定义；
+- construct 在 hidden-state evidence 前无法 operationalize；
+- `TOO_NARROW_FOR_MAIN` 或 `TOO_BROAD`；
+- novelty 主要是换模型、语言、数据或 interpretability method；
+- collision 已做完 mother question，只能继续压窄；
+- first scientific test 前有昂贵 prerequisite chain；
+- behavior 不成立后靠 probe / SAE / layer sweep 救故事；
+- control 越写越多，claim 才勉强成立；
 - G0 null 只能说明“这个模型没出现”；
-- 最好结果出来后没有自然下一步；
+- **最好结果出来后没有 principled method opening；**
+- 方法只能是 generic prompt / steering / finetune，和前面的分析没有因果联系；
 - benchmark 是研究对象，而不是 measurement instrument。
 
 ---
 
 # 11. Round-by-Round 搜题日志制度
 
-**保留，而且强制执行。** 每一轮搜索都必须独立形成一个：
+**强制保留。** 每轮都形成：
 
 ```text
 advisor_topic_search/ROUND_XX_YYYY-MM-DD.md
 ```
 
-Round log 的目的不是写工作总结，而是保存**搜索轨迹与决策依据**，防止以后重复踩坑、忘记 collision、把旧 dead end 再包装一次。
-
-## 11.1 每个 Round 必须记录什么
-
-每轮至少包含：
+Round 必须记录：
 
 ```text
 1. Round objective
-2. 本轮 search lanes / mother constructs
-3. 为什么这些 lane 像研究室同门的 research shape
+2. search lanes / mother constructs
+3. 为什么像研究室同门的 research shape
 4. old scientific / NLP anchors
-5. 搜到的近年 ACL / EMNLP / NAACL / adjacent papers
-6. 每个候选的 mother question
+5. 近年 ACL / EMNLP / NAACL / adjacent papers
+6. mother question
 7. width audit: TOO_BROAD / MAIN_SCALE / TOO_NARROW_FOR_MAIN
-8. novelty audit: novelty 到底是什么
+8. novelty audit
 9. exact collision audit
 10. competing explanations / interaction
 11. artifact / prerequisite tax
 12. frozen first scientific G0
 13. interpretable null
-14. full-paper runway
-15. KEEP / WATCH / KILL 以及明确理由
-16. 本轮没有留下来的 search lanes 和失败教训
-17. 下一轮还需要继续挖的方向
+14. method runway：最好结果后具体可以设计什么方法
+15. method 为什么由 finding 自然推出
+16. full-paper runway
+17. KEEP / WATCH / KILL 及理由
+18. killed lanes 与失败教训
+19. 下一轮搜索方向
 ```
 
-## 11.2 必须记录被杀掉的题
+Round 不能只写 survivor。被撞掉、太窄、novelty 不够、artifact 太贵、method opening 太弱的题都必须留下 negative knowledge。
 
-**Round 不能只写 survivors。**
-
-尤其要保存：
-
-- 哪篇论文撞掉了 mother question；
-- 为什么某个题太窄；
-- 为什么某个题虽然自然但 novelty 不够；
-- 为什么某个题 artifact / prerequisite tax 太高；
-- 为什么某个方向需要越压越窄才能“显得新”。
-
-这样未来搜索时可以直接继承 negative knowledge。
-
-## 11.3 Round 与 ACTIVE 的关系
-
-```text
-ROUND_*.md = 搜索历史 / 候选生成 / 碰撞与淘汰记录
-ACTIVE_CANDIDATES.md = 当前真正值得继续审或执行的少数题
-numbered topic directory = 用户明确选择后才注册的正式题
-```
-
-**搜到 5 个给用户检查，不等于 5 个自动进入 ACTIVE，更不等于自动注册编号。**
-
-## 11.4 同一轮持续搜索
-
-如果用户要求“继续搜 / 继续审”，且仍属于同一 search round：继续更新该 Round 文件，而不是把聊天里的新结果丢掉。
-
-只有当搜索目标、标准或母方向明显变化时，才开启下一个 Round。
-
-一个 Round 即使最终 `0 survivor`，也必须留下日志。**没有留下题也是有效搜索结果。**
+`ROUND_*.md` 只代表搜索历史；搜到五个给用户看不等于五个进 ACTIVE，更不等于自动注册 numbered topic。
 
 ---
 
 # 12. 固定搜索流程
 
-以后每轮必须按这个顺序：
-
 ```text
 Step 1   从组内 research shape / 经典领域问题生成 search lanes
-Step 2   先定义 external construct，不看模型怪现象
+Step 2   定义 external construct
 Step 3   找 old literature / competing explanations
-Step 4   写清 operationalization：variables / controls / predictions
-Step 5   查 ACL / EMNLP / NAACL 近年新 handle
-Step 6   补 NeurIPS / ICML / AAAI / IJCAI 相邻 collision
-Step 7   写一句 mother question
-Step 8   做 ACL-scale width audit
-Step 9   做 scientific novelty audit
-Step 10  做 model-swap thought experiment
+Step 4   operationalize variables / controls / predictions
+Step 5   查 ACL / EMNLP / NAACL 近年 handle
+Step 6   补 AI 顶会 collision
+Step 7   写 mother question
+Step 8   ACL-scale width audit
+Step 9   scientific novelty audit
+Step 10  model-swap thought experiment
 Step 11  exact collision search
 Step 12  artifact / prerequisite audit
-Step 13  冻结最小 behavioral / structural G0
-Step 14  只有 behavior 站住后才规划 representation / mechanism
-Step 15  写入本轮 ROUND 日志，包括 killed lanes
-Step 16  只有 G1/G2/G3/G5/G6 明确通过才进入 ACTIVE
+Step 13  冻结 minimal behavioral / structural G0
+Step 14  预写 factor decomposition
+Step 15  写 method runway：如果 finding 成立，具体可以做什么方法
+Step 16  只有 behavior 站住才考虑 mechanism
+Step 17  写入 ROUND，包括 killed lanes
+Step 18  只有 G1–G8 都明确通过才进入 ACTIVE
 ```
 
 ---
@@ -720,44 +561,47 @@ Step 16  只有 G1/G2/G3/G5/G6 明确通过才进入 ACTIVE
 ```text
 Title / one-line question:
 External construct:
-Why it matters without mentioning a specific model:
+Why it matters without a specific model:
 Closest lab research shape:
 Old scientific / NLP anchor:
-Target venue calibration: ACL / EMNLP / NAACL Main
-Scope verdict: TOO_BROAD / MAIN_SCALE / TOO_NARROW_FOR_MAIN
-Why this is MAIN_SCALE:
+Target venue: ACL / EMNLP / NAACL Main
+Scope verdict:
+Why MAIN_SCALE:
 Core scientific novelty type:
 Novelty one-liner:
-Operationalization (IV / DV / matched controls):
+Operationalization (IV / DV / controls):
 Recent ACL / EMNLP / NAACL handle:
-2–4 competing explanations or interaction axis:
+2–4 competing explanations / interaction axis:
 Expected 2–4 headline findings:
 Why changing model does not destroy the question:
 Closest collisions:
-Why those collisions do not already answer the mother question:
+Why collisions do not answer mother question:
 Existing artifact:
 Paid API requirement:
 Human annotation requirement:
 Prerequisite tax:
-Frozen behavioral / structural G0:
+Frozen G0:
 Behavioral kill criterion:
 Null-result interpretation:
-Mechanism trigger (what behavior must hold first):
+Mechanism trigger:
 Possible representation / causal test:
-Intervention purpose (what scientific question it closes):
-Cross-model / cross-task / cross-language boundary test:
+Method runway:
+Concrete method family / intervention:
+Why the method follows from the expected finding:
+Method success criterion:
+Cross-model / task / language boundary test:
 Full-paper runway:
 Status:
 ```
 
-任何一项写不清楚，都说明题还没成熟。
+写不清任何关键项，说明题还没成熟。
 
 ---
 
-# 14. 当前原则的一句话版本
+# 14. 一句话版本
 
-> **先找一个本来就值得研究、换模型也不会消失的问题；把它严格 operationalize；确认它具有 ACL / EMNLP / NAACL Main 的题目尺度和 scientific novelty；先做直接 behavioral / structural test，再决定是否值得进入 representation、mechanism 和 intervention。**
+> **先找一个本来就值得研究、换模型也不会消失的问题；把它严格 operationalize；确认宽窄和 novelty 达到 ACL / EMNLP / NAACL Main；用低成本 G0 直接打科学问题；拆清因素 / mechanism；最后必须能由发现自然导出一个 principled method。**
 
 而不是：
 
-> **先找一个模型怪现象或内部信号，再想办法把它包装成一个“新”题。**
+> **先找一个模型怪现象，再补分析，再硬塞一个方法。**
