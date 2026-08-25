@@ -345,7 +345,7 @@ Final verdict: `NO_EVIDENCE_SPACING_IN_LOCKED_TEST`.
 
 | Candidate | Current reason not to promote |
 |---|---|
-| OAKS historical-state intrusion / proactive interference | fresh 2026-08-10 work directly reports proactive-interference primacy intrusion across 39 LLMs; mother question now collision-heavy |
+| OAKS historical-state intrusion / proactive interference | 2026 preprint `Transformers Remember First, Forget Last` (arXiv:2603.00270) directly reports proactive-interference primacy intrusion across 39 LLMs; mother question now collision-heavy |
 | SMI contextual diversity vs repetition | `Facts in Stats` already manipulates contextual diversity + rebuilding corpus metric carries TB-scale prerequisite tax |
 | generic belief rigidity / stubbornness | nearby direct challenge/deference literature + weak causal attribution from model-family comparisons |
 | ImplicitMemBench inhibition/preference asymmetry | construct gate + same-family redundancy; blocking is cleaner |
