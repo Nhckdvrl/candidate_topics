@@ -423,6 +423,8 @@ def main() -> None:
         "max_new_tokens": MAX_NEW_TOKENS,
         "decoding": "greedy",
         "python": platform.python_version(),
+        "torch": str(states["torch_version"].iloc[0]),
+        "transformers": str(states["transformers_version"].iloc[0]),
         "device": args.device,
     }
     (args.out_dir / "g1_receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
