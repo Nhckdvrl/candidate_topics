@@ -143,6 +143,7 @@ released reversals                       >= 8
 boundary hazard                          >= 0.20
 family hits                              >= 4
 top exact normalized wrong answer count  >= 5
+families producing that exact wrong      >= 2
 top wrong-answer share of all reversals  >= 0.50
 ```
 
@@ -152,6 +153,12 @@ the frozen strict gold-alias check; the denominator remains all released
 reversals, making consensus conservative. No semantic clustering, stemming,
 alias addition, or LLM judging is allowed.
 
+**Artifact-contract correction:** the first frozen implementation omitted the
+explicit cross-family requirement on the consensus answer, allowing repeated
+configs from one family to satisfy the answer-consensus half of the definition.
+The required minimum is set to the weakest literal meaning of cross-family
+(`>= 2`) rather than selected from results. No other threshold or gate changed.
+
 The same trap definition is applied to every null permutation.
 
 ## Frozen diagnostics
@@ -160,8 +167,8 @@ Report:
 
 1. cross-family and raw-config co-reversal overlap versus null;
 2. observed and null shared-trap counts;
-3. trap boundaries, risk, hazard, family support, exact top competitor, and
-   consensus share;
+3. trap boundaries, risk, hazard, family support, exact top competitor,
+   consensus share, and families producing that exact competitor;
 4. total exact-consensus reversal events within traps;
 5. trap questions and categories;
 6. trap incidence and mean family overlap by outcome-blind boundary-level

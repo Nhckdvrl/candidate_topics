@@ -24,6 +24,26 @@ class TestFamilies(unittest.TestCase):
 
 
 class TestPermutation(unittest.TestCase):
+    def test_wrong_answer_consensus_counts_distinct_families(self):
+        encoded = {
+            "boundaries": ["b0"],
+            "families": ["f0", "f1", "f2"],
+            "bf": np.array([0, 0, 1, 2]),
+            "b": np.array([0, 0, 0, 0]),
+            "f": np.array([0, 0, 1, 2]),
+            "risk_bf": np.array([[2, 1, 1]]),
+            "risk_b": np.array([4]),
+            "risk_families": np.array([3]),
+            "pair_opportunities": 3.0,
+            "config_pair_opportunities": 6.0,
+            "wrong_values": ["same wrong", "other wrong"],
+        }
+        reversal = np.array([True, True, True, True])
+        wrong = np.array([0, 0, 0, 1])
+        metrics = shared.compute_metrics(encoded, reversal, wrong)
+        self.assertEqual(metrics["top_wrong_count"].tolist(), [3])
+        self.assertEqual(metrics["top_wrong_families"].tolist(), [2])
+
     def test_payload_permutation_preserves_stratum_multisets(self):
         reversal = np.array([True, False, True, False, True])
         wrong = np.array([4, -1, 7, -1, 9])

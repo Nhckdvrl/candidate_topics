@@ -31,6 +31,7 @@ MIN_BOUNDARY_HAZARD = 0.20
 MIN_FAMILY_HITS = 4
 FAMILY_HIT_RATE = 0.25
 MIN_TOP_WRONG_COUNT = 5
+MIN_TOP_WRONG_FAMILIES = 2
 MIN_TOP_WRONG_SHARE = 0.50
 
 MIN_FAMILY_OVERLAP_RATIO = 1.25
@@ -277,6 +278,7 @@ def compute_metrics(encoded: dict, reversal: np.ndarray, wrong_code: np.ndarray)
 
     top_wrong_count = np.zeros(n_boundaries, dtype=np.int32)
     top_wrong_code = np.full(n_boundaries, -1, dtype=np.int32)
+    top_wrong_families = np.zeros(n_boundaries, dtype=np.int16)
     consensus_rows = reversal & (wrong_code >= 0)
     if consensus_rows.any():
         n_wrong = len(encoded["wrong_values"])
@@ -290,6 +292,15 @@ def compute_metrics(encoded: dict, reversal: np.ndarray, wrong_code: np.ndarray)
         chosen = order[first]
         top_wrong_count[pair_boundaries[chosen]] = counts[chosen]
         top_wrong_code[pair_boundaries[chosen]] = pair_wrong[chosen]
+        triples = pairs * n_families + encoded["f"][consensus_rows]
+        unique_triples = np.unique(triples)
+        family_pairs, family_counts = np.unique(
+            unique_triples // n_families, return_counts=True
+        )
+        selected_positions = np.searchsorted(family_pairs, unique_pairs[chosen])
+        top_wrong_families[pair_boundaries[chosen]] = family_counts[
+            selected_positions
+        ]
     top_wrong_share = np.divide(
         top_wrong_count,
         flips_b,
@@ -304,6 +315,7 @@ def compute_metrics(encoded: dict, reversal: np.ndarray, wrong_code: np.ndarray)
         & (hazard >= MIN_BOUNDARY_HAZARD)
         & (family_hits >= MIN_FAMILY_HITS)
         & (top_wrong_count >= MIN_TOP_WRONG_COUNT)
+        & (top_wrong_families >= MIN_TOP_WRONG_FAMILIES)
         & (top_wrong_share >= MIN_TOP_WRONG_SHARE)
     )
     return {
@@ -315,6 +327,7 @@ def compute_metrics(encoded: dict, reversal: np.ndarray, wrong_code: np.ndarray)
         "family_hits": family_hits,
         "top_wrong_count": top_wrong_count,
         "top_wrong_code": top_wrong_code,
+        "top_wrong_families": top_wrong_families,
         "top_wrong_share": top_wrong_share,
         "trap": trap,
         "trap_count": int(trap.sum()),
@@ -444,6 +457,7 @@ def main() -> None:
     boundary["hazard"] = observed["hazard"]
     boundary["family_hits"] = observed["family_hits"]
     boundary["top_wrong_count"] = observed["top_wrong_count"]
+    boundary["top_wrong_families"] = observed["top_wrong_families"]
     boundary["top_wrong_share"] = observed["top_wrong_share"]
     boundary["top_wrong_prediction"] = [
         encoded["wrong_values"][code] if code >= 0 else ""
