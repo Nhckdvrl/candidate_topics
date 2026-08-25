@@ -1,6 +1,6 @@
 # 28 — Information Non-Monotonicity under Progressive Truthful Clues
 
-**Status: G0 PASSED / REVERSAL OBJECT ESTABLISHED / STRUCTURE ANALYZED / CONTROLLED ORDER TEST NEXT.**
+**Status: G0 PASSED / REVERSAL OBJECT ESTABLISHED / STRUCTURE ANALYZED / G1 `STOP_ORDER_DEPENDENCE` / DO NOT TUNE.**
 
 ## Natural scientific question
 
@@ -200,6 +200,16 @@ while `43.09%` never do in the released trajectory. See
 [`ANALYSIS_RESULTS.md`](./ANALYSIS_RESULTS.md). These findings are descriptive,
 not mechanistic or causal.
 
+The preregistered adjacent-swap G1 is terminally negative for the proposed
+path-dependence explanation on Qwen2.5-7B-Instruct. The outcome-blind panel had
+498 boundaries from 415 questions. Original and swapped orders each produced
+15 reversals, so `delta_order=0.0000` (95% clustered CI `[-0.02001,+0.02016]`).
+The same-multiset final-error contrast was `-0.01606`
+(`[-0.03726,+0.00581]`), opposite the predicted direction. See
+[`G1_PREREGISTRATION.md`](./G1_PREREGISTRATION.md) and
+[`G1_RESULTS.md`](./G1_RESULTS.md). Do not search another model, prompt, panel,
+scorer, threshold, or permutation to rescue this branch.
+
 # Run
 
 ```bash
@@ -215,3 +225,6 @@ Run the frozen structure analysis with:
 ```bash
 bash run_analysis1.sh
 ```
+
+The historical frozen G1 entrypoint is `run_g1.sh`; its completed terminal
+result must not be rerun with altered scientific settings.

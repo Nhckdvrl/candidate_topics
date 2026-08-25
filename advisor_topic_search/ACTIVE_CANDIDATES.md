@@ -18,11 +18,12 @@ Last updated: 2026-08-25
 
 因此 Round 08 的前三全部重新审级。Topic 28 随后的冻结全量 G0 已把
 progressive truthful-clue reversal 从廉价 screen 提升为有大样本支持的真实实验对象；
-它仍需 controlled order 和跨任务边界验证，不能提前写成一般论文结论。
+但其 outcome-blind controlled-order G1 已返回 `STOP_ORDER_DEPENDENCE`，所以
+path-dependent belief-updating 的升级路线停止，不能进入 mechanism 或改配置救结果。
 
 ---
 
-# A. ACTIVE PRIORITY
+# A. ESTABLISHED OBJECT / EXPLANATION BRANCH STOPPED
 
 ## A1. Information Non-Monotonicity under Progressive Truthful Clues
 
@@ -39,12 +40,20 @@ monotonicity / belief updating stability。
 exact 引入；56.91% 后续恢复，43.09% 在 released trajectory 中未恢复。proper
 noun / number 的泛化 anchor-override 解释不受支持。
 
-**Current gate:** preregister clue multiset、gold、prompt、model 全固定的 order
-intervention。只进入 behavioral analysis，不进入 activation patching。之后仍需
-跨 task family / matched local-model reproduction 才能把 QuizBowl object 提升为一般
-evidence-integration claim。
+**Frozen G1 result:** outcome-blind 498-boundary adjacent-swap panel 在
+Qwen2.5-7B-Instruct 上得到 original reversal `15/498`、swap reversal
+`15/498`，所以 `delta_order=0.0000`（95% clustered CI
+`[-0.02001,+0.02016]`）。相同 clue multiset 的 final-error difference 为
+`-0.01606`（`[-0.03726,+0.00581]`），方向也不支持 original-order harm。
+285 个两条路径第一状态都正确的 common-belief cases 中，original-only 与
+swap-only final harm 各 1 个。
 
-**Status:** `PRIORITY_1 / G0_OBJECT_ESTABLISHED / STRUCTURE_ANALYZED / CONTROLLED_ORDER_NEXT`.
+**Interpretation:** released-trajectory phenomenon 仍成立，但最有希望的
+path-dependent belief-updating 升级没有通过 controlled test。严格 alias scorer 对
+absolute event count 有 undercoverage，但 paired order result 完全对称，不能以此为由
+修 scorer 或换模型救结果。
+
+**Status:** `G0_OBJECT_ESTABLISHED / G1_STOP_ORDER_DEPENDENCE / DO_NOT_TUNE / PAPER_STORY_DEMOTED`.
 
 ---
 
