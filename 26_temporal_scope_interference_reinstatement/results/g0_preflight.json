@@ -1,0 +1,11 @@
+{
+  "seed": 20260825,
+  "target_n": 512,
+  "eligible_n": 0,
+  "selected_n": 0,
+  "hard_gate_pass": false,
+  "skip_counts": {
+    "probe_not_drift_eligible": 324637,
+    "not_target_family": 1144991
+  }
+}
