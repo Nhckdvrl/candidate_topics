@@ -2,9 +2,9 @@
 
 > 这是 `advisor_topic_search/` 的**唯一当前候选状态表**。
 >
-> 2026-08-26 起，旧的 cue competition / positional imprinting / source-arbitration 等候选不再视为当前 shortlist。当前 ACTIVE 只保留用户明确认可、并通过 README 四条一等原则初筛的题。
+> 当前只保留真正通过母题尺度、novelty、method runway、executable-first 初筛的题。2026-08-27 起，Topic 29 / 原 A3 会议 decision-state 题已正式归档，不再视为 ACTIVE。
 
-Last updated: 2026-08-26
+Last updated: 2026-08-27
 
 ---
 
@@ -15,14 +15,17 @@ Last updated: 2026-08-26
 1. **ACL-scale**：题目宽窄与 novelty package 对齐 ACL / EMNLP / NAACL Main；不是靠换模型、换语言、换数据集续命。
 2. **Narrative-level novelty**：允许方法、局部现象、实验工具与已有工作重叠；但 mother question / decisive contrast / 整体叙事不能已经被完整覆盖。
 3. **Method runway**：分析结果必须自然导出方法、训练目标、推理策略或系统设计，不能停在“发现现象，然后呢”。
-4. **Executable-first**：第一科学检验必须便宜、直接、可杀。尤其可解释性题，优先要求已有公开数据 / benchmark、已知稳定行为现象，最好还有局部机制基础；不接受先重造大规模数据再赌内部机制是否存在。
+4. **Executable-first**：第一科学检验必须便宜、直接；优先已有公开数据 / benchmark，不接受先大规模造数据再赌现象。
 
-此外：
+额外执行原则：
 
-- 不做 RAG / retrieval-heavy 题；
-- 不做 AI Scientist 方向；
-- 不为了凑数量强行加入高风险机制题；
-- mechanism 只能解释一个先于模型存在的具体问题，不能从 probe / SAE / head 倒推题目。
+- 当前新题搜索只做 **NLP application**；
+- 不做 RAG / retrieval-heavy；
+- 不做 AI Scientist；
+- 不拿一个小 error subtype 当母题；
+- 不用机制/模型内部现象倒推研究问题；
+- 强模型进步后仍应留下一个真实、独立的任务或约束问题；
+- 一个简单 prompt 就几乎消失的问题，默认 method runway 不足，除非其更大的外部任务有独立必要性。
 
 ---
 
@@ -55,11 +58,7 @@ Last updated: 2026-08-26
 
 Task-Conditioned Hierarchical WSD / Selective Sense Resolution：模型只选择“当前任务真正有用且上下文证据足以支持”的最深语义节点。
 
-**机制定位：**
-
-可解释性不是主线。2026 已已有概念层级内部表征 / activation patching 近邻；内部分析最多作为 bonus，不能承担 novelty。
-
-**Status:** `STRONG_KEEP / APPLICATION+CLASSIC_NLP_REFRAMING / G0_DESIGN_NEEDED`.
+**Status:** `WATCH+ / CLASSIC-NLP REFRAMING / EXACT COLLISION + DATA CONTRACT NEEDED`.
 
 ---
 
@@ -72,8 +71,7 @@ Task-Conditioned Hierarchical WSD / Selective Sense Resolution：模型只选择
 **为什么是自然问题：**
 
 - ambiguity preservation 是机器翻译中的经典问题；
-- 当前大量 lexical-ambiguity MT 工作默认目标仍是“找到正确 sense 并翻出来”；
-- 但真正的翻译目标应是：**不要比原文做更多未经支持的语义承诺。**
+- 真正的翻译目标不应是无条件选择一个 sense，而应避免比原文做更多未经支持的语义承诺。
 
 **关键因素：**
 
@@ -90,42 +88,7 @@ Task-Conditioned Hierarchical WSD / Selective Sense Resolution：模型只选择
 
 Ambiguity-Aware Translation Policy：预测 `RESOLVE / PRESERVE / CLARIFY`，并在证据不足时约束译文不要产生额外语义承诺。
 
-**机制定位：**
-
-不把“内部多解释何时坍缩”作为主线；ACL 2026 已有 delayed disambiguation 的内部路径与 causal steering 近邻。
-
-**Status:** `STRONG_KEEP / MT_APPLICATION_REFRAMING / DATA_FEASIBILITY_AUDIT_NEEDED`.
-
----
-
-## A3. 会议摘要会不会把“讨论过 / 建议过 / 有条件同意”写成“已经决定”？
-
-**母问题：**
-
-> 会议摘要中的事实内容即使没有明显 hallucination，命题的行动状态仍可能被压缩时升级：proposal → decision、conditional → unconditional、open → resolved、rejected → accepted。LLM 是否系统性破坏这种 decision status？
-
-**为什么是自然问题：**
-
-- 会议理解中 proposal / agreement / resolution / action item / decision 是经典对象；
-- 现有 LLM meeting summarization 主要关注 omission、hallucination、relevance、structure、personalization；
-- 本题关注的是 **同一命题的决策状态在摘要过程中是否被错误升级或降级**，不是 generic factuality。
-
-**关键因素：**
-
-- proposal / discussion / tentative agreement / conditional commitment / rejection / reversal / final decision；
-- 是否存在后续修订或撤销；
-- 压缩强度；
-- 摘要格式（自由摘要 vs minutes / action items）。
-
-**第一枪：**
-
-优先使用 AMI / QMSum 等现有会议数据与 decision-related dialogue-act / decision abstracts；先验证能否从公开标注直接构造 proposal→decision 等状态错误，不先人工造会议。
-
-**方法口：**
-
-Decision-State-Preserving Meeting Summarizer：生成前维护 `proposition → status → owner/speaker → condition → revision history`，再据此生成 minutes。
-
-**Status:** `STRONG_KEEP / APPLIED_NLP / PUBLIC-DATA_G0_AUDIT`.
+**Status:** `WATCH / MT APPLICATION / COLLISION + GOLD-POLICY DATA RISK`.
 
 ---
 
@@ -138,8 +101,8 @@ Decision-State-Preserving Meeting Summarizer：生成前维护 `proposition → 
 **为什么是自然问题：**
 
 - 法律、政策、规章、合同中的 deontic semantics 是稳定外部对象；
-- 法律文本简化已经有公开数据与 meaning-preservation 研究，但“所有语义维度同等重要”的总体相似度并不能直接保证规范结构不变；
-- 题目可从 Legal NLP 扩展到公司政策、使用条款、安全说明等受约束改写。
+- 法律文本简化已经有公开数据与 meaning-preservation 研究，但总体相似度并不能直接保证规范结构不变；
+- 即使更强模型减少自然错误，“受约束改写必须保持规范效力”这一任务目标本身仍然存在。
 
 **关键因素：**
 
@@ -148,61 +111,44 @@ Decision-State-Preserving Meeting Summarizer：生成前维护 `proposition → 
 - 责任主体是否变化；
 - 可读性提升与规范语义保持之间的 trade-off。
 
-**第一枪：**
+**已完成 G0：**
 
-优先复用 SIMPLE-LAW、LexDeMod 等已有法律简化 / deontic modality 资源，检验现成 simplification systems 是否出现结构化规范语义漂移；不先自建大规模法律语料。
+Topic 30 已用 LexDeMod gold trigger spans 做 controlled normative-force contrasts，并验证普通相似度可在规范效力已反转时仍保持极高。Lex-Simple 也有足够 deontic-eligible pairs。下一关键问题是自然 simplification drift prevalence，而不是继续证明 metric blind spot。
 
 **方法口：**
 
-Deontic-Structure-Constrained Simplification：显式抽取 `actor → modality → action → condition → exception`，生成时约束这些结构不变，再优化 readability。
+Deontic-Structure-Constrained Simplification：显式维护 `actor → modality → action → condition → exception`，生成时约束规范结构，再优化 readability。
 
-**Status:** `KEEP / APPLIED_NLP / DOMAIN-BREADTH_AND_COLLISION_AUDIT_NEEDED`.
-
----
-
-# B. OPEN SLOT — INTERPRETABILITY
-
-当前**不强行填满第 5 题**。
-
-可解释性候选只有满足以下额外条件才可进入 ACTIVE：
-
-```text
-具体、自然、模型外部存在的问题
-+ 已有公开 benchmark / 成熟数据
-+ 已知稳定 behavioral phenomenon / failure
-+ 最好已有局部 representation / circuit 基础
-+ 至少两个可区分的内部机制解释
-+ causal intervention 能产生选择性预测
-+ mechanism 结果能自然导出方法
-```
-
-优先寻找：
-
-- 非语言学小现象；
-- 普通人一听就明白的实体 / 决策 / 认知 / 系统行为；
-- 不需要先大规模构造新数据；
-- behavioral null 或 mechanism null 能低成本 kill。
+**Status:** `KEEP / APPLIED NLP / NATURAL-DRIFT G0 NEXT`.
 
 ---
 
-# C. RECENTLY KILLED / DO NOT REVIVE WITHOUT A NEW MOTHER QUESTION
+# B. PAUSED LANES
 
+当前用户明确要求只继续找 **NLP application** 题，因此 interpretability / mechanism lane 暂停，不为凑数量强行填候选。
+
+---
+
+# C. RECENTLY KILLED / ARCHIVED / DO NOT REVIVE WITHOUT A NEW MOTHER QUESTION
+
+- **Topic 29 / 会议 decision-state preservation**：三模型 temporal-prefix 现象真实且很大，但独立母题过窄；最强 G0 依赖人为截断到最终决定之前；一句 preservation instruction 将错误从 `44–75%` 降到 `0–1.9%`，method runway 和强模型寿命不足。已正式归档。不要靠人工标注、更多模型、机制分析或“commitment inflation”大伞救题。
 - 固定检索预算 / retrieval granularity：用户明确不感兴趣，且整体偏 retrieval / RAG。
 - Controls Are Tests of Assumptions：AI Scientist 方向，不继续。
 - When Is No Evidence Evidence：search / retrieval 味过重，不继续。
 - Scope vs Verbosity in Retrieval：检索相关，不继续。
-- 命题内容 vs 事实 / 承诺状态：与近期 factuality / belief / epistemic representation 工作过近，且因果识别容易混入句法和来源结构。
-- 预设 vs 明说：2025–2026 presupposition 行为工作密集，内部 causal construct 难以隔离。
-- Metaphor / idiom literal-vs-figurative mechanism：EACL / ACL 2026 已有 causal tracing / delayed disambiguation / steering，mother narrative 已被明显覆盖。
-- 实体状态更新：ICML 2025–2026 已覆盖 state tracking、state changes、global update vs query-time rebinding、causal interventions；mother question collision，KILL。
-- 规则例外 rigidity：行为问题自然，但需要先构造跨场景高质量数据再赌 mechanism；G0 沉没成本过高，不符合 executable-first。
-- 语篇 anaphora accessibility mechanism：已有行为基础但共享内部 construct 是否存在风险过高；不继续当前版本。
-- 主谓一致 attraction mechanism：机制可做性高，但语言学味过重，暂不进入 advisor shortlist。
+- 命题内容 vs 事实 / 承诺状态：与近期 factuality / belief / epistemic representation 工作过近，且容易成为局部 error taxonomy。
+- 预设 vs 明说：近期 presupposition 行为工作密集，且不是当前 application 优先方向。
+- Metaphor / idiom literal-vs-figurative mechanism：mother narrative 已被近邻工作明显覆盖。
+- 实体状态更新：近期 state tracking / causal intervention 工作已覆盖母问题，KILL。
+- 规则例外 rigidity：需要先构造跨场景高质量数据再赌现象，沉没成本过高。
+- 语篇 anaphora accessibility mechanism：机制 lane，暂停。
+- 主谓一致 attraction mechanism：语言学小现象 + mechanism lane，不继续当前版本。
 
 ---
 
 # D. CURRENT PRIORITY
 
-1. 对 A1–A4 继续做 **exact collision + public-data G0 feasibility + method runway** 审查；
-2. 深挖一个真正满足 B 节硬门槛的可解释性题；
-3. 找到合格的第 5 题之前，不因数量压力降低标准。
+1. **只找新的 NLP application mother question**：真实任务先于模型存在、强模型时代仍有意义、不是一个小 error subtype。
+2. 新题必须同时给出：exact recent collision audit、可直接拿到的 public-data contract、一个便宜直接的 first shot、2–4 个自然因素/边界、以及不靠“prompt 一句解决”的 principled method runway。
+3. A4 继续保留；A1/A2 维持 WATCH，除非 exact audit 后仍有清楚独立叙事。
+4. 找不到足够好的题就空着，不因数量压力降标准。
