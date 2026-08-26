@@ -4,6 +4,10 @@ LEX=${1:?usage: run_preflight.sh lexdemod.csv simplification_pairs.csv [original
 PAIRS=${2:?}
 ORIG=${3:-original}
 SIMP=${4:-simplified}
-python audit_lexdemod.py --csv "$LEX" --out lexdemod_audit.json
-python audit_simplification_pairs.py --input "$PAIRS" --original-col "$ORIG" --simplified-col "$SIMP" --out simplification_audit.json
-python -m pytest -q tests
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+PYTHON_BIN=${PYTHON_BIN:-python3}
+OUT_DIR=${OUT_DIR:-$SCRIPT_DIR}
+mkdir -p "$OUT_DIR"
+"$PYTHON_BIN" "$SCRIPT_DIR/audit_lexdemod.py" --csv "$LEX" --out "$OUT_DIR/lexdemod_audit.json"
+"$PYTHON_BIN" "$SCRIPT_DIR/audit_simplification_pairs.py" --input "$PAIRS" --original-col "$ORIG" --simplified-col "$SIMP" --out "$OUT_DIR/simplification_audit.json"
+"$PYTHON_BIN" -m pytest -q "$SCRIPT_DIR/tests"
