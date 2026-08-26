@@ -1,6 +1,8 @@
 # 29 — Decision-State Preservation in Meeting Summaries
 
-**Status: REGISTERED / PUBLIC-ARTIFACT PREFLIGHT PASSED / THREE-MODEL TEMPORAL-PREFIX G0 PASSED.**
+**Status: ARCHIVED / TEMPORAL-PREFIX PHENOMENON REAL / STANDALONE QUESTION TOO NARROW.**
+
+> Final decision: do not continue this topic as a standalone candidate. The three-model temporal-prefix effect is preserved as a real empirical result, but the meeting-specific mother question is too small, the strongest G0 depends on artificial pre-decision truncation, and a one-line preservation instruction nearly removes the failure. See [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md).
 
 ## Mother question
 
@@ -18,7 +20,7 @@ Primary failure classes: proposal→decision, tentative→final, conditional→u
 
 AMI's released annotation stack contains ordered dialogue acts with timestamps, abstractive summaries with a dedicated `decisions` type, and summlink links from a decision abstract to supporting utterances. The public `guokan-shang/ami-and-icsi-corpora` converter documents this exact JSON contract. This independently identifies decision propositions and their evidence chains, but it does **not** independently label every intermediate source state. In particular, selecting `decisions` conditions the pool on an eventual decision; a proposal-looking support chain may encode implicit consensus or incomplete extractive linking rather than a true unsupported upgrade.
 
-QMSum can be added later for free-form transfer, but is not required for the first test.
+QMSum could have been added for free-form transfer, but no further expansion is authorized for this archived topic.
 
 ## Frozen P0 artifact audit
 
@@ -29,42 +31,30 @@ Run `audit_ami.py` over processed AMI annotations. Gates:
 - >=75 linked chains spanning >=15 seconds;
 - >=100 chains with an explicit conservative state cue.
 
-This is outcome-blind and makes no model call.
+All four gates passed on the public artifact.
 
-## G0a — natural summary drift
+## G0 result
 
-For each eligible decision chain, construct a bounded transcript window containing the linked decision-support utterances. Before treating source→summary differences as scientific errors, validate source-state labels on a small blinded sample or use temporally truncated prefixes with independently licensed states. Then generate a short minutes-style summary with one fixed open model/prompt and score:
+A repaired temporal-prefix G0 withheld the final linked decision turn and retained only explicitly non-final prefixes. Unsupported unconditional-decision rates under a neutral minutes prompt were:
 
-1. decision-state level;
-2. conditionality;
-3. rejection/negation;
-4. revision recency.
+- Qwen2.5-7B-Instruct: `39/52 = 75.0%`;
+- Qwen3-8B: `34/53 = 64.2%`;
+- Gemma-3-12B-IT: `22/50 = 44.0%`.
 
-Primary headline metric: **unsupported state-upgrade rate** among chains whose licensed source state is not unconditionally decided.
+On a common 49-example grounded intersection the same directional effect remained. A matched state-preservation instruction reduced the corresponding errors to `0/52`, `1/53`, and `0/50`.
 
-`decision_state.py` is intentionally conservative and deterministic; it distinguishes uncued `UNKNOWN` from explicit `OPEN`, avoids treating rejection as the bottom of a false ordinal scale, and uses genre-specific rules for transcript versus minutes text. It is a triage scorer, not source-state ground truth or the final paper annotation scheme.
+The result establishes premature finalization in the controlled temporal-prefix task. It does **not** establish that ordinary full-meeting summarization has a comparably large decision-state problem.
 
-## G0b — matched contrast
+## Why no further method work
 
-Only after G0a establishes the object, build proposition-matched state contrasts such as `propose` vs `decided`, `agreed if X` vs `agreed`, and `rejected X` vs `decided X`. This isolates decision state from topic content.
-
-## Method runway
-
-**Decision-State-Preserving Summarization**: maintain a ledger
+The originally proposed Decision-State-Preserving Summarizer would maintain
 
 `proposition -> speaker/owner -> state -> condition -> revision history -> finality`
 
-before generation, then constrain the summary to the latest licensed state.
+before generation. After G0, however, a simple explicit preservation instruction already removes almost all of the measured failure. Combined with the narrow meeting-specific scope and artificial truncation used by the strongest test, this leaves insufficient standalone method runway.
 
-## Collision position
+Do not rescue this topic by model scaling, human annotation, mechanism work, or post-hoc expansion into a broad “commitment inflation” umbrella.
 
-Prior meeting work already studies decision-focused summarization, consensus, omission, hallucination and factuality. The distinct narrative here is proposition-level **state transmutation under compression**, its boundary conditions, and a structured preservation remedy.
+## Final archive pointer
 
-## Public-data preflight receipt
-
-- Official AMI manual annotations v1.6.2 were downloaded and converted with public converter commit `81716f66`.
-- Exact counts: 624 linked decision abstracts, 366 multi-turn chains, 281 chains spanning at least 15 seconds, and 180 chains with a conservative explicit lexical state cue. All four frozen artifact-support conditions pass.
-- A three-model temporal-prefix G0 now provides direct phenomenon evidence. On each model's content-grounded, explicitly non-final prefixes, unsupported upgrade rates are 75.0% for Qwen2.5-7B-Instruct, 64.2% for Qwen3-8B, and 44.0% for Gemma-3-12B-IT. The matched state-preservation prompt reduces these to 0%, 1.9%, and 0%, respectively.
-- Code review and full interpretation are recorded in `REVIEW_AND_PREFLIGHT_RESULTS.md`.
-- Full G0 receipt and scope limits are recorded in `G0_RESULTS.md`.
-- Next paper step: human-adjudicate the prefix state and proposition alignment, then expand across models and a transfer corpus. These are publication-validity steps, not additional gates on whether the topic is worth pursuing.
+See [`ARCHIVE_SUMMARY.md`](./ARCHIVE_SUMMARY.md) for the authoritative stop rationale and transferable lessons.
