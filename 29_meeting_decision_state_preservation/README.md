@@ -1,6 +1,6 @@
 # 29 — Decision-State Preservation in Meeting Summaries
 
-**Status: REGISTERED / PUBLIC-ARTIFACT PREFLIGHT PASSED / TEMPORAL-PREFIX G0 PASSED.**
+**Status: REGISTERED / PUBLIC-ARTIFACT PREFLIGHT PASSED / THREE-MODEL TEMPORAL-PREFIX G0 PASSED.**
 
 ## Mother question
 
@@ -64,7 +64,7 @@ Prior meeting work already studies decision-focused summarization, consensus, om
 
 - Official AMI manual annotations v1.6.2 were downloaded and converted with public converter commit `81716f66`.
 - Exact counts: 624 linked decision abstracts, 366 multi-turn chains, 281 chains spanning at least 15 seconds, and 180 chains with a conservative explicit lexical state cue. All four frozen artifact-support conditions pass.
-- A fixed-model temporal-prefix G0 now provides direct phenomenon evidence: on 52 content-grounded, explicitly non-final prefixes, Qwen2.5-7B-Instruct upgraded 39 to an unconditional decision (75.0%). On the identical inputs, one explicit state-preservation instruction reduced this to 0/52.
+- A three-model temporal-prefix G0 now provides direct phenomenon evidence. On each model's content-grounded, explicitly non-final prefixes, unsupported upgrade rates are 75.0% for Qwen2.5-7B-Instruct, 64.2% for Qwen3-8B, and 44.0% for Gemma-3-12B-IT. The matched state-preservation prompt reduces these to 0%, 1.9%, and 0%, respectively.
 - Code review and full interpretation are recorded in `REVIEW_AND_PREFLIGHT_RESULTS.md`.
 - Full G0 receipt and scope limits are recorded in `G0_RESULTS.md`.
 - Next paper step: human-adjudicate the prefix state and proposition alignment, then expand across models and a transfer corpus. These are publication-validity steps, not additional gates on whether the topic is worth pursuing.

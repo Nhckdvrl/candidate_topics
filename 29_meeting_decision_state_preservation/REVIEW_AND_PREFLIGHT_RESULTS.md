@@ -40,6 +40,6 @@ This invalidates the claim that summlink alone supplies outcome ground truth. It
 
 ## Completed next shot
 
-Summlink now anchors propositions and the runner constructs temporally truncated prefixes with explicit non-final cues. The fixed Qwen2.5-7B-Instruct run produced 39/52 unsupported unconditional upgrades under a neutral minutes prompt and 0/52 under a matched state-preservation prompt. Human adjudication remains necessary before presenting the number as corpus prevalence, but no further feasibility gate is required.
+Summlink now anchors propositions and the runner constructs temporally truncated prefixes with explicit non-final cues. Neutral-prompt unsupported upgrade rates are 39/52 for Qwen2.5-7B-Instruct, 34/53 for Qwen3-8B, and 22/50 for Gemma-3-12B-IT; matched preservation rates are 0/52, 1/53, and 0/50. Human adjudication remains necessary before presenting these as corpus prevalence, but no further feasibility gate is required.
 
 This remains a compact ACL/EMNLP/NAACL-sized question when framed as: (1) a state-preservation failure taxonomy and validated evaluation set, (2) prevalence and boundary-condition analysis across summarizers, and (3) a state-ledger or constrained-generation remedy. AMI scale is adequate; a second corpus is desirable for transfer, not for the first feasibility test.

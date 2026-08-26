@@ -120,13 +120,31 @@ def generate(model_path: str, prompts: list[str], batch_size: int) -> list[str]:
     outputs = []
     for start in range(0, len(prompts), batch_size):
         messages = [[{"role": "user", "content": prompt}] for prompt in prompts[start:start + batch_size]]
-        rendered = [tokenizer.apply_chat_template(message, tokenize=False, add_generation_prompt=True) for message in messages]
+        # Qwen3 enables a hidden reasoning preamble by default. Disable it for
+        # a fair one-sentence summarization comparison; templates that do not
+        # expose this switch simply ignore the extra template variable.
+        rendered = [
+            tokenizer.apply_chat_template(
+                message,
+                tokenize=False,
+                add_generation_prompt=True,
+                enable_thinking=False,
+            )
+            for message in messages
+        ]
         inputs = tokenizer(rendered, return_tensors="pt", padding=True, truncation=True, max_length=2048).to(model.device)
         with torch.inference_mode():
             generated = model.generate(**inputs, max_new_tokens=64, do_sample=False)
         new_tokens = generated[:, inputs["input_ids"].shape[1]:]
         outputs.extend(tokenizer.batch_decode(new_tokens, skip_special_tokens=True))
-    return [output.strip().replace("\n", " ") for output in outputs]
+    cleaned = []
+    for output in outputs:
+        # Defensive cleanup for reasoning-capable templates. This should be a
+        # no-op when ``enable_thinking=False`` is honored.
+        if "</think>" in output:
+            output = output.rsplit("</think>", 1)[-1]
+        cleaned.append(output.strip().replace("\n", " "))
+    return cleaned
 
 
 def main():
@@ -141,11 +159,18 @@ def main():
     rows = load_candidates(args.root, args.limit)
     if not rows:
         raise RuntimeError("no explicit nonfinal temporal-prefix candidates found")
-    prefix_summaries = generate(args.model, _prompts(rows, "prefix_transcript"), args.batch_size)
-    preserving_summaries = generate(
-        args.model, _prompts(rows, "prefix_transcript", preserve_state=True), args.batch_size
+    # Load the model once for all matched conditions. Apart from being faster,
+    # this guarantees that every condition uses the identical loaded weights.
+    n = len(rows)
+    all_prompts = (
+        _prompts(rows, "prefix_transcript")
+        + _prompts(rows, "prefix_transcript", preserve_state=True)
+        + _prompts(rows, "full_transcript")
     )
-    full_summaries = generate(args.model, _prompts(rows, "full_transcript"), args.batch_size)
+    all_summaries = generate(args.model, all_prompts, args.batch_size)
+    prefix_summaries = all_summaries[:n]
+    preserving_summaries = all_summaries[n:2 * n]
+    full_summaries = all_summaries[2 * n:]
 
     for row, prefix_summary, preserving_summary, full_summary in zip(
         rows, prefix_summaries, preserving_summaries, full_summaries
