@@ -21,10 +21,40 @@
 > force grid (50N/150N, 100N reused from G1) with the corrected predicate
 > finds the reversal strictly established only at `100N`. `50N` is
 > direction-consistent but short of significance; `150N`'s `left` effect is
-> exactly `0.000` (CI `[0,0]`, zero on all 30 configs) — the navigation
-> channel's `left`-push benefit decays monotonically to nothing as force
-> increases (`+0.30 → +0.20 → 0.00`), while its `right`-push cost peaks at
-> `100N` rather than trending. See [`G2_RESULTS.md`](./G2_RESULTS.md).
+> exactly `0.000` (CI `[0,0]`, zero on all 30 configs). The three left-push
+> point estimates read `+0.30 → +0.20 → 0.00` as force increases, which is a
+> descriptive sequence, not a preregistered monotonic-trend finding — no
+> trend test was ever registered for it, so "decays monotonically" is not a
+> claim this project can make from three points. Its `right`-push cost
+> peaks at `100N` rather than trending in either direction. See
+> [`G2_RESULTS.md`](./G2_RESULTS.md).
+>
+> **G3 (cross-task, `XMoveBendPickTeleop`) verdict: `PREREQUISITE_FAIL_REPLAY_FIDELITY`.**
+> The 28-config eligible panel's own 0N baseline success (82.1%) did not
+> clear the pre-registered 90% fidelity floor, so no confirmatory
+> `delta_VLA` was ever licensed. A post-hoc exploratory audit of the same
+> 392 rows through the task's continuous `final_target_lift_m` (rather than
+> its floored binary success) found a threshold-stable, one-sided pattern of
+> sparse "catastrophic failure-basin" swings at `100N/right`, but it does
+> not survive family-wise multiplicity correction at conventional
+> significance (max-T omnibus `p=0.092`) and is not a result. See
+> [`xmove_bend_pick/G3_RESULTS.md`](./xmove_bend_pick/G3_RESULTS.md) and
+> [`xmove_bend_pick/G3_EXPLORATORY_LIFT_AUDIT.md`](./xmove_bend_pick/G3_EXPLORATORY_LIFT_AUDIT.md).
+>
+> **Project status: PIVOT, not KILL.** The experimental tree in this
+> directory is not being extended further (the registered G4 follow-up,
+> [`xmove_bend_pick/G4_FAILURE_BASIN_HYPOTHESIS_REGISTERED_NOT_EXECUTED.md`](./xmove_bend_pick/G4_FAILURE_BASIN_HYPOTHESIS_REGISTERED_NOT_EXECUTED.md),
+> is explicitly not run). The CloseDoor sign-reversal finding is real but is
+> scoped to one humanoid task and one hierarchy split — on its own it is a
+> mechanism-paper-scale result, not a top-venue-scale question. It is kept
+> as the motivating discovery for a reframed question,
+> **the counterfactual value of feedback in VLA policies** (`Y_replan -
+> Y_continue`, measured by branching the same physical state rather than
+> inferred from a proxy), rather than extended as "which layer absorbs a
+> push." See [`PIVOT_DECISION.md`](./PIVOT_DECISION.md) for the full
+> reasoning, the literature-crowding argument for why the original framing
+> does not clear top-venue scale on its own, and the proposed Gate-0 plan.
+> This history is not rewritten.
 
 ## Natural question
 
@@ -210,10 +240,10 @@ Do not tune the force grid, the timing rule, the minimum worthy effect, or the
 horizon after seeing a number. A prerequisite failure is a result about this
 task and this force grid, not about the hypothesis.
 
-## Method opening
+## Method opening (historical motivation, not current novelty)
 
-The result points at a lever either way, which is why it passes the then-what
-test:
+This was the original then-what framing, kept for the record rather than as a
+live research direction:
 
 - if most recovery is WBC-level, do not pay for a full VLA re-plan on every
   disturbance — learn low-level recoverability and wake the VLA only when the
@@ -221,8 +251,20 @@ test:
 - if the VLA contribution is large, the question becomes which observations,
   memory and training make high-level corrective re-planning work.
 
-Either way it opens compute allocation, replanning policy, the policy–controller
-interface, and co-training, rather than ending at "we found a pattern".
+**This "when to replan" framing is now a crowded field, not an opening.**
+2026 work already covers it from several angles: Bernoulli-Continuation
+Policy learns a continue/replan head via trajectory-level RL
+(arXiv:2608.03483); Adaptive Action Chunking uses action entropy to size
+chunks at inference time (arXiv:2604.04161); AutoHorizon reads a VLA's own
+attention as a predictive-limit signal; Adaptive Action Chunking via
+Multi-Chunk Q estimates per-length Q values; VLA-Corrector triggers
+truncation from latent dynamics deviation; and Hi-VLA already systematically
+studies planner/controller/interface/switching in hierarchical VLA agents
+(arXiv:2606.10267). "Replanning can sometimes hurt" is also not novel on its
+own — B2FF documents off-trajectory replanning destabilizing action
+sequences (arXiv:2606.09258). See [`PIVOT_DECISION.md`](./PIVOT_DECISION.md)
+for the reframing this motivated: distinguishing *need for correction* from
+*causal value of replanning*, which none of the above measure directly.
 
 ## Cost
 
